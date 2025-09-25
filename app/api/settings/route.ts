@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import User from "@/models/User";
+import ServiceProvider from "@/models/ServiceProvider";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -17,6 +18,14 @@ export async function GET(request: NextRequest) {
 
     await connectMongoDB();
     const user = await User.findById(decoded.userId).select("settings");
+
+    let providerSettings = null;
+    if (decoded.role === "provider") {
+      const provider = await ServiceProvider.findOne({
+        userId: decoded.userId,
+      });
+      providerSettings = provider?.settings || {};
+    }
 
     const defaultSettings = {
       notifications: {
@@ -37,6 +46,12 @@ export async function GET(request: NextRequest) {
         language: "en",
         timezone: "Asia/Kolkata",
         currency: "INR",
+      },
+      provider: providerSettings || {
+        autoAcceptOrders: false,
+        maxOrdersPerDay: 50,
+        preparationTime: 30,
+        deliveryRadius: 10,
       },
     };
 
@@ -67,7 +82,22 @@ export async function PUT(request: NextRequest) {
     await connectMongoDB();
     const { settings } = await request.json();
 
-    await User.findByIdAndUpdate(decoded.userId, { settings });
+    // Update user settings
+    await User.findByIdAndUpdate(decoded.userId, {
+      settings: {
+        notifications: settings.notifications,
+        privacy: settings.privacy,
+        preferences: settings.preferences,
+      },
+    });
+
+    // Update provider settings if user is a provider
+    if (decoded.role === "provider" && settings.provider) {
+      await ServiceProvider.findOneAndUpdate(
+        { userId: decoded.userId },
+        { settings: settings.provider }
+      );
+    }
 
     return NextResponse.json({ message: "Settings updated successfully" });
   } catch (error) {
