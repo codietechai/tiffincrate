@@ -351,7 +351,7 @@ export default function AdminProvidersPage() {
                   <SelectValue placeholder="All Verification" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Verification</SelectItem>
+                  <SelectItem value="all">All Verification</SelectItem>
                   <SelectItem value="verified">Verified</SelectItem>
                   <SelectItem value="unverified">Unverified</SelectItem>
                 </SelectContent>
@@ -362,7 +362,7 @@ export default function AdminProvidersPage() {
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>

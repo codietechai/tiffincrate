@@ -19,7 +19,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import {
@@ -363,7 +362,7 @@ export default function ProviderOrdersPage() {
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="preparing">Preparing</SelectItem>
@@ -378,7 +377,7 @@ export default function ProviderOrdersPage() {
                   <SelectValue placeholder="All Time" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Time</SelectItem>
+                  <SelectItem value="all">All Time</SelectItem>
                   <SelectItem value="today">Today</SelectItem>
                   <SelectItem value="week">Last Week</SelectItem>
                   <SelectItem value="month">Last Month</SelectItem>

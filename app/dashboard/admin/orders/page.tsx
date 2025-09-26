@@ -388,7 +388,7 @@ export default function AdminOrdersPage() {
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="preparing">Preparing</SelectItem>
@@ -403,7 +403,7 @@ export default function AdminOrdersPage() {
                   <SelectValue placeholder="All Payments" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Payments</SelectItem>
+                  <SelectItem value="all">All Payments</SelectItem>
                   <SelectItem value="paid">Paid</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
@@ -416,7 +416,7 @@ export default function AdminOrdersPage() {
                   <SelectValue placeholder="All Time" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Time</SelectItem>
+                  <SelectItem value="all">All Time</SelectItem>
                   <SelectItem value="today">Today</SelectItem>
                   <SelectItem value="week">Last Week</SelectItem>
                   <SelectItem value="month">Last Month</SelectItem>
