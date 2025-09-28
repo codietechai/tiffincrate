@@ -8,7 +8,6 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     await connectMongoDB();
-    console.log("businessData", data.businessData);
     const existingUser = await User.findOne({ email: data.email });
     if (existingUser) {
       return NextResponse.json(
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
       await serviceProvider.save();
     }
 
-    const token = generateToken({
+    const token = await generateToken({
       userId: user._id,
       email: user.email,
       role: user.role,

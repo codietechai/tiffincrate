@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const providerId = searchParams.get("providerId");
     const category = searchParams.get("category");
-    console.log("providerId", providerId);
     const query: any = { isActive: true };
 
     if (providerId) {
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token);
+    const decoded = await verifyToken(token);
     if (!decoded || decoded.role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

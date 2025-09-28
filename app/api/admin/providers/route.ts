@@ -2,18 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import ServiceProvider from "@/models/ServiceProvider";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth";
+import { checkAuthAndRole } from "@/middleware/authAndRole";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = checkAuthAndRole(request, "admin");
+    if (auth instanceof NextResponse) return auth;
 
     await connectMongoDB();
 

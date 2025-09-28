@@ -19,7 +19,7 @@ export class SettingsService {
       const setting = await response.json();
       return setting;
     } catch (error) {
-      console.log("Error creating customer:", error);
+      console.log("Error fetching settings:", error);
       throw error;
     }
   }
@@ -43,7 +43,7 @@ export class SettingsService {
 
       return response.json();
     } catch (error) {
-      console.error("Error creating customer:", error);
+      console.error("Error updating settings:", error);
       throw error;
     }
   }
