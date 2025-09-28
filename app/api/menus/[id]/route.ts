@@ -39,7 +39,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token);
+    const decoded = await verifyToken(token);
     if (!decoded || decoded.role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -84,7 +84,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token);
+    const decoded = await verifyToken(token);
     if (!decoded || decoded.role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

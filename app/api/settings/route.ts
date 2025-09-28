@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import User from "@/models/User";
-import ServiceProvider from "@/models/ServiceProvider";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
 
     await connectMongoDB();
-    const user = await User.findById(decoded.userId).select("settings");
+    const user = await User.findById(userId).select("settings");
 
     const defaultSettings = {
       notifications: {
@@ -64,21 +54,14 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
 
     await connectMongoDB();
     const settings = await request.json();
 
-    if (decoded.role === "provider" && settings.provider) {
-      await User.findByIdAndUpdate(decoded.userId, {
+    if (role === "provider" && settings.provider) {
+      await User.findByIdAndUpdate(userId, {
         settings: {
           notifications: settings.notifications,
           privacy: settings.privacy,
@@ -87,7 +70,7 @@ export async function PUT(request: NextRequest) {
         },
       });
     } else {
-      await User.findByIdAndUpdate(decoded.userId, {
+      await User.findByIdAndUpdate(userId, {
         settings: {
           notifications: settings.notifications,
           privacy: settings.privacy,

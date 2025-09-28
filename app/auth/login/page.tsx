@@ -41,20 +41,21 @@ export default function LoginPage() {
 
     try {
       const { user } = await AuthService.signin(payload);
-
-      switch (user.role) {
-        case "admin":
-          router.push("/dashboard/admin");
-          break;
-        case "provider":
-          router.push("/dashboard/provider");
-          break;
-        case "consumer":
-          router.push("/dashboard/consumer");
-          break;
-        default:
-          router.push("/");
-      }
+      console.log("user", user);
+      router.push("/settings");
+      // switch (user.role) {
+      //   case "admin":
+      //     router.push("/dashboard/admin");
+      //     break;
+      //   case "provider":
+      //     router.push("/dashboard/provider");
+      //     break;
+      //   case "consumer":
+      //     router.push("/dashboard/consumer");
+      //     break;
+      //   default:
+      //     router.push("/");
+      // }
     } catch (err: any) {
       setServerError(err.message || "Registration failed");
     }
