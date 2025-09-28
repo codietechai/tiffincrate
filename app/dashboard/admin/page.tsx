@@ -19,6 +19,8 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
+  MessageCircle,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -180,7 +182,6 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Order Status Distribution */}
           <Card>
             <CardHeader>
               <CardTitle>Order Status Distribution</CardTitle>
@@ -271,6 +272,18 @@ export default function AdminDashboard() {
                   <Link href="/dashboard/admin/reports">
                     <TrendingUp className="mr-2 h-4 w-4" />
                     View Reports
+                  </Link>
+                </Button>
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link href="/reviews">
+                    <Star className="mr-2 h-4 w-4" />
+                    Manage Reviews
+                  </Link>
+                </Button>
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link href="/help-requests">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Help Requests
                   </Link>
                 </Button>
               </div>

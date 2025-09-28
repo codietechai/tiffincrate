@@ -138,7 +138,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                  <p className="text-xs text-red-500">{errors.name.message}</p>
                 )}
               </div>
 
@@ -155,7 +155,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                  <p className="text-xs text-red-500">{errors.email.message}</p>
                 )}
               </div>
             </div>
@@ -177,7 +177,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-red-500">
+                  <p className="text-xs text-red-500">
                     {errors.password.message}
                   </p>
                 )}
@@ -200,7 +200,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-500">
+                  <p className="text-xs text-red-500">
                     {errors.confirmPassword.message}
                   </p>
                 )}
@@ -275,7 +275,7 @@ export default function RegisterPage() {
                     })}
                   />
                   {errors.businessName && (
-                    <p className="text-sm text-red-500">
+                    <p className="text-xs text-red-500">
                       {errors.businessName.message}
                     </p>
                   )}

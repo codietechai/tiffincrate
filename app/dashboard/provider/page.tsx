@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import Navbar from '@/components/layout/Navbar';
-import { LoadingPage } from '@/components/ui/loading';
-import { ShoppingBag, DollarSign, Star, Clock, Plus, Eye } from 'lucide-react';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Navbar from "@/components/layout/Navbar";
+import { LoadingPage } from "@/components/ui/loading";
+import { ShoppingBag, DollarSign, Star, Clock, Plus, Eye } from "lucide-react";
 
 export default function ProviderDashboard() {
   const [analytics, setAnalytics] = useState<any>(null);
@@ -21,32 +27,32 @@ export default function ProviderDashboard() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/me');
+      const response = await fetch("/api/auth/me");
       if (response.ok) {
         const data = await response.json();
-        if (data.user.role !== 'provider') {
-          window.location.href = '/';
+        if (data.user.role !== "provider") {
+          window.location.href = "/";
           return;
         }
         setUser(data.user);
       } else {
-        window.location.href = '/auth/login';
+        window.location.href = "/auth/login";
       }
     } catch (error) {
-      console.error('Auth check error:', error);
-      window.location.href = '/auth/login';
+      console.error("Auth check error:", error);
+      window.location.href = "/auth/login";
     }
   };
 
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch('/api/analytics/dashboard');
+      const response = await fetch("/api/analytics/dashboard");
       if (response.ok) {
         const data = await response.json();
         setAnalytics(data.analytics);
       }
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      console.error("Error fetching analytics:", error);
     } finally {
       setLoading(false);
     }
@@ -54,13 +60,20 @@ export default function ProviderDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'preparing': return 'bg-purple-100 text-purple-800';
-      case 'ready': return 'bg-green-100 text-green-800';
-      case 'delivered': return 'bg-emerald-100 text-emerald-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800";
+      case "preparing":
+        return "bg-purple-100 text-purple-800";
+      case "ready":
+        return "bg-green-100 text-green-800";
+      case "delivered":
+        return "bg-emerald-100 text-emerald-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -69,12 +82,16 @@ export default function ProviderDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Provider Dashboard</h1>
-            <p className="text-gray-600">Manage your tiffin service and track performance</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Provider Dashboard
+            </h1>
+            <p className="text-gray-600">
+              Manage your tiffin service and track performance
+            </p>
           </div>
           <Button asChild>
             <Link href="/dashboard/provider/menu/new">
@@ -88,29 +105,39 @@ export default function ProviderDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Orders
+              </CardTitle>
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{analytics?.totalOrders || 0}</div>
+              <div className="text-2xl font-bold">
+                {analytics?.totalOrders || 0}
+              </div>
               <p className="text-xs text-muted-foreground">Orders received</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Revenue
+              </CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{(analytics?.totalRevenue || 0).toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                ₹{(analytics?.totalRevenue || 0).toLocaleString()}
+              </div>
               <p className="text-xs text-muted-foreground">Revenue earned</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Average Rating
+              </CardTitle>
               <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -121,12 +148,16 @@ export default function ProviderDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pending Orders
+              </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {analytics?.ordersByStatus?.find((item: any) => item._id === 'pending')?.count || 0}
+                {analytics?.ordersByStatus?.find(
+                  (item: any) => item._id === "pending"
+                )?.count || 0}
               </div>
               <p className="text-xs text-muted-foreground">Need attention</p>
             </CardContent>
@@ -143,7 +174,10 @@ export default function ProviderDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {analytics?.ordersByStatus?.map((item: any) => (
-                  <div key={item._id} className="flex items-center justify-between">
+                  <div
+                    key={item._id}
+                    className="flex items-center justify-between"
+                  >
                     <div className="flex items-center space-x-2">
                       <Badge className={getStatusColor(item._id)}>
                         {item._id.charAt(0).toUpperCase() + item._id.slice(1)}
@@ -165,13 +199,17 @@ export default function ProviderDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {analytics?.recentOrders?.slice(0, 5).map((order: any) => (
-                  <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div
+                    key={order._id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div>
                       <p className="font-medium">{order.consumerId.name}</p>
                       <p className="text-sm text-gray-500">
-                        {order.items.length} items • {new Date(order.createdAt).toLocaleDateString()}
+                        {order.items.length} items •{" "}
+                        {new Date(order.createdAt).toLocaleDateString()}
                       </p>
-                      <Badge className={getStatusColor(order.status)} size="sm">
+                      <Badge className={getStatusColor(order.status)}>
                         {order.status}
                       </Badge>
                     </div>
@@ -210,13 +248,17 @@ export default function ProviderDashboard() {
                     View Orders
                   </Link>
                 </Button>
-                <Button variant="outline" className="justify-start">
-                  <Star className="mr-2 h-4 w-4" />
-                  Customer Reviews
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link href="/reviews">
+                    <Star className="mr-2 h-4 w-4" />
+                    Customer Reviews
+                  </Link>
                 </Button>
-                <Button variant="outline" className="justify-start">
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Analytics
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link href="/dashboard/provider/analytics">
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Analytics
+                  </Link>
                 </Button>
               </div>
             </CardContent>

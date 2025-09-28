@@ -243,16 +243,28 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-2">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+
                         <Input
                           id="phone"
-                          {...register("phone")}
+                          {...register("phone", {
+                            required: "Phone number is required",
+                            pattern: {
+                              value: /^(\+91[\s]?)?[6-9]\d{9}$/,
+                              message: "Enter a valid Indian phone number",
+                            },
+                          })}
                           className="pl-10"
                         />
+                        {errors.phone && (
+                          <p className="text-xs text-red-500  absolute">
+                            {errors.phone.message}
+                          </p>
+                        )}
                       </div>
                     </div>
 

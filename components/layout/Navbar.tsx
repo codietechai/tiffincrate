@@ -11,7 +11,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChefHat, User, Settings, LogOut, Heart, Package } from "lucide-react";
+import {
+  ChefHat,
+  User,
+  Settings,
+  LogOut,
+  Heart,
+  Package,
+  Bell,
+  MessageCircle,
+  Star,
+} from "lucide-react";
 
 interface User {
   id: string;
@@ -159,6 +169,35 @@ export default function Navbar() {
                         <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Link
+                        href="/notifications"
+                        className="flex items-center w-full"
+                      >
+                        <Bell className="mr-2 h-4 w-4" />
+                        <span>Notifications</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Link
+                        href="/help-requests"
+                        className="flex items-center w-full"
+                      >
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        <span>Help & Support</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    {(user.role === "admin" || user.role === "provider") && (
+                      <DropdownMenuItem>
+                        <Link
+                          href="/reviews"
+                          className="flex items-center w-full"
+                        >
+                          <Star className="mr-2 h-4 w-4" />
+                          <span>Reviews</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {user.role === "consumer" && (
                       <>
                         <DropdownMenuItem>

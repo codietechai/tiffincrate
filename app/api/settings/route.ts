@@ -19,14 +19,6 @@ export async function GET(request: NextRequest) {
     await connectMongoDB();
     const user = await User.findById(decoded.userId).select("settings");
 
-    let providerSettings = null;
-    if (decoded.role === "provider") {
-      const provider = await ServiceProvider.findOne({
-        userId: decoded.userId,
-      });
-      providerSettings = provider?.settings || {};
-    }
-
     const defaultSettings = {
       notifications: {
         email: true,
@@ -47,17 +39,20 @@ export async function GET(request: NextRequest) {
         timezone: "Asia/Kolkata",
         currency: "INR",
       },
-      provider: providerSettings || {
+      provider: {
         autoAcceptOrders: false,
-        maxOrdersPerDay: 50,
-        preparationTime: 30,
-        deliveryRadius: 10,
+        maxOrdersPerDay: 0,
+        preparationTime: 0,
+        deliveryRadius: 0,
       },
     };
 
     const settings = user?.settings || defaultSettings;
 
-    return NextResponse.json({ settings });
+    return NextResponse.json({
+      data: settings,
+      message: "Settings fetched successfully",
+    });
   } catch (error) {
     console.error("Get settings error:", error);
     return NextResponse.json(
@@ -80,23 +75,25 @@ export async function PUT(request: NextRequest) {
     }
 
     await connectMongoDB();
-    const { settings } = await request.json();
+    const settings = await request.json();
 
-    // Update user settings
-    await User.findByIdAndUpdate(decoded.userId, {
-      settings: {
-        notifications: settings.notifications,
-        privacy: settings.privacy,
-        preferences: settings.preferences,
-      },
-    });
-
-    // Update provider settings if user is a provider
     if (decoded.role === "provider" && settings.provider) {
-      await ServiceProvider.findOneAndUpdate(
-        { userId: decoded.userId },
-        { settings: settings.provider }
-      );
+      await User.findByIdAndUpdate(decoded.userId, {
+        settings: {
+          notifications: settings.notifications,
+          privacy: settings.privacy,
+          preferences: settings.preferences,
+          provider: settings.provider,
+        },
+      });
+    } else {
+      await User.findByIdAndUpdate(decoded.userId, {
+        settings: {
+          notifications: settings.notifications,
+          privacy: settings.privacy,
+          preferences: settings.preferences,
+        },
+      });
     }
 
     return NextResponse.json({ message: "Settings updated successfully" });
