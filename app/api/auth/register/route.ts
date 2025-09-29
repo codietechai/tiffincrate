@@ -7,6 +7,7 @@ import { hashPassword, generateToken } from "@/lib/auth";
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
+    console.log("data", data);
     await connectMongoDB();
     const existingUser = await User.findOne({ email: data.email });
     if (existingUser) {
@@ -44,11 +45,12 @@ export async function POST(request: NextRequest) {
 
       await serviceProvider.save();
     }
-
+    console.log("user", user);
     const token = await generateToken({
       userId: user._id,
       email: user.email,
       role: user.role,
+      tokenVersion: user.tokenVersion,
     });
 
     const response = NextResponse.json(

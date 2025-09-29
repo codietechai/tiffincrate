@@ -2,22 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import HelpRequest from "@/models/HelpRequest";
 import Notification from "@/models/Notification";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
 
     await connectMongoDB();
 
@@ -35,9 +27,9 @@ export async function GET(
 
     // Check permissions
     const canView =
-      decoded.role === "admin" ||
-      helpRequest.fromUserId._id.toString() === decoded.userId ||
-      helpRequest.toUserId?._id.toString() === decoded.userId;
+      role === "admin" ||
+      helpRequest.fromUserId._id.toString() === userId ||
+      helpRequest.toUserId?._id.toString() === userId;
 
     if (!canView) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -58,15 +50,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
 
     await connectMongoDB();
     const { status, priority, response } = await request.json();
@@ -81,9 +66,9 @@ export async function PATCH(
 
     // Check permissions
     const canUpdate =
-      decoded.role === "admin" ||
-      helpRequest.fromUserId.toString() === decoded.userId ||
-      helpRequest.toUserId?.toString() === decoded.userId;
+      role === "admin" ||
+      helpRequest.fromUserId.toString() === userId ||
+      helpRequest.toUserId?.toString() === userId;
 
     if (!canUpdate) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -94,7 +79,7 @@ export async function PATCH(
       helpRequest.status = status;
       if (status === "resolved") {
         helpRequest.resolvedAt = new Date();
-        helpRequest.resolvedBy = decoded.userId;
+        helpRequest.resolvedBy = userId;
       }
     }
     if (priority) helpRequest.priority = priority;
@@ -102,15 +87,15 @@ export async function PATCH(
     // Add response if provided
     if (response) {
       helpRequest.responses.push({
-        userId: decoded.userId,
+        userId: userId,
         message: response,
         timestamp: new Date(),
-        isAdmin: decoded.role === "admin",
+        isAdmin: role === "admin",
       });
 
       // Create notification for the other party
       const notifyUserId =
-        helpRequest.fromUserId.toString() === decoded.userId
+        helpRequest.fromUserId.toString() === userId
           ? helpRequest.toUserId
           : helpRequest.fromUserId;
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Menu from "@/models/Menu";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(
   request: NextRequest,
@@ -34,13 +33,10 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
 
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== "provider") {
+    if (role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -53,7 +49,7 @@ export async function PATCH(
     }
 
     // Check if the menu belongs to the authenticated provider
-    if (menu.providerId.toString() !== decoded.userId) {
+    if (menu.providerId.toString() !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -79,13 +75,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== "provider") {
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
+    if (role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -97,7 +89,7 @@ export async function DELETE(
     }
 
     // Check if the menu belongs to the authenticated provider
-    if (menu.providerId.toString() !== decoded.userId) {
+    if (menu.providerId.toString() !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

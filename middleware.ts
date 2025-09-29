@@ -41,6 +41,7 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   response.headers.set("x-user-id", decoded.userId);
   response.headers.set("x-user-role", decoded.role);
+  response.headers.set("x-user-token-version", decoded.tokenVersion);
 
   return response;
 }

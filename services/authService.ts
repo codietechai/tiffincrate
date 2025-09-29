@@ -51,4 +51,46 @@ export class AuthService {
       throw error;
     }
   }
+
+  static async logoutAllDevices(): Promise<{ message: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/logout-all`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to logout from all devices");
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error while logout from all devices:", error);
+      throw error;
+    }
+  }
+
+  static async deleteAccount(): Promise<{ message: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/delete-account`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete account");
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error deleting account customer:", error);
+      throw error;
+    }
+  }
 }

@@ -2,19 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import HelpRequest from "@/models/HelpRequest";
 import Notification from "@/models/Notification";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
 
     await connectMongoDB();
 
@@ -30,7 +22,7 @@ export async function GET(request: NextRequest) {
     let query: any = {};
 
     // Role-based filtering
-    if (decoded.role === "admin") {
+    if (role === "admin") {
       // Admin can see all help requests or those directed to admin
       if (type !== "consumer_to_provider") {
         query = {
@@ -40,7 +32,7 @@ export async function GET(request: NextRequest) {
     } else {
       // Users can see their own requests and requests directed to them
       query = {
-        $or: [{ fromUserId: decoded.userId }, { toUserId: decoded.userId }],
+        $or: [{ fromUserId: userId }, { toUserId: userId }],
       };
     }
 
@@ -78,22 +70,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
 
     await connectMongoDB();
     const { toUserId, type, subject, message, priority, category } =
       await request.json();
 
     const helpRequest = new HelpRequest({
-      fromUserId: decoded.userId,
+      fromUserId: userId,
       toUserId,
       type,
       subject,
