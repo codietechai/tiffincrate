@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
     const isValidPassword = await verifyPassword(password, user.password);
     if (!isValidPassword) {
       return NextResponse.json(
@@ -34,11 +33,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate token
     const token = await generateToken({
       userId: user._id,
       email: user.email,
       role: user.role,
+      tokenVersion: user.tokenVersion,
     });
 
     const response = NextResponse.json({

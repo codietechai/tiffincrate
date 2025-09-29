@@ -11,6 +11,10 @@ export interface IUser extends mongoose.Document {
   isActive: boolean;
   favorites?: string[];
   settings?: any;
+  tokenVersion: {
+    type: Number;
+    default: 0;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

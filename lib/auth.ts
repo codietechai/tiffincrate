@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 import { jwtVerify, SignJWT } from "jose";
+import { connectMongoDB } from "./mongodb";
+import User from "@/models/User";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key"
@@ -22,17 +24,28 @@ export async function generateToken(payload: any): Promise<string> {
   return await new SignJWT({
     ...payload,
     userId: payload.userId.toString(),
+    tokenVersion: payload.tokenVersion,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
     .sign(JWT_SECRET);
 }
 
-export async function verifyToken(token: string): Promise<any | null> {
+export async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload;
-  } catch (error) {
+
+    await connectMongoDB();
+    const user = await User.findById(payload.userId);
+
+    if (!user) return null;
+
+    if (payload.tokenVersion !== user.tokenVersion) {
+      return null;
+    }
+
+    return payload as any;
+  } catch (err) {
     return null;
   }
 }
