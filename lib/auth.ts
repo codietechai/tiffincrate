@@ -24,7 +24,6 @@ export async function generateToken(payload: any): Promise<string> {
   return await new SignJWT({
     ...payload,
     userId: payload.userId.toString(),
-    tokenVersion: payload.tokenVersion,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")

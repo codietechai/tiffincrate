@@ -11,10 +11,7 @@ export interface IUser extends mongoose.Document {
   isActive: boolean;
   favorites?: string[];
   settings?: any;
-  tokenVersion: {
-    type: Number;
-    default: 0;
-  };
+  tokenVersion: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -62,6 +59,10 @@ const userSchema = new mongoose.Schema(
         ref: "ServiceProvider",
       },
     ],
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
     settings: {
       type: mongoose.Schema.Types.Mixed,
     },
