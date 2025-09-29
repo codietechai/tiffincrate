@@ -12,7 +12,7 @@ export interface IMenuItem {
 
 export interface IMenu extends mongoose.Document {
   _id: string;
-  providerId: string;
+  providerId: mongoose.Types.ObjectId;
   name: string;
   description?: string;
   items: IMenuItem[];
@@ -23,7 +23,7 @@ export interface IMenu extends mongoose.Document {
   updatedAt: Date;
 }
 
-const menuItemSchema = new mongoose.Schema({
+const menuItemSchema = new mongoose.Schema<IMenuItem>({
   name: {
     type: String,
     required: true,
@@ -56,7 +56,7 @@ const menuItemSchema = new mongoose.Schema({
   },
 });
 
-const menuSchema = new mongoose.Schema({
+const menuSchema = new mongoose.Schema<IMenu>({
   providerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceProvider',
@@ -89,4 +89,4 @@ const menuSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-export default mongoose.models.Menu || mongoose.model<IMenu>('Menu', menuSchema);
+export default (mongoose.models.Menu as mongoose.Model<IMenu>) || mongoose.model<IMenu>('Menu', menuSchema);

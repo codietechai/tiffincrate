@@ -41,7 +41,9 @@ export async function PATCH(
 
     // Update the item
     Object.keys(updateData).forEach((key) => {
-      menu.items[itemIndex][key] = updateData[key];
+      if (key in menu.items[itemIndex]) {
+        (menu.items[itemIndex] as any)[key] = updateData[key];
+      }
     });
 
     await menu.save();

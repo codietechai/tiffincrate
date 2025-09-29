@@ -24,17 +24,19 @@ export async function GET(request: NextRequest) {
       .populate("providerId", "businessName")
       .sort({ createdAt: -1 });
 
-    let filteredMenus = menus;
+    let responseMenus;
     if (category) {
-      filteredMenus = menus
+      responseMenus = menus
         .map((menu) => ({
           ...menu.toObject(),
           items: menu.items.filter((item: any) => item.category === category),
         }))
         .filter((menu) => menu.items.length > 0);
+    } else {
+      responseMenus = menus.map((menu) => menu.toObject());
     }
 
-    return NextResponse.json({ menus: filteredMenus });
+    return NextResponse.json({ menus: responseMenus });
   } catch (error) {
     console.error("Get menus error:", error);
     return NextResponse.json(
