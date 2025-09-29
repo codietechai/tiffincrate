@@ -8,7 +8,6 @@ export async function POST(request: NextRequest) {
     await connectMongoDB();
     const { email, password } = await request.json();
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
@@ -17,7 +16,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is active
     if (!user.isActive) {
       return NextResponse.json(
         { error: "Account is deactivated" },
@@ -32,7 +30,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-
     const token = await generateToken({
       userId: user._id,
       email: user.email,

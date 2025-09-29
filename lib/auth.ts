@@ -1,13 +1,8 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 import { jwtVerify, SignJWT } from "jose";
-import { connectMongoDB } from "./mongodb";
-import User from "@/models/User";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-secret-key"
-);
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export async function hashPassword(password: string): Promise<string> {
   return await bcrypt.hash(password, 12);
@@ -33,18 +28,8 @@ export async function generateToken(payload: any): Promise<string> {
 export async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-
-    await connectMongoDB();
-    const user = await User.findById(payload.userId);
-
-    if (!user) return null;
-
-    if (payload.tokenVersion !== user.tokenVersion) {
-      return null;
-    }
-
     return payload as any;
-  } catch (err) {
+  } catch {
     return null;
   }
 }

@@ -49,6 +49,11 @@ const Account = ({
   const deleteAccount = async () => {
     try {
       await AuthService.deleteAccount();
+      setModalStates({
+        deleteAccount: false,
+        logoutFromAll: false,
+      });
+      router.push("/auth/login");
     } catch (error) {
       setError("Error while deleting account please try again later.");
     }
@@ -57,6 +62,11 @@ const Account = ({
   const logoutAllDevices = async () => {
     try {
       await AuthService.logoutAllDevices();
+      setModalStates({
+        deleteAccount: false,
+        logoutFromAll: false,
+      });
+      router.push("/auth/login");
     } catch (error) {
       setError("Error while logging out of all accounts.");
     }
