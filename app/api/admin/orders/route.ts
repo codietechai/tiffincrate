@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
+
 import { checkAuthAndRole } from "@/middleware/authAndRole";
 
 export async function GET(request: NextRequest) {

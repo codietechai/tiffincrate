@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Review from "@/models/Review";
 import ServiceProvider from "@/models/ServiceProvider";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,13 +33,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== "consumer") {
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
+    if (role !== "consumer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -49,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Check if review already exists for this order
     const existingReview = await Review.findOne({
-      consumerId: decoded.userId,
+      consumerId: userId,
       orderId,
     });
 
@@ -61,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     const review = new Review({
-      consumerId: decoded.userId,
+      consumerId: userId,
       providerId,
       orderId,
       rating,

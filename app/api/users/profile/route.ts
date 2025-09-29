@@ -6,18 +6,11 @@ import { getTokenFromRequest, verifyToken, hashPassword } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
 
     await connectMongoDB();
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await User.findById(userId).select("-password");
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -45,20 +38,10 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
+    const userId = request.headers.get("x-user-id");
     await connectMongoDB();
     const updateData = await request.json();
 
-    // Update user profile
     const userUpdates: any = {};
     if (updateData.name) userUpdates.name = updateData.name;
     if (updateData.phone) userUpdates.phone = updateData.phone;
@@ -67,14 +50,14 @@ export async function PUT(request: NextRequest) {
       userUpdates.password = await hashPassword(updateData.password);
     }
 
-    const user = await User.findByIdAndUpdate(decoded.userId, userUpdates, {
+    const user = await User.findByIdAndUpdate(userId, userUpdates, {
       new: true,
     }).select("-password");
 
     // If user is a provider, update service provider profile
     if (user.role === "provider" && updateData.serviceProvider) {
       await ServiceProvider.findOneAndUpdate(
-        { userId: decoded.userId },
+        { userId: userId },
         updateData.serviceProvider,
         { new: true }
       );

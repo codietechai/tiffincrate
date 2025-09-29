@@ -4,7 +4,7 @@ import Order from "@/models/Order";
 import ServiceProvider from "@/models/ServiceProvider";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
+
 import { verifyRazorpayPayment } from "@/lib/razorpay";
 import {
   sendEmail,
@@ -15,15 +15,8 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
 
     await connectMongoDB();
 
@@ -32,10 +25,10 @@ export async function GET(request: NextRequest) {
 
     // Build query based on user role
     let query: any = {};
-    if (decoded.role === "consumer") {
-      query.consumerId = decoded.userId;
-    } else if (decoded.role === "provider") {
-      query.providerId = decoded.userId;
+    if (role === "consumer") {
+      query.consumerId = userId;
+    } else if (role === "provider") {
+      query.providerId = userId;
     }
     // Admin can see all orders
 
@@ -58,13 +51,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== "consumer") {
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
+    if (role !== "consumer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -106,7 +95,7 @@ export async function POST(request: NextRequest) {
       deliveryDate,
       paymentMethod,
       notes,
-      consumerId: decoded.userId,
+      consumerId: userId,
       paymentStatus: paymentMethod === "razorpay" ? "paid" : "pending",
       status: "confirmed",
     });
@@ -115,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch user and provider details for notifications
     const [consumer, provider] = await Promise.all([
-      User.findById(decoded.userId),
+      User.findById(userId),
       ServiceProvider.findById(providerId).populate("userId"),
     ]);
 
@@ -123,7 +112,7 @@ export async function POST(request: NextRequest) {
     await Promise.all([
       // Consumer notification
       new Notification({
-        userId: decoded.userId,
+        userId: userId,
         title: "Order Confirmed",
         message: `Your order from ${provider.businessName} has been confirmed.`,
         type: "order",
@@ -136,7 +125,7 @@ export async function POST(request: NextRequest) {
         title: "New Order Received",
         message: `You have received a new order from ${consumer.name}.`,
         type: "order",
-        data: { orderId: order._id, consumerId: decoded.userId },
+        data: { orderId: order._id, consumerId: userId },
       }).save(),
     ]);
 
