@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+// import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import { Search, Star, Trash2, Filter } from "lucide-react";
@@ -158,7 +158,6 @@ export default function ReviewsPage() {
           </p>
         </div>
 
-        {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
@@ -196,10 +195,10 @@ export default function ReviewsPage() {
                   {stats.ratingDistribution.map((item: any) => (
                     <div key={item.rating} className="flex items-center gap-2">
                       <span className="text-sm w-8">{item.rating}★</span>
-                      <Progress
-                        value={(item.count / stats.totalReviews) * 100}
+                      {/* <Progress
+                        value={(item.count / stats.totalReviews) * 100 || 0}
                         className="flex-1 h-2"
-                      />
+                      /> */}
                       <span className="text-sm text-gray-500 w-8">
                         {item.count}
                       </span>
@@ -211,7 +210,6 @@ export default function ReviewsPage() {
           </div>
         )}
 
-        {/* Filters */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -300,7 +298,6 @@ export default function ReviewsPage() {
           </CardContent>
         </Card>
 
-        {/* Reviews List */}
         <div className="space-y-4">
           {filteredReviews.length > 0 ? (
             filteredReviews.map((review) => (

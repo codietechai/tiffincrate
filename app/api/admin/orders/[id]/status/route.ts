@@ -28,10 +28,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // Create notifications for both consumer and provider
     await Promise.all([
       new Notification({
-        userId: order.consumerId._id,
+        userId: order.consumerId,
         title: "Order Status Updated",
         message: `Your order status has been updated to ${status} by admin.`,
         type: "order",
@@ -39,7 +38,7 @@ export async function PATCH(
       }).save(),
 
       new Notification({
-        userId: order.providerId.userId,
+        userId: order.providerId,
         title: "Order Status Updated",
         message: `Order ${order._id
           .toString()

@@ -179,10 +179,7 @@ export default function ConsumerDashboard() {
                           {order.items.length} items •{" "}
                           {new Date(order.createdAt).toLocaleDateString()}
                         </p>
-                        <Badge
-                          className={getStatusColor(order.status)}
-                          size="sm"
-                        >
+                        <Badge className={getStatusColor(order.status)}>
                           {order.status.charAt(0).toUpperCase() +
                             order.status.slice(1)}
                         </Badge>
