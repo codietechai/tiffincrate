@@ -113,7 +113,7 @@ export default function HelpRequestsPage() {
     setSuccess("");
 
 
-    
+console.log('quick fix');
     try {
       const payload = { ...newRequest };
       if (
