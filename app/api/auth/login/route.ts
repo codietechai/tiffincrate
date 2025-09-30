@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
     const token = await generateToken({
       userId: user._id,
       email: user.email,

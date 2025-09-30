@@ -1,15 +1,10 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
 
-import { checkAuthAndRole } from "@/middleware/authAndRole";
-
 export async function GET(request: NextRequest) {
   try {
-    const auth = checkAuthAndRole(request, "admin");
-    if (auth instanceof NextResponse) return auth;
-
     await connectMongoDB();
 
     const { searchParams } = new URL(request.url);

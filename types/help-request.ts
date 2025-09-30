@@ -1,0 +1,30 @@
+export interface THelpRequest {
+  _id: string;
+  fromUserId: {
+    name: string;
+    email: string;
+    role: string;
+  };
+  toUserId?: {
+    name: string;
+    email: string;
+    role: string;
+  };
+  type: string;
+  subject: string;
+  message: string;
+  status: string;
+  priority: string;
+  category: string;
+  responses: Array<{
+    userId: {
+      name: string;
+      role: string;
+    };
+    message: string;
+    timestamp: string;
+    isAdmin: boolean;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}

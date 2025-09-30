@@ -42,43 +42,14 @@ import {
   TriangleAlert as AlertTriangle,
   Send,
 } from "lucide-react";
-
-interface HelpRequest {
-  _id: string;
-  fromUserId: {
-    name: string;
-    email: string;
-    role: string;
-  };
-  toUserId?: {
-    name: string;
-    email: string;
-    role: string;
-  };
-  type: string;
-  subject: string;
-  message: string;
-  status: string;
-  priority: string;
-  category: string;
-  responses: Array<{
-    userId: {
-      name: string;
-      role: string;
-    };
-    message: string;
-    timestamp: string;
-    isAdmin: boolean;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-}
+import { THelpRequest } from "@/types";
+import RequestCard from "@/components/screens/help-request/request-card";
 
 export default function HelpRequestsPage() {
-  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([]);
+  const [helpRequests, setHelpRequests] = useState<THelpRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(
+  const [selectedRequest, setSelectedRequest] = useState<THelpRequest | null>(
     null
   );
   const [newRequest, setNewRequest] = useState({
@@ -145,7 +116,10 @@ export default function HelpRequestsPage() {
     
     try {
       const payload = { ...newRequest };
-      if (payload.type === "admin_support" || payload.type === "provider_support") {
+      if (
+        payload.type === "admin_support" ||
+        payload.type === "provider_support"
+      ) {
         delete (payload as any).toUserId;
       }
       const response = await fetch("/api/help-requests", {
@@ -470,196 +444,15 @@ export default function HelpRequestsPage() {
           <TabsContent value="all" className="space-y-4">
             {helpRequests.length > 0 ? (
               helpRequests.map((request) => (
-                <Card
-                  key={request._id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold">{request.subject}</h3>
-                          <Badge className={getStatusColor(request.status)}>
-                            <div className="flex items-center gap-1">
-                              {getStatusIcon(request.status)}
-                              {request.status.replace("_", " ")}
-                            </div>
-                          </Badge>
-                          <Badge className={getPriorityColor(request.priority)}>
-                            {request.priority}
-                          </Badge>
-                          <Badge variant="outline">{request.category}</Badge>
-                        </div>
-
-                        <p className="text-gray-600 mb-3 line-clamp-2">
-                          {request.message}
-                        </p>
-
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span>
-                            From: {request.fromUserId.name} (
-                            {request.fromUserId.role})
-                          </span>
-                          {request.toUserId && (
-                            <span>
-                              To: {request.toUserId.name} (
-                              {request.toUserId.role})
-                            </span>
-                          )}
-                          <span>•</span>
-                          <span>
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </span>
-                          <span>•</span>
-                          <span>{request.responses.length} responses</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 ml-4">
-                        {user?.role === "admin" &&
-                          request.status !== "resolved" &&
-                          request.status !== "closed" && (
-                            <Select
-                              value={request.status}
-                              onValueChange={(value) =>
-                                updateStatus(request._id, value)
-                              }
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="open">Open</SelectItem>
-                                <SelectItem value="in_progress">
-                                  In Progress
-                                </SelectItem>
-                                <SelectItem value="resolved">
-                                  Resolved
-                                </SelectItem>
-                                <SelectItem value="closed">Closed</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedRequest(request)}
-                            >
-                              <MessageCircle className="mr-2 h-4 w-4" />
-                              View
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2">
-                                {selectedRequest?.subject}
-                                <Badge
-                                  className={getStatusColor(
-                                    selectedRequest?.status || ""
-                                  )}
-                                >
-                                  {selectedRequest?.status.replace("_", " ")}
-                                </Badge>
-                              </DialogTitle>
-                              <DialogDescription>
-                                Request #{selectedRequest?._id.slice(-8)} •{" "}
-                                {selectedRequest?.category}
-                              </DialogDescription>
-                            </DialogHeader>
-
-                            {selectedRequest && (
-                              <div className="space-y-6">
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <span className="font-medium">
-                                      {selectedRequest.fromUserId.name}
-                                    </span>
-                                    <span className="text-sm text-gray-500">
-                                      {new Date(
-                                        selectedRequest.createdAt
-                                      ).toLocaleString()}
-                                    </span>
-                                  </div>
-                                  <p className="text-gray-700">
-                                    {selectedRequest.message}
-                                  </p>
-                                </div>
-
-                                {selectedRequest.responses.length > 0 && (
-                                  <div className="space-y-4">
-                                    <h4 className="font-medium">Responses</h4>
-                                    {selectedRequest.responses.map(
-                                      (resp, index) => (
-                                        <div
-                                          key={index}
-                                          className="bg-blue-50 p-4 rounded-lg"
-                                        >
-                                          <div className="flex justify-between items-start mb-2">
-                                            <div className="flex items-center gap-2">
-                                              <span className="font-medium">
-                                                {resp.userId.name}
-                                              </span>
-                                              {resp.isAdmin && (
-                                                <Badge
-                                                  variant="default"
-                                                  className="text-xs"
-                                                >
-                                                  Admin
-                                                </Badge>
-                                              )}
-                                            </div>
-                                            <span className="text-sm text-gray-500">
-                                              {new Date(
-                                                resp.timestamp
-                                              ).toLocaleString()}
-                                            </span>
-                                          </div>
-                                          <p className="text-gray-700">
-                                            {resp.message}
-                                          </p>
-                                        </div>
-                                      )
-                                    )}
-                                  </div>
-                                )}
-
-                                {selectedRequest.status !== "closed" &&
-                                  selectedRequest.status !== "resolved" && (
-                                    <div className="space-y-2">
-                                      <Label htmlFor="response">
-                                        Add Response
-                                      </Label>
-                                      <Textarea
-                                        id="response"
-                                        placeholder="Type your response..."
-                                        value={response}
-                                        onChange={(e) =>
-                                          setResponse(e.target.value)
-                                        }
-                                        rows={3}
-                                      />
-                                      <Button
-                                        onClick={() =>
-                                          addResponse(selectedRequest._id)
-                                        }
-                                        disabled={!response.trim()}
-                                      >
-                                        <Send className="mr-2 h-4 w-4" />
-                                        Send Response
-                                      </Button>
-                                    </div>
-                                  )}
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RequestCard
+                  request={request}
+                  user={user}
+                  updateStatus={updateStatus}
+                  addResponse={addResponse}
+                  getStatusColor={getStatusColor}
+                  getStatusIcon={getStatusIcon}
+                  getPriorityColor={getPriorityColor}
+                />
               ))
             ) : (
               <div className="text-center py-12">
@@ -678,9 +471,15 @@ export default function HelpRequestsPage() {
             {helpRequests
               .filter((req) => req.status === "open")
               .map((request) => (
-                <Card key={request._id}>
-                  {/* Same card content as above */}
-                </Card>
+                <RequestCard
+                  request={request}
+                  user={user}
+                  updateStatus={updateStatus}
+                  addResponse={addResponse}
+                  getStatusColor={getStatusColor}
+                  getStatusIcon={getStatusIcon}
+                  getPriorityColor={getPriorityColor}
+                />
               ))}
           </TabsContent>
 
@@ -688,9 +487,15 @@ export default function HelpRequestsPage() {
             {helpRequests
               .filter((req) => req.status === "in_progress")
               .map((request) => (
-                <Card key={request._id}>
-                  {/* Same card content as above */}
-                </Card>
+                <RequestCard
+                  request={request}
+                  user={user}
+                  updateStatus={updateStatus}
+                  addResponse={addResponse}
+                  getStatusColor={getStatusColor}
+                  getStatusIcon={getStatusIcon}
+                  getPriorityColor={getPriorityColor}
+                />
               ))}
           </TabsContent>
 
@@ -698,9 +503,15 @@ export default function HelpRequestsPage() {
             {helpRequests
               .filter((req) => req.status === "resolved")
               .map((request) => (
-                <Card key={request._id}>
-                  {/* Same card content as above */}
-                </Card>
+                <RequestCard
+                  request={request}
+                  user={user}
+                  updateStatus={updateStatus}
+                  addResponse={addResponse}
+                  getStatusColor={getStatusColor}
+                  getStatusIcon={getStatusIcon}
+                  getPriorityColor={getPriorityColor}
+                />
               ))}
           </TabsContent>
         </Tabs>

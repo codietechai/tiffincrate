@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import User from "@/models/User";
@@ -13,13 +13,12 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-
-    if (Number(tokenVersion) !== Number(user.tokenVersion)) {
-      return NextResponse.json(
-        { error: "Invalid or expired token" },
-        { status: 401 }
-      );
-    }
+    // if (Number(tokenVersion) !== Number(user.tokenVersion)) {
+    //   return NextResponse.json(
+    //     { error: "Invalid or expired token" },
+    //     { status: 401 }
+    //   );
+    // }
 
     return NextResponse.json({ user });
   } catch (error) {

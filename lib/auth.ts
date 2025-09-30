@@ -18,6 +18,7 @@ export async function verifyPassword(
 export async function generateToken(payload: any): Promise<string> {
   return await new SignJWT({
     ...payload,
+    tokenVersion: payload.tokenVersion,
     userId: payload.userId.toString(),
   })
     .setProtectedHeader({ alg: "HS256" })

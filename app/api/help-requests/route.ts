@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) query.status = status;
-    if (type) query.type = type;
+    if (type && type !== "all") query.type = type;
     if (priority) query.priority = priority;
 
     const helpRequests = await HelpRequest.find(query)
@@ -75,16 +75,21 @@ export async function POST(request: NextRequest) {
     await connectMongoDB();
     const { toUserId, type, subject, message, priority, category } =
       await request.json();
-
-    const helpRequest = new HelpRequest({
+    let payload: any = {
       fromUserId: userId,
-      toUserId,
       type,
       subject,
       message,
       priority: priority || "medium",
       category: category || "general",
-    });
+    };
+    if (toUserId) {
+      payload = {
+        ...payload,
+        toUserId,
+      };
+    }
+    const helpRequest = new HelpRequest();
 
     await helpRequest.save();
 
