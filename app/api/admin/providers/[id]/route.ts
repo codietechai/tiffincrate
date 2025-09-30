@@ -2,16 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import ServiceProvider from "@/models/ServiceProvider";
 
-import { checkAuthAndRole } from "@/middleware/authAndRole";
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = checkAuthAndRole(request, "admin");
-    if (auth instanceof NextResponse) return auth;
-
     await connectMongoDB();
     const updateData = await request.json();
 

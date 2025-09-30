@@ -3,16 +3,11 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import Notification from "@/models/Notification";
 
-import { checkAuthAndRole } from "@/middleware/authAndRole";
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = checkAuthAndRole(request, "admin");
-    if (auth instanceof NextResponse) return auth;
-
     await connectMongoDB();
     const { status } = await request.json();
 
