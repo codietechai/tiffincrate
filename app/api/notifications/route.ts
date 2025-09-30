@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Notification from "@/models/Notification";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
 
     await connectMongoDB();
 
@@ -24,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    const query: any = { userId: decoded.userId };
+    const query: any = { userId: userId };
     if (unreadOnly) query.isRead = false;
 
     const notifications = await Notification.find(query)
@@ -34,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     const total = await Notification.countDocuments(query);
     const unreadCount = await Notification.countDocuments({
-      userId: decoded.userId,
+      userId: userId,
       isRead: false,
     });
 
@@ -59,23 +50,16 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
 
     await connectMongoDB();
     const { notificationIds, markAsRead } = await request.json();
 
     const updateQuery =
       notificationIds && notificationIds.length > 0
-        ? { _id: { $in: notificationIds }, userId: decoded.userId }
-        : { userId: decoded.userId };
+        ? { _id: { $in: notificationIds }, userId: userId }
+        : { userId: userId };
 
     await Notification.updateMany(updateQuery, { isRead: markAsRead });
 

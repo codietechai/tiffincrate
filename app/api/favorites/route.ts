@@ -2,23 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import ServiceProvider from "@/models/ServiceProvider";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== "consumer") {
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
+    if (role !== "consumer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await connectMongoDB();
 
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(userId);
     const favoriteIds = user.favorites || [];
 
     const favorites = await ServiceProvider.find({
@@ -37,25 +32,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== "consumer") {
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
+    if (role !== "consumer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await connectMongoDB();
     const { providerId } = await request.json();
 
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(userId);
     const favorites = user.favorites || [];
 
     if (!favorites.includes(providerId)) {
       favorites.push(providerId);
-      await User.findByIdAndUpdate(decoded.userId, { favorites });
+      await User.findByIdAndUpdate(userId, { favorites });
     }
 
     return NextResponse.json({ message: "Added to favorites" });
@@ -70,13 +61,9 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== "consumer") {
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
+    if (role !== "consumer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -84,12 +71,12 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const providerId = searchParams.get("providerId");
 
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(userId);
     const favorites = (user.favorites || []).filter(
       (id: string) => id.toString() !== providerId
     );
 
-    await User.findByIdAndUpdate(decoded.userId, { favorites });
+    await User.findByIdAndUpdate(userId, { favorites });
 
     return NextResponse.json({ message: "Removed from favorites" });
   } catch (error) {

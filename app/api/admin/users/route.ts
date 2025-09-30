@@ -2,17 +2,12 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import User from "@/models/User";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== "admin") {
+    const userId = request.headers.get("x-user-id");
+    const arole = request.headers.get("x-user-role");
+    if (arole !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

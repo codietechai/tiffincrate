@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
 
     await connectMongoDB();
     const { status } = await request.json();
@@ -27,17 +19,11 @@ export async function PATCH(
     }
 
     // Check permissions
-    if (
-      decoded.role === "provider" &&
-      order.providerId.toString() !== decoded.userId
-    ) {
+    if (role === "provider" && order.providerId.toString() !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (
-      decoded.role === "consumer" &&
-      order.consumerId.toString() !== decoded.userId
-    ) {
+    if (role === "consumer" && order.consumerId.toString() !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
