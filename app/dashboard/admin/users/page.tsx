@@ -35,6 +35,7 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
+import EditUserModal from "./EditUser";
 
 interface User {
   _id: string;
@@ -57,6 +58,9 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [user, setUser] = useState<any>(null);
   const [message, setMessage] = useState("");
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -211,6 +215,31 @@ export default function AdminUsersPage() {
   if (loading) return <LoadingPage />;
 
   const stats = getUserStats();
+
+  const handleSaveUser = async (data: Partial<User>) => {
+    if (!editingUser) return;
+
+    try {
+      const response = await fetch(`/api/admin/users/${editingUser._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUsers((prev) =>
+          prev.map((u) => (u._id === updatedUser._id ? updatedUser : u))
+        );
+        setMessage("User updated successfully");
+        setTimeout(() => setMessage(""), 3000);
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      setError("Failed to update user");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -437,7 +466,14 @@ export default function AdminUsersPage() {
                           }
                         />
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingUser(user);
+                          setEditModalOpen(true);
+                        }}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
@@ -468,6 +504,12 @@ export default function AdminUsersPage() {
           )}
         </div>
       </div>
+      <EditUserModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        user={editingUser}
+        onSave={handleSaveUser}
+      />
     </div>
   );
 }

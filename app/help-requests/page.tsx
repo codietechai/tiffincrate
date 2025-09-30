@@ -142,12 +142,16 @@ export default function HelpRequestsPage() {
     setSuccess("");
 
     try {
+      const payload = { ...newRequest };
+      if (payload.type === "admin_support" || payload.type === "provider_support") {
+        delete (payload as any).toUserId;
+      }
       const response = await fetch("/api/help-requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newRequest),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
