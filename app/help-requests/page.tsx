@@ -141,6 +141,7 @@ export default function HelpRequestsPage() {
     setError("");
     setSuccess("");
 
+    
     try {
       const payload = { ...newRequest };
       if (payload.type === "admin_support" || payload.type === "provider_support") {
