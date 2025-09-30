@@ -112,6 +112,7 @@ export default function HelpRequestsPage() {
     setError("");
     setSuccess("");
 
+    
     try {
       const payload = { ...newRequest };
       if (
