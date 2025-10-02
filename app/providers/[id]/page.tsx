@@ -375,7 +375,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
       <Navbar />
 
       {/* Razorpay Script */}
@@ -383,7 +383,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Provider Header */}
-        <Card className="mb-8">
+        <Card className="mb-8 bg-gradient-to-r from-orange-100 to-yellow-100 border-orange-200">
           <CardHeader>
             <div className="flex justify-between items-start">
               <div className="flex-1">
@@ -513,7 +513,10 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                 {/* Menu Items */}
                 <div className="space-y-4">
                   {getFilteredItems().map((item) => (
-                    <Card key={item._id}>
+                    <Card
+                      key={item._id}
+                      className="hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-orange-50"
+                    >
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
@@ -540,7 +543,10 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                               <span className="font-bold text-lg">
                                 ₹{item.price}
                               </span>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-gradient-to-r from-orange-100 to-yellow-100"
+                              >
                                 {item.category}
                               </Badge>
                             </div>
@@ -554,6 +560,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => removeFromCart(item._id)}
+                                    className="hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50"
                                   >
                                     <Minus className="h-3 w-3" />
                                   </Button>
@@ -564,6 +571,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => addToCart(item)}
+                                    className="hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
                                   >
                                     <Plus className="h-3 w-3" />
                                   </Button>
@@ -572,6 +580,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                                 <Button
                                   size="sm"
                                   onClick={() => addToCart(item)}
+                                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                                 >
                                   Add to Cart
                                 </Button>
@@ -666,7 +675,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
           {/* Cart & Order Section */}
           {user?.role === "consumer" && (
             <div className="space-y-6">
-              <Card className="sticky top-4">
+              <Card className="sticky top-4 bg-gradient-to-br from-white to-orange-50 border-orange-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ShoppingCart className="h-5 w-5" />
@@ -725,35 +734,81 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                           <label className="text-sm font-medium">
                             Delivery Address
                           </label>
-                          <Textarea
-                            placeholder="Enter your delivery address"
-                            value={orderData.deliveryAddress}
-                            onChange={(e) =>
-                              setOrderData((prev) => ({
-                                ...prev,
-                                deliveryAddress: e.target.value,
-                              }))
-                            }
-                            className="mt-1"
-                          />
+                          <div className="mt-1 space-y-2">
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Enter your delivery address"
+                                value={orderData.deliveryAddress}
+                                onChange={(e) =>
+                                  setOrderData((prev) => ({
+                                    ...prev,
+                                    deliveryAddress: e.target.value,
+                                  }))
+                                }
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() =>
+                                  router.push(
+                                    `/map-selector?returnUrl=${encodeURIComponent(
+                                      window.location.pathname
+                                    )}`
+                                  )
+                                }
+                                className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
+                              >
+                                <MapPin className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              Click the map icon to select location on map
+                            </p>
+                          </div>
                         </div>
 
                         <div>
                           <label className="text-sm font-medium">
-                            Delivery Date & Time
+                            Time Slot & Delivery Date
                           </label>
-                          <Input
-                            type="datetime-local"
-                            value={orderData.deliveryDate}
-                            onChange={(e) =>
-                              setOrderData((prev) => ({
-                                ...prev,
-                                deliveryDate: e.target.value,
-                              }))
-                            }
-                            className="mt-1"
-                            min={new Date().toISOString().slice(0, 16)}
-                          />
+                          <div className="mt-1 space-y-2">
+                            <Select
+                              value={(orderData as any).timeSlot || ""} // recheck
+                              onValueChange={(value) =>
+                                setOrderData((prev) => ({
+                                  ...prev,
+                                  timeSlot: value,
+                                }))
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select time slot" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="breakfast">
+                                  Breakfast (6:00 AM - 8:00 AM)
+                                </SelectItem>
+                                <SelectItem value="lunch">
+                                  Lunch (1:00 PM - 3:00 PM)
+                                </SelectItem>
+                                <SelectItem value="dinner">
+                                  Dinner (9:00 PM - 11:00 PM)
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              type="date"
+                              value={orderData.deliveryDate}
+                              onChange={(e) =>
+                                setOrderData((prev) => ({
+                                  ...prev,
+                                  deliveryDate: e.target.value,
+                                }))
+                              }
+                              min={new Date().toISOString().slice(0, 10)}
+                            />
+                          </div>
                         </div>
 
                         <div>
@@ -775,13 +830,13 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                       </div>
 
                       <Button
-                        className="w-full"
                         onClick={handlePlaceOrder}
                         disabled={
                           isOrdering ||
                           !orderData.deliveryAddress ||
                           !orderData.deliveryDate
                         }
+                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                       >
                         {isOrdering
                           ? "Processing..."

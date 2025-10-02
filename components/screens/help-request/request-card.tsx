@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -20,15 +20,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MessageCircle, Send } from "lucide-react";
+import { THelpRequest } from "@/types";
+import { IUser } from "@/models/User";
 
 interface RequestCardProps {
-  request: any; // replace with your Request type
-  user: any; // replace with your User type
+  request: THelpRequest; // replace with your Request type
+  user: IUser; // replace with your User type
   updateStatus: (id: string, status: string) => void;
   addResponse: (id: string, message: string) => void;
   getStatusColor: (status: string) => string;
   getStatusIcon: (status: string) => JSX.Element;
   getPriorityColor: (priority: string) => string;
+  response: string;
+  setResponse: Dispatch<SetStateAction<string>>;
 }
 
 export default function RequestCard({
@@ -39,10 +43,10 @@ export default function RequestCard({
   getStatusColor,
   getStatusIcon,
   getPriorityColor,
+  response,
+  setResponse,
 }: RequestCardProps) {
   const [open, setOpen] = useState(false);
-  const [response, setResponse] = useState("");
-
   return (
     <Card
       key={request._id}
@@ -89,7 +93,9 @@ export default function RequestCard({
 
           {/* RIGHT SIDE (controls + dialog) */}
           <div className="flex items-center gap-2 ml-4">
-            {user?.role === "admin" &&
+            {user &&
+              (user?.role === "admin" ||
+                request.toUserId?._id.toString() === user._id) &&
               request.status !== "resolved" &&
               request.status !== "closed" && (
                 <Select

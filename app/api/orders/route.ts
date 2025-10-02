@@ -4,7 +4,7 @@ import Order from "@/models/Order";
 import ServiceProvider from "@/models/ServiceProvider";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
-
+import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 import { verifyRazorpayPayment } from "@/lib/razorpay";
 import {
   sendEmail,
@@ -15,8 +15,15 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.headers.get("x-user-id");
-    const role = request.headers.get("x-user-role");
+    const token = getTokenFromRequest(request);
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
 
     await connectMongoDB();
 
@@ -25,10 +32,10 @@ export async function GET(request: NextRequest) {
 
     // Build query based on user role
     let query: any = {};
-    if (role === "consumer") {
-      query.consumerId = userId;
-    } else if (role === "provider") {
-      query.providerId = userId;
+    if (decoded.role === "consumer") {
+      query.consumerId = decoded.userId;
+    } else if (decoded.role === "provider") {
+      query.providerId = decoded.userId;
     }
     // Admin can see all orders
 
@@ -51,9 +58,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = request.headers.get("x-user-id");
-    const role = request.headers.get("x-user-role");
-    if (role !== "consumer") {
+    const token = getTokenFromRequest(request);
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.role !== "consumer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -64,6 +75,7 @@ export async function POST(request: NextRequest) {
       totalAmount,
       deliveryAddress,
       deliveryDate,
+      timeSlot,
       paymentMethod,
       notes,
       razorpayOrderId,
@@ -91,11 +103,15 @@ export async function POST(request: NextRequest) {
       providerId,
       items,
       totalAmount,
-      deliveryAddress,
+      deliveryAddress:
+        typeof deliveryAddress === "string"
+          ? { address: deliveryAddress, latitude: 0, longitude: 0 }
+          : deliveryAddress,
       deliveryDate,
+      timeSlot,
       paymentMethod,
       notes,
-      consumerId: userId,
+      consumerId: decoded.userId,
       paymentStatus: paymentMethod === "razorpay" ? "paid" : "pending",
       status: "confirmed",
     });
@@ -104,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch user and provider details for notifications
     const [consumer, provider] = await Promise.all([
-      User.findById(userId),
+      User.findById(decoded.userId),
       ServiceProvider.findById(providerId).populate("userId"),
     ]);
 
@@ -112,7 +128,7 @@ export async function POST(request: NextRequest) {
     await Promise.all([
       // Consumer notification
       new Notification({
-        userId: userId,
+        userId: decoded.userId,
         title: "Order Confirmed",
         message: `Your order from ${provider.businessName} has been confirmed.`,
         type: "order",
@@ -125,7 +141,7 @@ export async function POST(request: NextRequest) {
         title: "New Order Received",
         message: `You have received a new order from ${consumer.name}.`,
         type: "order",
-        data: { orderId: order._id, consumerId: userId },
+        data: { orderId: order._id, consumerId: decoded.userId },
       }).save(),
     ]);
 
@@ -153,6 +169,19 @@ export async function POST(request: NextRequest) {
           to: consumer.phone,
           message: smsMessage,
         });
+      }
+
+      // Auto-assign delivery partner if provider doesn't self-deliver
+      if (!provider.operatingHours[timeSlot]?.selfDelivery) {
+        try {
+          await fetch("/api/delivery/auto-assign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: order._id }),
+          });
+        } catch (assignError) {
+          console.error("Auto-assign delivery error:", assignError);
+        }
       }
     } catch (notificationError) {
       console.error("Notification error:", notificationError);

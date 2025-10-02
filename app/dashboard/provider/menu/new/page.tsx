@@ -63,8 +63,20 @@ export default function NewMenuPage() {
     { value: "breakfast", label: "Breakfast" },
     { value: "lunch", label: "Lunch" },
     { value: "dinner", label: "Dinner" },
-    { value: "snacks", label: "Snacks" },
-    { value: "beverages", label: "Beverages" },
+  ];
+
+  const timeSlots = [
+    {
+      value: "breakfast",
+      label: "Breakfast (6:00 AM - 8:00 AM)",
+      time: "06:00-08:00",
+    },
+    { value: "lunch", label: "Lunch (1:00 PM - 3:00 PM)", time: "13:00-15:00" },
+    {
+      value: "dinner",
+      label: "Dinner (9:00 PM - 11:00 PM)",
+      time: "21:00-23:00",
+    },
   ];
 
   const handleMenuDataChange = (field: string, value: any) => {
@@ -73,7 +85,16 @@ export default function NewMenuPage() {
 
   const handleItemChange = (index: number, field: string, value: any) => {
     setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              [field]: value,
+              // Auto-set timeSlot when category changes
+              ...(field === "category" ? { timeSlot: value } : {}),
+            }
+          : item
+      )
     );
   };
 
@@ -85,6 +106,7 @@ export default function NewMenuPage() {
         description: "",
         price: 0,
         category: "lunch",
+        timeSlot: "lunch",
         isVegetarian: false,
         isAvailable: true,
       },
@@ -167,7 +189,7 @@ export default function NewMenuPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -380,6 +402,12 @@ export default function NewMenuPage() {
                           ))}
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-gray-500">
+                        {
+                          timeSlots.find((slot) => slot.value === item.category)
+                            ?.time
+                        }
+                      </p>
                     </div>
 
                     <div className="space-y-2">

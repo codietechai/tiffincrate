@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 export interface IServiceProvider extends mongoose.Document {
   _id: string;
@@ -19,62 +19,104 @@ export interface IServiceProvider extends mongoose.Document {
   updatedAt: Date;
 }
 
-const serviceProviderSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-    unique: true,
-  },
-  businessName: {
-    type: String,
-    required: [true, 'Business name is required'],
-    trim: true,
-  },
-  description: {
-    type: String,
-    trim: true,
-  },
-  cuisine: [{
-    type: String,
-    required: true,
-  }],
-  deliveryAreas: [{
-    type: String,
-    required: true,
-  }],
-  rating: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 5,
-  },
-  totalOrders: {
-    type: Number,
-    default: 0,
-  },
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
-  },
-  operatingHours: {
-    start: {
-      type: String,
+const serviceProviderSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
-      default: '09:00',
+      unique: true,
     },
-    end: {
+    businessName: {
       type: String,
-      required: true,
-      default: '21:00',
+      required: [true, "Business name is required"],
+      trim: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    cuisine: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
+    deliveryAreas: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    totalOrders: {
+      type: Number,
+      default: 0,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    operatingHours: {
+      breakfast: {
+        enabled: {
+          type: Boolean,
+          default: true,
+        },
+        selfDelivery: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      lunch: {
+        enabled: {
+          type: Boolean,
+          default: true,
+        },
+        selfDelivery: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      dinner: {
+        enabled: {
+          type: Boolean,
+          default: true,
+        },
+        selfDelivery: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    },
+    location: {
+      latitude: {
+        type: Number,
+        required: true,
+      },
+      longitude: {
+        type: Number,
+        required: true,
+      },
+      address: {
+        type: String,
+        required: true,
+      },
     },
   },
-}, {
-  timestamps: true,
-});
+  {
+    timestamps: true,
+  }
+);
 
-export default mongoose.models.ServiceProvider || mongoose.model<IServiceProvider>('ServiceProvider', serviceProviderSchema);
+export default mongoose.models.ServiceProvider ||
+  mongoose.model<IServiceProvider>("ServiceProvider", serviceProviderSchema);
