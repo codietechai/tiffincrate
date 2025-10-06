@@ -3,12 +3,16 @@ import { connectMongoDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import ServiceProvider from "@/models/ServiceProvider";
 import { hashPassword, generateToken } from "@/lib/auth";
+import DeliveryPartner from "@/models/DeliveryPartner";
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
     await connectMongoDB();
-    const existingUser = await User.findOne({ email: data.email });
+    const { name, email, password, role, phone, address, businessData } =
+      await request.json();
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
         { error: "User already exists" },
@@ -16,40 +20,70 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const hashedPassword = await hashPassword(data.password);
+    // Hash password
+    const hashedPassword = await hashPassword(password);
 
+    // Create user
     const user = new User({
-      name: data.name,
-      email: data.email,
+      name,
+      email,
       password: hashedPassword,
-      role: data.role,
-      phone: data.phone,
-      address: data.address,
-      tokenVersion: 0,
+      role,
+      phone,
+      address,
     });
 
     await user.save();
 
-    if (data.role === "provider" && data.businessData) {
-      const serviceProvider = new ServiceProvider({
-        userId: user._id,
-        businessName: data.businessData.businessName,
-        description: data.businessData.description,
-        cuisine: data.businessData.cuisine || [],
-        deliveryAreas: data.businessData.deliveryAreas || [],
-        operatingHours: data.businessData.operatingHours || {
-          start: "09:00",
-          end: "21:00",
-        },
-      });
+    // If role is provider, create service provider profile
+    if ((role === "provider" || role === "delivery_partner") && businessData) {
+      if (role === "provider") {
+        const serviceProvider = new ServiceProvider({
+          userId: user._id,
+          businessName: businessData.businessName,
+          description: businessData.description,
+          cuisine: businessData.cuisine || [],
+          deliveryAreas: businessData.deliveryAreas || [],
+          operatingHours: {
+            breakfast: { enabled: true, selfDelivery: false },
+            lunch: { enabled: true, selfDelivery: false },
+            dinner: { enabled: true, selfDelivery: false },
+          },
+          location: {
+            latitude: 12.9716,
+            longitude: 77.5946,
+            address: address || "Bangalore, Karnataka",
+          },
+        });
 
-      await serviceProvider.save();
+        await serviceProvider.save();
+      } else if (role === "delivery_partner") {
+        const deliveryPartner = new DeliveryPartner({
+          userId: user._id,
+          vehicleType: businessData.vehicleType,
+          vehicleNumber: businessData.vehicleNumber,
+          licenseNumber: businessData.licenseNumber,
+          currentLocation: {
+            latitude: 12.9716,
+            longitude: 77.5946,
+            address: address || "Bangalore, Karnataka",
+          },
+          availableSlots: businessData.availableSlots || {
+            breakfast: true,
+            lunch: true,
+            dinner: true,
+          },
+        });
+
+        await deliveryPartner.save();
+      }
     }
-    const token = await generateToken({
+
+    // Generate token
+    const token = generateToken({
       userId: user._id,
       email: user.email,
       role: user.role,
-      tokenVersion: user.tokenVersion,
     });
 
     const response = NextResponse.json(
@@ -65,7 +99,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
 
-    response.cookies.set("token", token, {
+    (response as any).cookies.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",

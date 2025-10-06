@@ -52,6 +52,9 @@ export default function LoginPage() {
         case "consumer":
           router.push("/dashboard/consumer");
           break;
+        case "delivery_partner":
+          router.push("/dashboard/delivery");
+          break;
         default:
           router.push("/");
       }
