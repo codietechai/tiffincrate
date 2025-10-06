@@ -111,11 +111,16 @@ export default function DeliverySettingsPage() {
       lunch: { time: "1:00 PM - 3:00 PM", icon: "☀️" },
       dinner: { time: "9:00 PM - 11:00 PM", icon: "🌙" },
     };
+
+    if (!slot || !(slot in slotInfo)) {
+      return { time: "Invalid slot", icon: "❌" };
+    }
+
     return slotInfo[slot as keyof typeof slotInfo];
   };
 
   if (loading) return <LoadingPage />;
-
+  console.log("settings", settings);
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
       <Navbar />

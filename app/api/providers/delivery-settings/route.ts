@@ -1,23 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import ServiceProvider from "@/models/ServiceProvider";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== "provider") {
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
+    if (role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await connectMongoDB();
 
-    const provider = await ServiceProvider.findOne({ userId: decoded.userId });
+    const provider = await ServiceProvider.findOne({ userId: userId });
     if (!provider) {
       return NextResponse.json(
         { error: "Provider not found" },
@@ -37,13 +32,9 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== "provider") {
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
+    if (role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -51,7 +42,7 @@ export async function PUT(request: NextRequest) {
     const { operatingHours } = await request.json();
 
     const provider = await ServiceProvider.findOneAndUpdate(
-      { userId: decoded.userId },
+      { userId: userId },
       { operatingHours },
       { new: true }
     );
