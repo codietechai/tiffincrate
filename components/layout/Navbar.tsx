@@ -21,6 +21,7 @@ import {
   Bell,
   MessageCircle,
   Star,
+  SettingsIcon,
 } from "lucide-react";
 
 interface User {
@@ -235,6 +236,14 @@ export default function Navbar() {
                 <Link href="/auth/register">
                   <Button>Sign Up</Button>
                 </Link>
+              </div>
+            )}
+            {user && (
+              <div
+                className="cursor-pointer"
+                onClick={() => router.push("/options")}
+              >
+                <SettingsIcon />
               </div>
             )}
           </div>
