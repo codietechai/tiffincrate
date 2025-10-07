@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+
 export interface IOrderItem {
   menuItemId: string;
   name: string;
@@ -7,7 +8,6 @@ export interface IOrderItem {
 }
 
 export interface IOrder extends Document {
-  _id: string;
   consumerId: mongoose.Types.ObjectId;
   providerId: mongoose.Types.ObjectId;
   items: IOrderItem[];
@@ -19,7 +19,14 @@ export interface IOrder extends Document {
     | "ready"
     | "delivered"
     | "cancelled";
-  deliveryAddress: string;
+  deliveryAddress: {
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  timeSlot: "breakfast" | "lunch" | "dinner";
+  deliveryPartnerId?: mongoose.Types.ObjectId;
+  deliveryAssignmentId?: mongoose.Types.ObjectId;
   deliveryDate: Date;
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
   paymentMethod: string;
@@ -28,7 +35,6 @@ export interface IOrder extends Document {
   updatedAt: Date;
 }
 
-/* ----------------------- Schemas ----------------------- */
 const orderItemSchema = new Schema<IOrderItem>({
   menuItemId: { type: String, required: true },
   name: { type: String, required: true },
@@ -38,11 +44,7 @@ const orderItemSchema = new Schema<IOrderItem>({
 
 const orderSchema = new Schema<IOrder>(
   {
-    consumerId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
+    consumerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     providerId: {
       type: Schema.Types.ObjectId,
       ref: "ServiceProvider",
@@ -62,7 +64,21 @@ const orderSchema = new Schema<IOrder>(
       ],
       default: "pending",
     },
-    deliveryAddress: { type: String, required: true },
+    deliveryAddress: {
+      address: { type: String, required: true },
+      latitude: { type: Number, required: true },
+      longitude: { type: Number, required: true },
+    },
+    timeSlot: {
+      type: String,
+      enum: ["breakfast", "lunch", "dinner"],
+      required: true,
+    },
+    deliveryPartnerId: { type: Schema.Types.ObjectId, ref: "DeliveryPartner" },
+    deliveryAssignmentId: {
+      type: Schema.Types.ObjectId,
+      ref: "DeliveryAssignment",
+    },
     deliveryDate: { type: Date, required: true },
     paymentStatus: {
       type: String,
@@ -75,8 +91,5 @@ const orderSchema = new Schema<IOrder>(
   { timestamps: true }
 );
 
-const Order: Model<IOrder> =
-  (mongoose.models.Order as Model<IOrder>) ||
+export default mongoose.models.Order ||
   mongoose.model<IOrder>("Order", orderSchema);
-
-export default Order;

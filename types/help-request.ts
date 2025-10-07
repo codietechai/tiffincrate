@@ -1,11 +1,13 @@
 export interface THelpRequest {
   _id: string;
   fromUserId: {
+    _id: string;
     name: string;
     email: string;
     role: string;
   };
   toUserId?: {
+    _id: string;
     name: string;
     email: string;
     role: string;

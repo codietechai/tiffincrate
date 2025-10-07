@@ -6,6 +6,7 @@ const nextConfig = {
   images: { unoptimized: true },
   env: {
     NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
   },
 };
 

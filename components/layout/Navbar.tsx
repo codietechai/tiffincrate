@@ -73,6 +73,8 @@ export default function Navbar() {
         return "/dashboard/provider";
       case "consumer":
         return "/dashboard/consumer";
+      case "delivery_partner":
+        return "/dashboard/delivery";
       default:
         return "/";
     }
@@ -122,6 +124,17 @@ export default function Navbar() {
                     </Link>
                     <Link href="/track-orders">
                       <Button variant="ghost">Track Orders</Button>
+                    </Link>
+                  </>
+                )}
+
+                {user.role === "delivery_partner" && (
+                  <>
+                    <Link href="/dashboard/delivery">
+                      <Button variant="ghost">Deliveries</Button>
+                    </Link>
+                    <Link href="/delivery/earnings">
+                      <Button variant="ghost">Earnings</Button>
                     </Link>
                   </>
                 )}

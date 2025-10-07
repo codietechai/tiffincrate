@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 export interface IMenuItem {
   name: string;
@@ -12,7 +12,7 @@ export interface IMenuItem {
 
 export interface IMenu extends mongoose.Document {
   _id: string;
-  providerId: mongoose.Types.ObjectId;
+  providerId: string;
   name: string;
   description?: string;
   items: IMenuItem[];
@@ -23,7 +23,7 @@ export interface IMenu extends mongoose.Document {
   updatedAt: Date;
 }
 
-const menuItemSchema = new mongoose.Schema<IMenuItem>({
+const menuItemSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -41,7 +41,12 @@ const menuItemSchema = new mongoose.Schema<IMenuItem>({
   category: {
     type: String,
     required: true,
-    enum: ['breakfast', 'lunch', 'dinner', 'snacks', 'beverages'],
+    enum: ["breakfast", "lunch", "dinner"],
+  },
+  timeSlot: {
+    type: String,
+    required: true,
+    enum: ["breakfast", "lunch", "dinner"],
   },
   isVegetarian: {
     type: Boolean,
@@ -56,37 +61,41 @@ const menuItemSchema = new mongoose.Schema<IMenuItem>({
   },
 });
 
-const menuSchema = new mongoose.Schema<IMenu>({
-  providerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ServiceProvider',
-    required: true,
+const menuSchema = new mongoose.Schema(
+  {
+    providerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ServiceProvider",
+      required: true,
+    },
+    name: {
+      type: String,
+      required: [true, "Menu name is required"],
+      trim: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    items: [menuItemSchema],
+    validFrom: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+    validTo: {
+      type: Date,
+      required: true,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
-  name: {
-    type: String,
-    required: [true, 'Menu name is required'],
-    trim: true,
-  },
-  description: {
-    type: String,
-    trim: true,
-  },
-  items: [menuItemSchema],
-  validFrom: {
-    type: Date,
-    required: true,
-    default: Date.now,
-  },
-  validTo: {
-    type: Date,
-    required: true,
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
-  },
-}, {
-  timestamps: true,
-});
+  {
+    timestamps: true,
+  }
+);
 
-export default (mongoose.models.Menu as mongoose.Model<IMenu>) || mongoose.model<IMenu>('Menu', menuSchema);
+export default mongoose.models.Menu ||
+  mongoose.model<IMenu>("Menu", menuSchema);

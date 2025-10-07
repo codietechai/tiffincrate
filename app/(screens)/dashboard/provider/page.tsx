@@ -13,7 +13,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
-import { ShoppingBag, DollarSign, Star, Clock, Plus, Eye } from "lucide-react";
+import {
+  ShoppingBag,
+  DollarSign,
+  Star,
+  Clock,
+  Plus,
+  Eye,
+  Truck,
+} from "lucide-react";
 
 export default function ProviderDashboard() {
   const [analytics, setAnalytics] = useState<any>(null);
@@ -80,7 +88,7 @@ export default function ProviderDashboard() {
   if (loading) return <LoadingPage />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -246,6 +254,12 @@ export default function ProviderDashboard() {
                   <Link href="/dashboard/provider/orders">
                     <ShoppingBag className="mr-2 h-4 w-4" />
                     View Orders
+                  </Link>
+                </Button>
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link href="/dashboard/provider/delivery-settings">
+                    <Truck className="mr-2 h-4 w-4" />
+                    Delivery Settings
                   </Link>
                 </Button>
                 <Button variant="outline" className="justify-start" asChild>

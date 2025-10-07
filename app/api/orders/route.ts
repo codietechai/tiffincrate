@@ -4,7 +4,7 @@ import Order from "@/models/Order";
 import ServiceProvider from "@/models/ServiceProvider";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
-
+import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 import { verifyRazorpayPayment } from "@/lib/razorpay";
 import {
   sendEmail,
@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
-
     await connectMongoDB();
 
     const { searchParams } = new URL(request.url);
@@ -64,6 +63,7 @@ export async function POST(request: NextRequest) {
       totalAmount,
       deliveryAddress,
       deliveryDate,
+      timeSlot,
       paymentMethod,
       notes,
       razorpayOrderId,
@@ -91,8 +91,12 @@ export async function POST(request: NextRequest) {
       providerId,
       items,
       totalAmount,
-      deliveryAddress,
+      deliveryAddress:
+        typeof deliveryAddress === "string"
+          ? { address: deliveryAddress, latitude: 0, longitude: 0 }
+          : deliveryAddress,
       deliveryDate,
+      timeSlot,
       paymentMethod,
       notes,
       consumerId: userId,
@@ -153,6 +157,19 @@ export async function POST(request: NextRequest) {
           to: consumer.phone,
           message: smsMessage,
         });
+      }
+
+      // Auto-assign delivery partner if provider doesn't self-deliver
+      if (!provider.operatingHours[timeSlot]?.selfDelivery) {
+        try {
+          await fetch("/api/delivery/auto-assign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: order._id }),
+          });
+        } catch (assignError) {
+          console.error("Auto-assign delivery error:", assignError);
+        }
       }
     } catch (notificationError) {
       console.error("Notification error:", notificationError);

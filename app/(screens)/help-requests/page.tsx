@@ -14,14 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -40,10 +32,11 @@ import {
   CircleCheck as CheckCircle,
   Circle as XCircle,
   TriangleAlert as AlertTriangle,
-  Send,
 } from "lucide-react";
 import { THelpRequest } from "@/types";
 import RequestCard from "@/components/screens/help-request/request-card";
+import { ProviderService } from "@/services/providerService";
+import { IServiceProvider } from "@/models/ServiceProvider";
 
 export default function HelpRequestsPage() {
   const [helpRequests, setHelpRequests] = useState<THelpRequest[]>([]);
@@ -62,6 +55,7 @@ export default function HelpRequestsPage() {
   });
   const [response, setResponse] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [providers, setProviders] = useState<IServiceProvider[]>([]);
   const [typeFilter, setTypeFilter] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [error, setError] = useState("");
@@ -107,13 +101,26 @@ export default function HelpRequestsPage() {
     }
   };
 
+  const fetchProviders = async () => {
+    try {
+      const response = await ProviderService.fetchProvidersLinkedWithConsumer();
+      setProviders(response?.data || []);
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
+
+  useEffect(() => {
+    if (newRequest.type === "consumer_to_provider") {
+      fetchProviders();
+    }
+  }, [newRequest.type]);
+
   const createHelpRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-
-console.log('quick fix');
     try {
       const payload = { ...newRequest };
       if (
@@ -302,18 +309,45 @@ console.log('quick fix');
                           Admin Support
                         </SelectItem>
                         {user?.role === "consumer" && (
-                          <SelectItem value="provider_support">
-                            Provider Support
-                          </SelectItem>
-                        )}
-                        {user?.role === "provider" && (
-                          <SelectItem value="admin_support">
-                            Contact Admin
-                          </SelectItem>
+                          <>
+                            <SelectItem value="provider_support">
+                              Provider Support
+                            </SelectItem>
+                            <SelectItem value="consumer_to_provider">
+                              To Provider
+                            </SelectItem>
+                          </>
                         )}
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {providers.length > 0 &&
+                    newRequest.type === "consumer_to_provider" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="type">Select Provider</Label>
+                        <Select
+                          value={newRequest.toUserId}
+                          onValueChange={(value) =>
+                            setNewRequest((prev) => ({
+                              ...prev,
+                              toUserId: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger placeholder="Select Provider">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {providers.map((item) => (
+                              <SelectItem value={(item.userId as any)._id}>
+                                {item.businessName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
                   <div className="space-y-2">
                     <Label htmlFor="priority">Priority</Label>
@@ -445,6 +479,8 @@ console.log('quick fix');
             {helpRequests.length > 0 ? (
               helpRequests.map((request) => (
                 <RequestCard
+                  response={response}
+                  setResponse={setResponse}
                   request={request}
                   user={user}
                   updateStatus={updateStatus}
@@ -472,6 +508,8 @@ console.log('quick fix');
               .filter((req) => req.status === "open")
               .map((request) => (
                 <RequestCard
+                  response={response}
+                  setResponse={setResponse}
                   request={request}
                   user={user}
                   updateStatus={updateStatus}
@@ -488,6 +526,8 @@ console.log('quick fix');
               .filter((req) => req.status === "in_progress")
               .map((request) => (
                 <RequestCard
+                  response={response}
+                  setResponse={setResponse}
                   request={request}
                   user={user}
                   updateStatus={updateStatus}
@@ -504,6 +544,8 @@ console.log('quick fix');
               .filter((req) => req.status === "resolved")
               .map((request) => (
                 <RequestCard
+                  response={response}
+                  setResponse={setResponse}
                   request={request}
                   user={user}
                   updateStatus={updateStatus}

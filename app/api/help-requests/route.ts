@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import HelpRequest from "@/models/HelpRequest";
 import Notification from "@/models/Notification";
+import User from "@/models/User";
 
 export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
 
+    console.log("userId", userId);
     await connectMongoDB();
 
     const { searchParams } = new URL(request.url);
@@ -21,25 +23,23 @@ export async function GET(request: NextRequest) {
 
     let query: any = {};
 
-    // Role-based filtering
     if (role === "admin") {
-      // Admin can see all help requests or those directed to admin
       if (type !== "consumer_to_provider") {
         query = {
           $or: [{ type: "admin_support" }, { type: "provider_support" }],
         };
       }
     } else {
-      // Users can see their own requests and requests directed to them
+      console.log("firstsssss");
       query = {
         $or: [{ fromUserId: userId }, { toUserId: userId }],
       };
     }
 
-    if (status) query.status = status;
-    if (type && type !== "all") query.type = type;
-    if (priority) query.priority = priority;
-
+    // if (status) query.status = status;
+    // if (type && type !== "all") query.type = type;
+    // if (priority) query.priority = priority;
+    console.log("userId", userId);
     const helpRequests = await HelpRequest.find(query)
       .populate("fromUserId", "name email role")
       .populate("toUserId", "name email role")
@@ -83,22 +83,33 @@ export async function POST(request: NextRequest) {
       priority: priority || "medium",
       category: category || "general",
     };
+
     if (toUserId) {
       payload = {
         ...payload,
         toUserId,
       };
     }
-    const helpRequest = new HelpRequest();
+
+    const helpRequest = new HelpRequest(payload);
 
     await helpRequest.save();
 
-    // Create notification for recipient
     const recipientId =
-      type === "admin_support" || type === "provider_support"
-        ? null // Will be handled by admin
-        : toUserId;
+      type === "admin_support" || type === "provider_support" ? null : toUserId;
+    const admins = await User.find({ role: "admin" });
 
+    if (type === "admin_support" || type === "provider_support") {
+      for (const admin of admins) {
+        await new Notification({
+          userId: admin._id,
+          title: "New Help Request",
+          message: `You have received a new help request: ${subject}`,
+          type: "system",
+          data: { helpRequestId: helpRequest._id, type },
+        }).save();
+      }
+    }
     if (recipientId) {
       await new Notification({
         userId: recipientId,
