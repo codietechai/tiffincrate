@@ -52,10 +52,11 @@ const menuSchema = new mongoose.Schema(
       required: true,
       enum: ["breakfast", "lunch", "dinner"],
     },
-    weeklyItems: weeklyMenuSchema, // ✅ flexible per-day food list
+    weeklyItems: weeklyMenuSchema,
+    quantity: { type: Number, required: true, min: 1 },
     basePrice: { type: Number, required: true, min: 0 },
-    monthlyPlanPrice: { type: Number }, // optional
-    imageUrl: [String],
+    monthlyPlanPrice: { type: Number }, 
+    images: [String],
     isAvailable: { type: Boolean, default: true },
     isActive: { type: Boolean, default: true },
     rating: { type: Number, min: 0, max: 5, default: 0 },
