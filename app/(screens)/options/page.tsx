@@ -9,7 +9,16 @@ import {
   Bell,
   LogOut,
   MessageSquareIcon,
+  Settings,
+  User2,
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+
 import React from "react";
 
 const page = () => {
@@ -66,28 +75,69 @@ const page = () => {
         </div>
       </div>
       <div className="px-4 md:px-10">
-        <div className="max-w-[1100px] mx-auto py-3 space-y-3 border border-border rounded-xl">
-          <div className="flex gap-5 text-sm items-center border-b border-border pb-2 px-3">
-            <UserIcon className="h-4 w-4" />
-            Profile
-          </div>
-          <div className="flex gap-5 text-sm items-center border-b border-border pb-2 px-3">
+        <div className="max-w-[1100px] mx-auto border border-border rounded-xl">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="profile">
+              <AccordionTrigger className="text-sm px-3 py-3">
+                <div className="flex gap-5 cursor-pointer">
+                  <UserIcon className="h-4 w-4" />
+                  Profile
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-sm pb-0">
+                <div className="flex py-2 border-b cursor-pointer border-border pl-12 gap-3 items-center">
+                  <User2 size={12} />
+                  Basic Information
+                </div>
+                <div className="py-2 pl-12 flex cursor-pointer gap-3 items-center">
+                  <div className="relative w-fit">
+                    <UserIcon size={12} className="fill-black" />
+                    <Settings
+                      size={8}
+                      className="absolute top-1.5 left-[7px] fill-white"
+                    />
+                  </div>
+                  Account Settings
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="notifications">
+              <AccordionTrigger className="text-sm py-3 px-3">
+                <div className="flex gap-5 cursor-pointer">
+                  <Bell className="h-4 w-4 rotate-0" />
+                  Notifications
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-sm pb-0">
+                <div className="flex py-2 border-b cursor-pointer border-border pl-12 gap-3 items-center">
+                  <Bell size={12} />
+                  Notifications
+                </div>
+                <div className="py-2 pl-12 flex cursor-pointer gap-3 items-center">
+                  <div className="relative w-fit">
+                    <Bell size={12} className="fill-black" />
+                    <Settings
+                      size={8}
+                      className="absolute top-1 left-[7px] fill-white"
+                    />
+                  </div>
+                  Notification Settings
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <div className="flex gap-5 cursor-pointer text-sm items-center border-b border-border pb-2 pt-3 px-3">
             <Heart className="h-4 w-4" />
             Favouaites
           </div>
-          <div className="flex gap-5 text-sm items-center border-b border-border pb-2 px-3">
-            <Bell className="h-4 w-4" />
-            Notifications
-          </div>
-          <div className="flex gap-5 text-sm items-center border-b border-border pb-2 px-3">
+
+          <div className="flex gap-5 cursor-pointer text-sm items-center border-b border-border pb-2 pt-3 px-3">
             <MessageSquareIcon className="h-4 w-4" />
             Help & Support
           </div>
-          <div className="flex gap-5 text-sm items-center border-b border-border pb-2 px-3">
-            <UserIcon className="h-4 w-4" />
-            Account Settings
-          </div>
-          <div className="flex gap-5 text-sm items-center border-b border-border pb-2 px-3">
+
+          <div className="flex gap-5 cursor-pointer text-sm items-center border-b border-border pb-2 pt-3 px-3">
             <LogOut className="h-4 w-4" />
             Logout
           </div>
