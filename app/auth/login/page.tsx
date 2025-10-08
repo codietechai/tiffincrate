@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ChefHat, Mail, Lock, Apple } from "lucide-react";
+import { ChefHat, Mail, Lock, Apple, Eye, EyeOff } from "lucide-react";
 import { AuthService } from "@/services/authService";
 
 type LoginFormValues = {
@@ -33,6 +33,7 @@ export default function LoginPage() {
 
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (payload) => {
@@ -155,13 +156,22 @@ export default function LoginPage() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Your password"
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     {...register("password", {
                       required: "Password is required",
                     })}
                   />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-gray-400"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+
                 </div>
                 {errors.password && (
                   <p className="text-red-500 text-sm">

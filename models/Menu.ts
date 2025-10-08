@@ -1,38 +1,65 @@
 import mongoose from "mongoose";
 
-const weeklyMenuSchema = new mongoose.Schema(
-  {
-    monday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    tuesday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    wednesday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    thursday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    friday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    saturday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    sunday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
+export interface IMenuItem {
+  name: string;
+  description?: string;
+  price: number;
+  category: string;
+  isVegetarian: boolean;
+  isAvailable: boolean;
+  imageUrl?: string;
+}
+
+export interface IMenu extends mongoose.Document {
+  _id: string;
+  providerId: string;
+  name: string;
+  description?: string;
+  items: IMenuItem[];
+  validFrom: Date;
+  validTo: Date;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const menuItemSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true,
   },
-  { _id: false }
-);
+  description: {
+    type: String,
+    trim: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: ["breakfast", "lunch", "dinner"],
+  },
+  timeSlot: {
+    type: String,
+    required: true,
+    enum: ["breakfast", "lunch", "dinner"],
+  },
+  isVegetarian: {
+    type: Boolean,
+    default: false,
+  },
+  isAvailable: {
+    type: Boolean,
+    default: true,
+  },
+  imageUrl: {
+    type: String,
+  },
+});
 
 const menuSchema = new mongoose.Schema(
   {
@@ -46,23 +73,29 @@ const menuSchema = new mongoose.Schema(
       required: [true, "Menu name is required"],
       trim: true,
     },
-    description: { type: String, trim: true },
-    category: {
+    description: {
       type: String,
-      required: true,
-      enum: ["breakfast", "lunch", "dinner"],
+      trim: true,
     },
-    weeklyItems: weeklyMenuSchema,
-    quantity: { type: Number, required: true, min: 1 },
-    basePrice: { type: Number, required: true, min: 0 },
-    monthlyPlanPrice: { type: Number }, 
-    images: [String],
-    isAvailable: { type: Boolean, default: true },
-    isActive: { type: Boolean, default: true },
-    rating: { type: Number, min: 0, max: 5, default: 0 },
-    userRatingCount: { type: Number, default: 0 },
+    items: [menuItemSchema],
+    validFrom: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+    validTo: {
+      type: Date,
+      required: true,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.model("Menu", menuSchema);
+export default mongoose.models.Menu ||
+  mongoose.model<IMenu>("Menu", menuSchema);
