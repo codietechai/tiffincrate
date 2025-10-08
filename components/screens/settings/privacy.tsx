@@ -20,13 +20,13 @@ import { Separator } from "@/components/ui/separator";
 import { Shield } from "lucide-react";
 import { TabsContent } from "@/components/ui/tabs";
 import { TProvider } from "@/types";
-import { TPrivacy } from "@/app/settings/page";
+// import { TPrivacy } from "@/app/settings/page";
 
 const Privacy = ({
   privacy,
   handlePrivacyChange,
 }: {
-  privacy: TPrivacy;
+  privacy: any;
   handlePrivacyChange: (key: string, value: any) => void;
 }) => {
   return (

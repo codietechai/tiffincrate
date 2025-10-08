@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
-import { TPreferences } from "@/app/settings/page";
+// import { TPreferences } from "@/app/settings/page";
 import { TProvider } from "@/types";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ const Preferences = ({
   handleProviderChange,
   user,
 }: {
-  preferences: TPreferences;
+  preferences: any;
   handlePreferenceChange: (key: string, value: any) => void;
   provider: TProvider | null;
   handleProviderChange: (key: string, value: any) => void;

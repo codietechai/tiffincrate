@@ -12,13 +12,12 @@ import {
 import { TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Bell } from "lucide-react";
-import { TPreferences } from "@/app/settings/page";
 
 const Notifications = ({
   preferences,
   handlePreferenceChange,
 }: {
-  preferences: TPreferences;
+  preferences: any;
   handlePreferenceChange: (key: string, value: any) => void;
 }) => {
   return (
