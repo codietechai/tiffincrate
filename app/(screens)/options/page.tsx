@@ -38,7 +38,7 @@ const page = () => {
             </div>
           </div>
           <div className="">
-            <h2 className="text-xl font-extrabold">Navnoor Singh</h2>
+            <h2 className="text-xl font-extrabold">Antriksh Mahajan</h2>
             <p className="text-xs text-[#3b3b3b]">+91-6280524351</p>
             <p className="text-xs text-[#3b3b3b]">
               navnoorsinghthind135@gmail.com

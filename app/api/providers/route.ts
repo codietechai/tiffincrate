@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .sort({ rating: -1, totalOrders: -1 });
     
+      console.log(providers)
     const total = await ServiceProvider.countDocuments(query);
     
     return NextResponse.json({

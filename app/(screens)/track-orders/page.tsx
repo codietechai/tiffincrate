@@ -42,7 +42,7 @@ interface Order {
   }>;
   totalAmount: number;
   status: string;
-  deliveryAddress: string;
+  deliveryAddress: any;
   deliveryDate: string;
   paymentStatus: string;
   createdAt: string;
@@ -290,7 +290,7 @@ export default function TrackOrdersPage() {
                     <div>
                       <h4 className="font-medium mb-1">Delivery Address:</h4>
                       <p className="text-sm text-gray-600">
-                        {order.deliveryAddress}
+                        {order.deliveryAddress.address}
                       </p>
                     </div>
                     <div>

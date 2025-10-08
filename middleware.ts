@@ -17,9 +17,10 @@ export async function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/api/admin")) {
     requiredRole = "admin";
-  } else if (pathname.startsWith("/api/provider")) {
-    requiredRole = "provider";
-  }
+  } 
+  // else if (pathname.startsWith("/api/provider")) {
+  //   requiredRole = "provider";
+  // }
 
   const token = getTokenFromRequest(request);
   if (!token) {

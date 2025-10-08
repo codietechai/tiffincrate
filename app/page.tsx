@@ -176,7 +176,7 @@ export default function HomePage() {
                             <Badge variant="default" className="text-xs">Verified</Badge>
                           )}
                         </CardTitle>
-                        <CardDescription>by {provider.userId.name}</CardDescription>
+                        <CardDescription>by {provider?.userId?.name}</CardDescription>
                       </div>
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />

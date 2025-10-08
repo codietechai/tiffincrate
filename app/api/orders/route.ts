@@ -71,7 +71,6 @@ export async function POST(request: NextRequest) {
       razorpaySignature,
     } = await request.json();
 
-    // Verify Razorpay payment if payment method is razorpay
     if (paymentMethod === "razorpay") {
       const isValidPayment = verifyRazorpayPayment(
         razorpayOrderId,
@@ -96,7 +95,7 @@ export async function POST(request: NextRequest) {
           ? { address: deliveryAddress, latitude: 0, longitude: 0 }
           : deliveryAddress,
       deliveryDate,
-      timeSlot,
+      timeSlot: timeSlot,
       paymentMethod,
       notes,
       consumerId: userId,
@@ -106,7 +105,6 @@ export async function POST(request: NextRequest) {
 
     await order.save();
 
-    // Fetch user and provider details for notifications
     const [consumer, provider] = await Promise.all([
       User.findById(userId),
       ServiceProvider.findById(providerId).populate("userId"),

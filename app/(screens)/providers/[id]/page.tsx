@@ -95,6 +95,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
     deliveryAddress: "",
     deliveryDate: "",
     notes: "",
+      timeSlot: "", // ✅ add this
   });
   const [isOrdering, setIsOrdering] = useState(false);
   const router = useRouter();
@@ -279,12 +280,10 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
     setIsOrdering(true);
 
     try {
-      // Create Razorpay order
-      const razorpayResponse = await fetch("/api/payments/create-order", {
+      // Step 1: Create Razorpay order on backend
+      const razorpayResponse = await fetch("/api/razorpay/create-order", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: getCartTotal(),
           currency: "INR",
@@ -292,26 +291,27 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
       });
 
       const razorpayOrder = await razorpayResponse.json();
-
-      if (!razorpayResponse.ok) {
-        throw new Error(razorpayOrder.error);
-      }
-
-      // Initialize Razorpay
+      if (!razorpayResponse.ok) throw new Error(razorpayOrder.error);
+      console.log(295, razorpayOrder);
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
+        amount: razorpayOrder.order.amount,
+        currency: razorpayOrder.order.currency,
         name: "TiffinCrate",
         description: `Order from ${provider?.businessName}`,
-        order_id: razorpayOrder.id,
+        order_id: razorpayOrder.order.id, 
         handler: async (response: any) => {
-          // Verify payment and create order
-          const orderResponse = await fetch("/api/orders", {
+          console.log("Razorpay Payment Success:", response);
+          // response will have the 3 values
+          // {
+          //   razorpay_payment_id,
+          //   razorpay_order_id,
+          //   razorpay_signature
+          // }
+
+          const res = await fetch("/api/orders", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               providerId: params.id,
               items: cart.map((item) => ({
@@ -322,31 +322,24 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
               })),
               totalAmount: getCartTotal(),
               deliveryAddress: orderData.deliveryAddress,
-              deliveryDate: new Date(orderData.deliveryDate),
+              deliveryDate: orderData.deliveryDate,
+              timeSlot:orderData.timeSlot,
               paymentMethod: "razorpay",
               notes: orderData.notes,
-              razorpayOrderId: razorpayOrder.id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
+              razorpayOrderId: response.razorpay_order_id, 
+              razorpayPaymentId: response.razorpay_payment_id, 
+              razorpaySignature: response.razorpay_signature, 
             }),
           });
 
-          if (orderResponse.ok) {
-            const orderData = await orderResponse.json();
-            setCart([]);
-            setOrderData({ deliveryAddress: "", deliveryDate: "", notes: "" });
-            router.push(`/track-orders`);
-          } else {
-            alert("Failed to create order");
-          }
+          const data = await res.json();
+          console.log("Order Response:", data);
         },
         prefill: {
           name: user.name,
           email: user.email,
         },
-        theme: {
-          color: "#3B82F6",
-        },
+        theme: { color: "#3B82F6" },
       };
 
       const razorpay = new (window as any).Razorpay(options);
@@ -358,6 +351,13 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
       setIsOrdering(false);
     }
   };
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
 
   if (loading) return <LoadingPage />;
 
@@ -773,30 +773,30 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                             Time Slot & Delivery Date
                           </label>
                           <div className="mt-1 space-y-2">
-                            <Select
-                              value={(orderData as any).timeSlot || ""} // recheck
-                              onValueChange={(value) =>
-                                setOrderData((prev) => ({
-                                  ...prev,
-                                  timeSlot: value,
-                                }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select time slot" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="breakfast">
-                                  Breakfast (6:00 AM - 8:00 AM)
-                                </SelectItem>
-                                <SelectItem value="lunch">
-                                  Lunch (1:00 PM - 3:00 PM)
-                                </SelectItem>
-                                <SelectItem value="dinner">
-                                  Dinner (9:00 PM - 11:00 PM)
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+<Select
+  value={orderData.timeSlot} // use timeSlot directly
+  onValueChange={(value) =>
+    setOrderData((prev) => ({
+      ...prev,
+      timeSlot: value,
+    }))
+  }
+>
+  <SelectTrigger>
+    <SelectValue placeholder="Select time slot" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="breakfast">
+      Breakfast (6:00 AM - 8:00 AM)
+    </SelectItem>
+    <SelectItem value="lunch">
+      Lunch (1:00 PM - 3:00 PM)
+    </SelectItem>
+    <SelectItem value="dinner">
+      Dinner (9:00 PM - 11:00 PM)
+    </SelectItem>
+  </SelectContent>
+</Select>
                             <Input
                               type="date"
                               value={orderData.deliveryDate}
