@@ -1,6 +1,6 @@
 "use client";
 import Header from "@/components/common/header";
-import { Clock, IndianRupee, Star } from "lucide-react";
+import { Clock, IndianRupee, Settings2, Star } from "lucide-react";
 import Image from "next/image";
 import React from "react";
 import HomeHeader from "./home-header";
@@ -39,7 +39,9 @@ const Home = () => {
   const renderConsumerHome = () => (
     <div>
       <div className="mb-5">
-        <h3 className="mb-3">Popular Tiffins Near You</h3>
+        <div className="mb-3 flex justify-between px-3 items-center">
+          <h3 className="font-bold">Filters</h3> <Settings2 />
+        </div>
         {mockTiffins.map((tiffin) => (
           <div
             key={tiffin.id}

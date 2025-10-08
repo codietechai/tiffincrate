@@ -80,3 +80,39 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* globals.css (or any global css file loaded by app) */
+@keyframes typing {
+  from {
+    width: 0ch;
+  }
+  to {
+    width: var(--chars);
+  }
+}
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.typewriter {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 2px solid currentColor;
+  animation: blink 1s step-end infinite;
+  font-feature-settings: "tnum";
+}
+
+/* helper to animate width with variable --chars and duration */
+.typewriter[data-anim="1"] {
+  width: 0ch;
+  animation: typing 1.6s steps(var(--chars), end) 1 forwards,
+    blink 1s step-end 1.6s infinite;
+}
+.typewriter[data-anim="2"] {
+  width: 0ch;
+  animation: typing 1.6s steps(var(--chars), end) 1s forwards,
+    blink 1s step-end 2.6s infinite;
+}
