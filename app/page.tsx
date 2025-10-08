@@ -106,7 +106,7 @@ export default function HomePage() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose TiffinHub?</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose TiffinCrate?</h2>
             <p className="text-xl text-gray-600">Experience the best of home-cooked meals with our platform</p>
           </div>
           
@@ -238,7 +238,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Start Your Journey?</h2>
           <p className="text-xl mb-8 text-blue-100">
-            Join thousands of happy customers and providers on TiffinHub
+            Join thousands of happy customers and providers on TiffinCrate
           </p>
           {!user && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -263,10 +263,10 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center mb-4 md:mb-0">
               <ChefHat className="h-8 w-8 text-blue-400" />
-              <span className="ml-2 text-xl font-bold">TiffinHub</span>
+              <span className="ml-2 text-xl font-bold">TiffinCrate</span>
             </div>
             <div className="text-gray-400 text-sm">
-              © 2024 TiffinHub. All rights reserved.
+              © 2024 TiffinCrate. All rights reserved.
             </div>
           </div>
         </div>

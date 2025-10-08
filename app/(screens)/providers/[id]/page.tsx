@@ -302,7 +302,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
-        name: "TiffinHub",
+        name: "TiffinCrate",
         description: `Order from ${provider?.businessName}`,
         order_id: razorpayOrder.id,
         handler: async (response: any) => {

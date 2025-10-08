@@ -125,7 +125,7 @@ export default function AdminReportsPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `tiffinhub-report-${dateRange}.${format}`;
+        a.download = `TiffinCrate-report-${dateRange}.${format}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
