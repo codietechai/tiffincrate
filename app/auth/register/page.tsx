@@ -3,9 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  ChefHat,
+  User,
+  Mail,
+  Lock,
+  Phone,
+  MapPin,
+  Eye,
+  EyeOff,
+  X,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -23,9 +35,11 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
-import { ChefHat, User, Mail, Lock, Phone, MapPin } from "lucide-react";
+
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -35,6 +49,10 @@ export default function RegisterPage() {
     phone: "",
     address: "",
   });
+
+const [addresses, setAddresses] = useState<string[]>([]);
+const [currentAddress, setCurrentAddress] = useState("");
+
   const [businessData, setBusinessData] = useState({
     businessName: "",
     description: "",
@@ -49,9 +67,11 @@ export default function RegisterPage() {
       dinner: false,
     },
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -67,10 +87,25 @@ export default function RegisterPage() {
     setBusinessData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleAddressKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "," || e.key === "Enter") {
+      e.preventDefault();
+      const value = formData.address.trim();
+      if (value && !addresses.includes(value)) {
+        setAddresses((prev) => [...prev, value]);
+        setFormData((prev) => ({ ...prev, address: "" }));
+      }
+    }
+  };
+
+  const removeAddress = (addr: string) => {
+    setAddresses((prev) => prev.filter((a) => a !== addr));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
@@ -79,7 +114,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const payload: any = { ...formData };
+      const payload: any = { ...formData, addresses };
 
       if (formData.role === "provider") {
         payload.businessData = {
@@ -101,35 +136,18 @@ export default function RegisterPage() {
 
       const response = await fetch("/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        switch (data.user.role) {
-          case "admin":
-            router.push("/dashboard/admin");
-            break;
-          case "provider":
-            router.push("/dashboard/provider");
-            break;
-          case "consumer":
-            router.push("/dashboard/consumer");
-            break;
-          case "delivery_partner":
-            router.push("/dashboard/delivery");
-            break;
-          default:
-            router.push("/");
-        }
+        router.push(`/dashboard/${data.user.role}`);
       } else {
         setError(data.error || "Registration failed");
       }
-    } catch (error) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -137,345 +155,350 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-2">
-            <div className="p-2 rounded-full bg-gradient-to-br from-orange-500 to-red-500">
-              <ChefHat className="h-8 w-8 text-white" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold">Join TiffinHub</CardTitle>
-          <CardDescription>
-            Create your account and start your journey
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+    <div className="relative flex min-h-screen bg-[#f7f7f8] dark:bg-[#0a0a0a] overflow-hidden">
+      {/* Left gradient section */}
+      <div className="hidden md:flex w-1/2 items-center justify-center bg-gradient-to-br from-[#6E56CF] to-[#A594F9] text-white p-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="max-w-md text-center space-y-4"
+        >
+          <ChefHat className="h-12 w-12 mx-auto" />
+          <h1 className="text-4xl font-bold tracking-tight">Join TiffinCrate</h1>
+          <p className="text-sm text-white/80">
+            Sign up to serve, deliver, or enjoy fresh home meals.  
+            Start your culinary journey today 🍱
+          </p>
+        </motion.div>
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="name"
-                    name="name"
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
+      {/* Right form section */}
+      <div className="flex flex-1 items-center justify-center p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-2xl backdrop-blur-xl bg-white/60 dark:bg-neutral-900/60 border border-white/40 dark:border-neutral-800/50 rounded-3xl shadow-xl"
+        >
+          <Card className="bg-transparent border-none">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+                Create Account
+              </CardTitle>
+              <CardDescription>
+                Fill in the details below to get started
+              </CardDescription>
+            </CardHeader>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4">
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="Create a password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="role">Account Type</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, role: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select account type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="consumer">
-                    Consumer - Order meals
-                  </SelectItem>
-                  <SelectItem value="provider">
-                    Service Provider - Offer tiffin services
-                  </SelectItem>
-                  <SelectItem value="delivery_partner">
-                    Delivery Partner - Deliver meals
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="phone"
-                    name="phone"
-                    placeholder="Enter phone number"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="address"
-                    name="address"
-                    placeholder="Enter your address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {formData.role === "provider" && (
-              <div className="space-y-4 pt-4 border-t">
-                <h3 className="font-medium text-lg">Business Information</h3>
-
-                <div className="space-y-2">
-                  <Label htmlFor="businessName">Business Name</Label>
-                  <Input
-                    id="businessName"
-                    name="businessName"
-                    placeholder="Enter your business name"
-                    value={businessData.businessName}
-                    onChange={handleBusinessInputChange}
-                    required={formData.role === "provider"}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Business Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    placeholder="Describe your tiffin service"
-                    value={businessData.description}
-                    onChange={handleBusinessInputChange}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cuisine">Cuisine Types</Label>
-                    <Input
-                      id="cuisine"
-                      name="cuisine"
-                      placeholder="e.g., North Indian, South Indian, Chinese"
-                      value={businessData.cuisine}
-                      onChange={handleBusinessInputChange}
-                    />
-                    <p className="text-xs text-gray-500">
-                      Separate multiple cuisines with commas
-                    </p>
+                {/* Name & Email */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        name="name"
+                        placeholder="John Doe"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="deliveryAreas">Delivery Areas</Label>
-                    <Input
-                      id="deliveryAreas"
-                      name="deliveryAreas"
-                      placeholder="e.g., Koramangala, HSR Layout"
-                      value={businessData.deliveryAreas}
-                      onChange={handleBusinessInputChange}
-                    />
-                    <p className="text-xs text-gray-500">
-                      Separate multiple areas with commas
-                    </p>
+                  <div>
+                    <Label>Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        name="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {formData.role === "delivery_partner" && (
-              <div className="space-y-4 pt-4 border-t">
-                <h3 className="font-medium text-lg">
-                  Delivery Partner Information
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="vehicleType">Vehicle Type</Label>
-                    <Select
-                      value={businessData.vehicleType || ""}
-                      onValueChange={(value) =>
-                        setBusinessData((prev) => ({
-                          ...prev,
-                          vehicleType: value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select vehicle type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bike">Motorcycle</SelectItem>
-                        <SelectItem value="scooter">Scooter</SelectItem>
-                        <SelectItem value="bicycle">Bicycle</SelectItem>
-                        <SelectItem value="car">Car</SelectItem>
-                      </SelectContent>
-                    </Select>
+                {/* Password */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-gray-400"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="vehicleNumber">Vehicle Number</Label>
+                  <div>
+                    <Label>Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        name="confirmPassword"
+                        type={showConfirm ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        className="absolute right-3 top-3 text-gray-400"
+                      >
+                        {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Role */}
+                <div>
+                  <Label>Account Type</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, role: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="consumer">Consumer</SelectItem>
+                      <SelectItem value="provider">Service Provider</SelectItem>
+                      <SelectItem value="delivery_partner">
+                        Delivery Partner
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <Label>Phone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      id="vehicleNumber"
-                      name="vehicleNumber"
-                      placeholder="e.g., KA01AB1234"
-                      value={businessData.vehicleNumber || ""}
-                      onChange={handleBusinessInputChange}
-                      required={formData.role === "delivery_partner"}
+                      name="phone"
+                      placeholder="Enter phone number"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="pl-10"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="licenseNumber">Driving License Number</Label>
-                  <Input
-                    id="licenseNumber"
-                    name="licenseNumber"
-                    placeholder="Enter your license number"
-                    value={businessData.licenseNumber || ""}
-                    onChange={handleBusinessInputChange}
-                    required={formData.role === "delivery_partner"}
-                  />
-                </div>
+                {/* Address bubbles for delivery partner */}
+{formData.role === "delivery_partner" && (
+  <div className="space-y-4">
+    <Label htmlFor="addresses">Delivery Addresses</Label>
 
-                <div className="space-y-2">
-                  <Label>Available Time Slots</Label>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="breakfast"
-                        checked={
-                          businessData.availableSlots?.breakfast !== false
-                        }
-                        onChange={(e) =>
-                          setBusinessData((prev) => ({
-                            ...prev,
-                            availableSlots: {
-                              ...prev.availableSlots,
-                              breakfast: e.target.checked,
-                            },
-                          }))
-                        }
-                      />
-                      <Label htmlFor="breakfast">Breakfast (6-8 AM)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="lunch"
-                        checked={businessData.availableSlots?.lunch !== false}
-                        onChange={(e) =>
-                          setBusinessData((prev) => ({
-                            ...prev,
-                            availableSlots: {
-                              ...prev.availableSlots,
-                              lunch: e.target.checked,
-                            },
-                          }))
-                        }
-                      />
-                      <Label htmlFor="lunch">Lunch (1-3 PM)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="dinner"
-                        checked={businessData.availableSlots?.dinner !== false}
-                        onChange={(e) =>
-                          setBusinessData((prev) => ({
-                            ...prev,
-                            availableSlots: {
-                              ...prev.availableSlots,
-                              dinner: e.target.checked,
-                            },
-                          }))
-                        }
-                      />
-                      <Label htmlFor="dinner">Dinner (9-11 PM)</Label>
+    <div className="flex flex-wrap gap-2 border rounded-md p-2 min-h-[46px] bg-white">
+      {addresses.map((addr, index) => (
+        <span
+          key={index}
+          className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm"
+        >
+          {addr}
+          <button
+            type="button"
+            onClick={() =>
+              setAddresses(addresses.filter((_, i) => i !== index))
+            }
+            className="hover:text-red-600"
+          >
+            ×
+          </button>
+        </span>
+      ))}
+
+      <input
+        type="text"
+        value={currentAddress}
+        onChange={(e) => setCurrentAddress(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            const trimmed = currentAddress.trim();
+            if (trimmed && !addresses.includes(trimmed)) {
+              setAddresses([...addresses, trimmed]);
+            }
+            setCurrentAddress("");
+          }
+        }}
+        placeholder="Type address and press Enter or comma"
+        className="flex-grow outline-none bg-transparent text-sm min-w-[120px]"
+      />
+    </div>
+
+    <p className="text-xs text-gray-500">
+      Add multiple addresses by pressing Enter or comma
+    </p>
+  </div>
+)}
+
+
+                {/* Provider fields */}
+                {formData.role === "provider" && (
+                  <div className="pt-4 border-t">
+                    <h3 className="font-medium text-lg mb-2">
+                      Business Information
+                    </h3>
+                    <Label>Business Name</Label>
+                    <Input
+                      name="businessName"
+                      value={businessData.businessName}
+                      onChange={handleBusinessInputChange}
+                    />
+                    <Label>Description</Label>
+                    <Textarea
+                      name="description"
+                      value={businessData.description}
+                      onChange={handleBusinessInputChange}
+                    />
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Cuisine Types</Label>
+                        <Input
+                          name="cuisine"
+                          value={businessData.cuisine}
+                          onChange={handleBusinessInputChange}
+                          placeholder="e.g., North Indian, Chinese"
+                        />
+                      </div>
+                      <div>
+                        <Label>Delivery Areas</Label>
+                        <Input
+                          name="deliveryAreas"
+                          value={businessData.deliveryAreas}
+                          onChange={handleBusinessInputChange}
+                          placeholder="e.g., Sector 15, HSR Layout"
+                        />
+                      </div>
                     </div>
                   </div>
+                )}
+
+                {/* Delivery partner fields */}
+                {formData.role === "delivery_partner" && (
+                  <div className="pt-4 border-t">
+                    <h3 className="font-medium text-lg mb-2">
+                      Delivery Partner Info
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Vehicle Type</Label>
+                        <Select
+                          value={businessData.vehicleType}
+                          onValueChange={(v) =>
+                            setBusinessData((p) => ({ ...p, vehicleType: v }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bike">Motorcycle</SelectItem>
+                            <SelectItem value="scooter">Scooter</SelectItem>
+                            <SelectItem value="bicycle">Bicycle</SelectItem>
+                            <SelectItem value="car">Car</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Vehicle Number</Label>
+                        <Input
+                          name="vehicleNumber"
+                          value={businessData.vehicleNumber}
+                          onChange={handleBusinessInputChange}
+                        />
+                      </div>
+                    </div>
+
+                    <Label>License Number</Label>
+                    <Input
+                      name="licenseNumber"
+                      value={businessData.licenseNumber}
+                      onChange={handleBusinessInputChange}
+                    />
+
+                    <Label>Available Time Slots</Label>
+                    <div className="grid grid-cols-3 gap-3 mt-2">
+                      {["breakfast", "lunch", "dinner"].map((slot) => (
+                        <label key={slot} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={
+                              businessData.availableSlots[slot as keyof typeof businessData.availableSlots]
+                            }
+                            onChange={(e) =>
+                              setBusinessData((prev) => ({
+                                ...prev,
+                                availableSlots: {
+                                  ...prev.availableSlots,
+                                  [slot]: e.target.checked,
+                                },
+                              }))
+                            }
+                          />
+                          <span className="capitalize">{slot}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+
+              <CardFooter className="flex flex-col space-y-4">
+                <Button
+                  type="submit"
+                  className="w-full bg-[#6E56CF] hover:bg-[#5b46b1]"
+                  disabled={loading}
+                >
+                  {loading ? "Creating Account..." : "Create Account"}
+                </Button>
+
+                <div className="text-center text-sm text-gray-600">
+                  Already have an account?{" "}
+                  <Link href="/auth/login" className="text-[#6E56CF] hover:underline">
+                    Sign in
+                  </Link>
                 </div>
-              </div>
-            )}
-          </CardContent>
-
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating Account..." : "Create Account"}
-            </Button>
-
-            <div className="text-center text-sm text-gray-600">
-              Already have an account?{" "}
-              <Link href="/auth/login" className="text-primary hover:underline">
-                Sign in
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
+              </CardFooter>
+            </form>
+          </Card>
+        </motion.div>
+      </div>
     </div>
   );
 }

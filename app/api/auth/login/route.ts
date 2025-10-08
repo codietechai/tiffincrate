@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log("User logged in:", user.email);
     const token = await generateToken({
       userId: user._id,
       email: user.email,

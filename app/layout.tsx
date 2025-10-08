@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'TiffinHub - Fresh Home-Cooked Meals Delivered',
+  title: 'TiffinCrate - Fresh Home-Cooked Meals Delivered',
   description: 'Connect with local tiffin providers and enjoy delicious, healthy meals delivered to your doorstep',
 };
 

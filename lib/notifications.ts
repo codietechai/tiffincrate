@@ -71,7 +71,7 @@ export const getOrderConfirmationEmail = (orderData: any) => ({
     <p><strong>Total Amount:</strong> ₹${orderData.totalAmount}</p>
     <p><strong>Delivery Date:</strong> ${orderData.deliveryDate}</p>
     <p>You can track your order status in your dashboard.</p>
-    <p>Thank you for choosing TiffinHub!</p>
+    <p>Thank you for choosing TiffinCrate!</p>
   `,
   textContent: `Order Confirmed! Your order ${orderData.orderId} has been confirmed with ${orderData.providerName}. Total: ₹${orderData.totalAmount}. Delivery: ${orderData.deliveryDate}.`,
 });
@@ -85,14 +85,14 @@ export const getOrderStatusUpdateEmail = (orderData: any) => ({
     <p><strong>Order ID:</strong> ${orderData.orderId}</p>
     <p><strong>Provider:</strong> ${orderData.providerName}</p>
     <p>Track your order in your dashboard for more details.</p>
-    <p>Thank you for choosing TiffinHub!</p>
+    <p>Thank you for choosing TiffinCrate!</p>
   `,
   textContent: `Order Status Update: Your order ${orderData.orderId} status is now ${orderData.status}.`,
 });
 
 // SMS Templates
 export const getOrderConfirmationSMS = (orderData: any) =>
-  `TiffinHub: Order ${orderData.orderId} confirmed! Total: ₹${orderData.totalAmount}. Delivery: ${orderData.deliveryDate}. Track in app.`;
+  `TiffinCrate: Order ${orderData.orderId} confirmed! Total: ₹${orderData.totalAmount}. Delivery: ${orderData.deliveryDate}. Track in app.`;
 
 export const getOrderStatusUpdateSMS = (orderData: any) =>
-  `TiffinHub: Order ${orderData.orderId} status updated to ${orderData.status}. Check app for details.`;
+  `TiffinCrate: Order ${orderData.orderId} status updated to ${orderData.status}. Check app for details.`;
