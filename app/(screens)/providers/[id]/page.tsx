@@ -41,21 +41,32 @@ interface MenuItem {
   _id: string;
   name: string;
   description?: string;
-  price: number;
-  category: string;
-  isVegetarian: boolean;
-  isAvailable: boolean;
-  imageUrl?: string;
+}
+
+interface WeeklyMenu {
+  monday?: MenuItem;
+  tuesday?: MenuItem;
+  wednesday?: MenuItem;
+  thursday?: MenuItem;
+  friday?: MenuItem;
+  saturday?: MenuItem;
+  sunday?: MenuItem;
 }
 
 interface Menu {
   _id: string;
   name: string;
   description?: string;
-  items: MenuItem[];
-  validFrom: string;
-  validTo: string;
+  category: "breakfast" | "lunch" | "dinner";
+  weeklyItems: WeeklyMenu;
+  basePrice: number;
+  monthlyPlanPrice?: number;
+  imageUrl?: string[];
+  isAvailable: boolean;
+  isVegetarian: boolean;
   isActive: boolean;
+  weekType: "whole" | "weekdays" | "weekends";
+  rating: number;
 }
 
 interface ServiceProvider {
@@ -67,18 +78,11 @@ interface ServiceProvider {
   rating: number;
   totalOrders: number;
   isVerified: boolean;
-  operatingHours: {
-    start: string;
-    end: string;
-  };
-  userId: {
-    name: string;
-    email: string;
-    phone?: string;
-  };
+  operatingHours: { start: string; end: string };
+  userId: { name: string; email: string; phone?: string };
 }
 
-interface CartItem extends MenuItem {
+interface CartItem extends Menu {
   quantity: number;
 }
 
@@ -91,13 +95,13 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
   const [user, setUser] = useState<any>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isOrdering, setIsOrdering] = useState(false);
   const [orderData, setOrderData] = useState({
     deliveryAddress: "",
     deliveryDate: "",
+    timeSlot: "",
     notes: "",
-      timeSlot: "", // ✅ add this
   });
-  const [isOrdering, setIsOrdering] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -109,247 +113,110 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth/me");
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
         setUser(data.user);
-        if (data.user.role === "consumer") {
-          checkFavoriteStatus();
-        }
+        if (data.user.role === "consumer") checkFavoriteStatus();
       }
-    } catch (error) {
-      console.error("Auth check error:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const fetchProvider = async () => {
-    try {
-      const response = await fetch(`/api/providers/${params.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProvider(data.provider);
-      }
-    } catch (error) {
-      console.error("Error fetching provider:", error);
+    const res = await fetch(`/api/providers/${params.id}`);
+    if (res.ok) {
+      const data = await res.json();
+      setProvider(data.provider);
     }
   };
 
   const fetchMenus = async () => {
-    try {
-      const response = await fetch(`/api/menus?providerId=${params.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setMenus(data.menus);
-      }
-    } catch (error) {
-      console.error("Error fetching menus:", error);
-    } finally {
-      setLoading(false);
+    const res = await fetch(`/api/menus?providerId=${params.id}`);
+    if (res.ok) {
+      const data = await res.json();
+      setMenus(data.menus);
     }
+    setLoading(false);
   };
 
   const fetchReviews = async () => {
-    try {
-      const response = await fetch(`/api/reviews?providerId=${params.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setReviews(data.reviews);
-      }
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
+    const res = await fetch(`/api/reviews?providerId=${params.id}`);
+    if (res.ok) {
+      const data = await res.json();
+      setReviews(data.reviews);
     }
   };
 
   const checkFavoriteStatus = async () => {
-    try {
-      const response = await fetch("/api/favorites");
-      if (response.ok) {
-        const data = await response.json();
-        setIsFavorite(data.favorites.some((fav: any) => fav._id === params.id));
-      }
-    } catch (error) {
-      console.error("Error checking favorite status:", error);
+    const res = await fetch("/api/favorites");
+    if (res.ok) {
+      const data = await res.json();
+      setIsFavorite(data.favorites.some((f: any) => f._id === params.id));
     }
   };
 
   const toggleFavorite = async () => {
     if (!user || user.role !== "consumer") return;
-
     try {
       if (isFavorite) {
-        const response = await fetch(`/api/favorites?providerId=${params.id}`, {
+        await fetch(`/api/favorites?providerId=${params.id}`, {
           method: "DELETE",
         });
-        if (response.ok) {
-          setIsFavorite(false);
-        }
+        setIsFavorite(false);
       } else {
-        const response = await fetch("/api/favorites", {
+        await fetch("/api/favorites", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ providerId: params.id }),
         });
-        if (response.ok) {
-          setIsFavorite(true);
-        }
+        setIsFavorite(true);
       }
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const addToCart = (item: MenuItem) => {
+  const addToCart = (menu: Menu) => {
     setCart((prev) => {
-      const existing = prev.find((cartItem) => cartItem._id === item._id);
-      if (existing) {
-        return prev.map((cartItem) =>
-          cartItem._id === item._id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
+      const existing = prev.find((m) => m._id === menu._id);
+      if (existing)
+        return prev.map((m) =>
+          m._id === menu._id ? { ...m, quantity: m.quantity + 1 } : m
         );
-      }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...menu, quantity: 1 }];
     });
   };
 
-  const removeFromCart = (itemId: string) => {
+  const removeFromCart = (id: string) => {
     setCart((prev) => {
-      const existing = prev.find((cartItem) => cartItem._id === itemId);
-      if (existing && existing.quantity > 1) {
-        return prev.map((cartItem) =>
-          cartItem._id === itemId
-            ? { ...cartItem, quantity: cartItem.quantity - 1 }
-            : cartItem
+      const existing = prev.find((m) => m._id === id);
+      if (existing && existing.quantity > 1)
+        return prev.map((m) =>
+          m._id === id ? { ...m, quantity: m.quantity - 1 } : m
         );
-      }
-      return prev.filter((cartItem) => cartItem._id !== itemId);
+      return prev.filter((m) => m._id !== id);
     });
   };
 
-  const getCartTotal = () => {
-    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
-  };
+  const getCartTotal = () =>
+    cart.reduce((t, m) => t + m.basePrice * m.quantity, 0);
 
-  const getCartItemCount = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
-  };
+  const getCartItemCount = () => cart.reduce((t, m) => t + m.quantity, 0);
 
-  const getItemQuantityInCart = (itemId: string) => {
-    const item = cart.find((cartItem) => cartItem._id === itemId);
-    return item ? item.quantity : 0;
-  };
+  const getItemQuantityInCart = (id: string) =>
+    cart.find((m) => m._id === id)?.quantity ?? 0;
 
   const getAllCategories = () => {
     const categories = new Set<string>();
-    menus.forEach((menu) => {
-      menu.items.forEach((item) => categories.add(item.category));
-    });
+    menus.forEach((m) => categories.add(m.category));
     return Array.from(categories);
   };
 
-  const getFilteredItems = () => {
-    let allItems: MenuItem[] = [];
-    menus.forEach((menu) => {
-      allItems = [...allItems, ...menu.items];
-    });
-
-    if (selectedCategory === "all") {
-      return allItems;
-    }
-    return allItems.filter((item) => item.category === selectedCategory);
-  };
-
-  const handlePlaceOrder = async () => {
-    if (!user || user.role !== "consumer") {
-      router.push("/auth/login");
-      return;
-    }
-
-    if (cart.length === 0) {
-      alert("Please add items to cart");
-      return;
-    }
-
-    if (!orderData.deliveryAddress || !orderData.deliveryDate) {
-      alert("Please fill in delivery details");
-      return;
-    }
-
-    setIsOrdering(true);
-
-    try {
-      // Step 1: Create Razorpay order on backend
-      const razorpayResponse = await fetch("/api/razorpay/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: getCartTotal(),
-          currency: "INR",
-        }),
-      });
-
-      const razorpayOrder = await razorpayResponse.json();
-      if (!razorpayResponse.ok) throw new Error(razorpayOrder.error);
-      console.log(295, razorpayOrder);
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: razorpayOrder.order.amount,
-        currency: razorpayOrder.order.currency,
-        name: "TiffinCrate",
-        description: `Order from ${provider?.businessName}`,
-        order_id: razorpayOrder.order.id, 
-        handler: async (response: any) => {
-          console.log("Razorpay Payment Success:", response);
-          // response will have the 3 values
-          // {
-          //   razorpay_payment_id,
-          //   razorpay_order_id,
-          //   razorpay_signature
-          // }
-
-          const res = await fetch("/api/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              providerId: params.id,
-              items: cart.map((item) => ({
-                menuItemId: item._id,
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity,
-              })),
-              totalAmount: getCartTotal(),
-              deliveryAddress: orderData.deliveryAddress,
-              deliveryDate: orderData.deliveryDate,
-              timeSlot:orderData.timeSlot,
-              paymentMethod: "razorpay",
-              notes: orderData.notes,
-              razorpayOrderId: response.razorpay_order_id, 
-              razorpayPaymentId: response.razorpay_payment_id, 
-              razorpaySignature: response.razorpay_signature, 
-            }),
-          });
-
-          const data = await res.json();
-          console.log("Order Response:", data);
-        },
-        prefill: {
-          name: user.name,
-          email: user.email,
-        },
-        theme: { color: "#3B82F6" },
-      };
-
-      const razorpay = new (window as any).Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      console.error("Error placing order:", error);
-      alert("Failed to place order");
-    } finally {
-      setIsOrdering(false);
-    }
+  const getFilteredMenus = () => {
+    if (selectedCategory === "all") return menus;
+    return menus.filter((m) => m.category === selectedCategory);
   };
 
   useEffect(() => {
@@ -361,7 +228,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
 
   if (loading) return <LoadingPage />;
 
-  if (!provider) {
+  if (!provider)
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -372,299 +239,195 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
       <Navbar />
 
-      {/* Razorpay Script */}
-      <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Provider Header */}
-        <Card className="mb-8 bg-gradient-to-r from-orange-100 to-yellow-100 border-orange-200">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Provider Info */}
+        <Card className="mb-8 bg-gradient-to-r from-orange-100 to-yellow-100">
           <CardHeader>
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <CardTitle className="text-3xl flex items-center gap-3">
-                  {provider.businessName}
-                  {provider.isVerified && (
-                    <Badge variant="default">Verified</Badge>
-                  )}
-                </CardTitle>
-                <CardDescription className="text-lg mt-2">
-                  by {provider.userId.name}
-                </CardDescription>
-                <p className="text-gray-600 mt-2">{provider.description}</p>
-              </div>
-              {user?.role === "consumer" && (
-                <Button
-                  variant="outline"
-                  onClick={toggleFavorite}
-                  className="ml-4"
-                >
-                  <Heart
-                    className={`mr-2 h-4 w-4 ${
-                      isFavorite ? "fill-red-500 text-red-500" : ""
-                    }`}
-                  />
-                  {isFavorite ? "Favorited" : "Add to Favorites"}
-                </Button>
-              )}
-            </div>
+            <CardTitle className="text-3xl flex items-center gap-3">
+              {provider.businessName}
+              {provider.isVerified && <Badge>Verified</Badge>}
+            </CardTitle>
+            <CardDescription>by {provider.userId.name}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <h4 className="font-medium mb-2">Cuisine Types</h4>
-                <div className="flex flex-wrap gap-1">
-                  {provider.cuisine.map((c, i) => (
-                    <Badge key={i} variant="secondary">
-                      {c}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Delivery Areas</h4>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">
-                    {provider.deliveryAreas.slice(0, 2).join(", ")}
-                    {provider.deliveryAreas.length > 2 &&
-                      ` +${provider.deliveryAreas.length - 2} more`}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Operating Hours</h4>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">
-                    {provider.operatingHours.start} -{" "}
-                    {provider.operatingHours.end}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6 mt-4 pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-medium">
-                  {provider.rating.toFixed(1)}
-                </span>
-                <span className="text-gray-500">
-                  ({reviews.length} reviews)
-                </span>
-              </div>
-              <div className="text-gray-500">
-                {provider.totalOrders} orders completed
-              </div>
-              {provider.userId.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">{provider.userId.phone}</span>
-                </div>
-              )}
+            <p className="mb-4 text-gray-600">{provider.description}</p>
+            <div className="flex items-center gap-6 text-gray-500">
+              <MapPin className="h-4 w-4" /> {provider.deliveryAreas.join(", ")}
+              <Clock className="h-4 w-4" /> {provider.operatingHours.start}–
+              {provider.operatingHours.end}
+              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />{" "}
+              {provider.rating.toFixed(1)} ({reviews.length} reviews)
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Menu Section */}
+        {/* Main */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Menus */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="menu" className="space-y-6">
+            <Tabs defaultValue="menu">
               <TabsList>
                 <TabsTrigger value="menu">Menu</TabsTrigger>
-                <TabsTrigger value="reviews">
-                  Reviews ({reviews.length})
-                </TabsTrigger>
+                <TabsTrigger value="reviews">Reviews</TabsTrigger>
                 <TabsTrigger value="info">Info</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="menu" className="space-y-6">
-                {/* Category Filter */}
-                <div className="flex gap-2 flex-wrap">
+              <TabsContent value="menu">
+                <div className="flex gap-2 flex-wrap mb-6">
                   <Button
                     variant={selectedCategory === "all" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedCategory("all")}
                   >
-                    All Items
+                    All
                   </Button>
-                  {getAllCategories().map((category) => (
+                  {getAllCategories().map((cat) => (
                     <Button
-                      key={category}
-                      variant={
-                        selectedCategory === category ? "default" : "outline"
-                      }
+                      key={cat}
+                      variant={selectedCategory === cat ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setSelectedCategory(category)}
+                      onClick={() => setSelectedCategory(cat)}
                     >
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
                     </Button>
                   ))}
                 </div>
 
-                {/* Menu Items */}
-                <div className="space-y-4">
-                  {getFilteredItems().map((item) => (
-                    <Card
-                      key={item._id}
-                      className="hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-orange-50"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-medium">{item.name}</h3>
-                              {item.isVegetarian && (
-                                <Leaf className="h-4 w-4 text-green-500" />
-                              )}
-                              {!item.isAvailable && (
-                                <Badge
-                                  variant="destructive"
-                                  className="text-xs"
-                                >
-                                  Out of Stock
-                                </Badge>
-                              )}
-                            </div>
-                            {item.description && (
-                              <p className="text-sm text-gray-600 mb-2">
-                                {item.description}
+                {getFilteredMenus().map((menu) => (
+                  <Card key={menu._id} className="mb-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        {menu.name}
+                        {menu.isVegetarian && (
+                          <Leaf className="h-4 w-4 text-green-500" />
+                        )}
+                        {!menu.isAvailable && (
+                          <Badge variant="destructive">Unavailable</Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription>
+                        {menu.category.toUpperCase()} Plan ({menu.weekType})
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        {Object.entries(menu.weeklyItems).map(([day, item]) =>
+                          item ? (
+                            <div
+                              key={day}
+                              className="p-3 border rounded-md bg-white"
+                            >
+                              <h4 className="capitalize font-medium">{day}</h4>
+                              <p className="text-sm text-gray-600">
+                                {item.name}
                               </p>
-                            )}
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-lg">
-                                ₹{item.price}
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className="text-xs bg-gradient-to-r from-orange-100 to-yellow-100"
-                              >
-                                {item.category}
-                              </Badge>
                             </div>
-                          </div>
+                          ) : (
+                            <div
+                              key={day}
+                              className="p-3 border rounded-md text-gray-400 text-sm"
+                            >
+                              {day}: No item
+                            </div>
+                          )
+                        )}
+                      </div>
 
-                          {user?.role === "consumer" && item.isAvailable && (
-                            <div className="flex items-center gap-2">
-                              {getItemQuantityInCart(item._id) > 0 ? (
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => removeFromCart(item._id)}
-                                    className="hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50"
-                                  >
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <span className="font-medium min-w-[20px] text-center">
-                                    {getItemQuantityInCart(item._id)}
-                                  </span>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => addToCart(item)}
-                                    className="hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  onClick={() => addToCart(item)}
-                                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                                >
-                                  Add to Cart
-                                </Button>
-                              )}
-                            </div>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-bold">₹{menu.basePrice}</p>
+                          {menu.monthlyPlanPrice && (
+                            <p className="text-sm text-gray-600">
+                              Monthly Plan: ₹{menu.monthlyPlanPrice}
+                            </p>
                           )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        {menu.isAvailable &&
+                          (getItemQuantityInCart(menu._id) > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => removeFromCart(menu._id)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span>{getItemQuantityInCart(menu._id)}</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => addToCart(menu)}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" onClick={() => addToCart(menu)}>
+                              Add To Cart
+                            </Button>
+                          ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </TabsContent>
 
-              <TabsContent value="reviews" className="space-y-4">
-                {reviews.length > 0 ? (
-                  reviews.map((review) => (
-                    <Card key={review._id}>
+              <TabsContent value="reviews">
+                {reviews.length ? (
+                  reviews.map((r) => (
+                    <Card key={r._id} className="mb-3">
                       <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-medium">
-                              {review.consumerId.name}
-                            </p>
-                            <div className="flex items-center gap-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < review.rating
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="font-medium">{r.consumerId.name}</p>
                           <span className="text-sm text-gray-500">
-                            {new Date(review.createdAt).toLocaleDateString()}
+                            {new Date(r.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        {review.comment && (
-                          <p className="text-gray-600">{review.comment}</p>
+                        <div className="flex gap-1 mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < r.rating
+                                  ? "text-yellow-400 fill-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {r.comment && (
+                          <p className="text-gray-600">{r.comment}</p>
                         )}
                       </CardContent>
                     </Card>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Star className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>No reviews yet</p>
-                  </div>
+                  <p className="text-gray-500 text-center py-6">
+                    No reviews yet.
+                  </p>
                 )}
               </TabsContent>
 
-              <TabsContent value="info" className="space-y-4">
+              <TabsContent value="info">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Contact Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span>{provider.userId.email}</span>
-                    </div>
-                    {provider.userId.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <span>{provider.userId.phone}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Service Areas</CardTitle>
+                    <CardTitle>Contact</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {provider.deliveryAreas.map((area, i) => (
-                        <Badge key={i} variant="outline">
-                          {area}
-                        </Badge>
-                      ))}
+                    <div className="space-y-2">
+                      <div className="flex gap-2 items-center">
+                        <Mail className="h-4 w-4" /> {provider.userId.email}
+                      </div>
+                      {provider.userId.phone && (
+                        <div className="flex gap-2 items-center">
+                          <Phone className="h-4 w-4" /> {provider.userId.phone}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -672,183 +435,56 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
             </Tabs>
           </div>
 
-          {/* Cart & Order Section */}
+          {/* Cart */}
           {user?.role === "consumer" && (
             <div className="space-y-6">
-              <Card className="sticky top-4 bg-gradient-to-br from-white to-orange-50 border-orange-200">
+              <Card className="sticky top-4">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ShoppingCart className="h-5 w-5" />
                     Your Order ({getCartItemCount()} items)
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {cart.length > 0 ? (
+                <CardContent>
+                  {cart.length ? (
                     <>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {cart.map((item) => (
-                          <div
-                            key={item._id}
-                            className="flex justify-between items-center py-2 border-b"
-                          >
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{item.name}</p>
-                              <p className="text-xs text-gray-500">
-                                ₹{item.price} each
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => removeFromCart(item._id)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="text-sm font-medium min-w-[20px] text-center">
-                                {item.quantity}
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => addToCart(item)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="pt-2 border-t">
-                        <div className="flex justify-between items-center font-bold">
-                          <span>Total:</span>
-                          <span>₹{getCartTotal()}</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium">
-                            Delivery Address
-                          </label>
-                          <div className="mt-1 space-y-2">
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="Enter your delivery address"
-                                value={orderData.deliveryAddress}
-                                onChange={(e) =>
-                                  setOrderData((prev) => ({
-                                    ...prev,
-                                    deliveryAddress: e.target.value,
-                                  }))
-                                }
-                                className="flex-1"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() =>
-                                  router.push(
-                                    `/map-selector?returnUrl=${encodeURIComponent(
-                                      window.location.pathname
-                                    )}`
-                                  )
-                                }
-                                className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
-                              >
-                                <MapPin className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <p className="text-xs text-gray-500">
-                              Click the map icon to select location on map
-                            </p>
+                      {cart.map((m) => (
+                        <div
+                          key={m._id}
+                          className="flex justify-between items-center border-b py-2"
+                        >
+                          <span>{m.name}</span>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => removeFromCart(m._id)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span>{m.quantity}</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => addToCart(m)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
                           </div>
                         </div>
-
-                        <div>
-                          <label className="text-sm font-medium">
-                            Time Slot & Delivery Date
-                          </label>
-                          <div className="mt-1 space-y-2">
-<Select
-  value={orderData.timeSlot} // use timeSlot directly
-  onValueChange={(value) =>
-    setOrderData((prev) => ({
-      ...prev,
-      timeSlot: value,
-    }))
-  }
->
-  <SelectTrigger>
-    <SelectValue placeholder="Select time slot" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="breakfast">
-      Breakfast (6:00 AM - 8:00 AM)
-    </SelectItem>
-    <SelectItem value="lunch">
-      Lunch (1:00 PM - 3:00 PM)
-    </SelectItem>
-    <SelectItem value="dinner">
-      Dinner (9:00 PM - 11:00 PM)
-    </SelectItem>
-  </SelectContent>
-</Select>
-                            <Input
-                              type="date"
-                              value={orderData.deliveryDate}
-                              onChange={(e) =>
-                                setOrderData((prev) => ({
-                                  ...prev,
-                                  deliveryDate: e.target.value,
-                                }))
-                              }
-                              min={new Date().toISOString().slice(0, 10)}
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="text-sm font-medium">
-                            Special Instructions (Optional)
-                          </label>
-                          <Textarea
-                            placeholder="Any special requests or notes"
-                            value={orderData.notes}
-                            onChange={(e) =>
-                              setOrderData((prev) => ({
-                                ...prev,
-                                notes: e.target.value,
-                              }))
-                            }
-                            className="mt-1"
-                          />
-                        </div>
+                      ))}
+                      <div className="flex justify-between font-bold mt-4">
+                        <span>Total</span>
+                        <span>₹{getCartTotal()}</span>
                       </div>
-
-                      <Button
-                        onClick={handlePlaceOrder}
-                        disabled={
-                          isOrdering ||
-                          !orderData.deliveryAddress ||
-                          !orderData.deliveryDate
-                        }
-                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                      >
-                        {isOrdering
-                          ? "Processing..."
-                          : `Place Order - ₹${getCartTotal()}`}
+                      <Button className="w-full mt-4 bg-orange-500 hover:bg-orange-600">
+                        Proceed to Pay
                       </Button>
                     </>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>Your cart is empty</p>
-                      <p className="text-sm">Add items from the menu</p>
-                    </div>
+                    <p className="text-center text-gray-500 py-6">
+                      Your cart is empty
+                    </p>
                   )}
                 </CardContent>
               </Card>

@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { model, models } from "mongoose";
 
 const weeklyMenuSchema = new mongoose.Schema(
   {
@@ -41,7 +41,6 @@ const menuSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-
     name: {
       type: String,
       required: [true, "Menu name is required"],
@@ -72,4 +71,4 @@ const menuSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Menu", menuSchema);
+export default models.Menu || model("Menu", menuSchema);

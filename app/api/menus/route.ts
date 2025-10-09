@@ -7,11 +7,18 @@ import MenuItem from "@/models/MenuItem";
 
 export async function GET(request: NextRequest) {
   try {
+    const role = request.headers.get("x-user-role");
+
     await connectMongoDB();
     const { searchParams } = new URL(request.url);
     const providerId = searchParams.get("providerId");
     const category = searchParams.get("category");
-    const query: any = { isActive: true };
+    let query: any = {};
+    if (role === "consumer") {
+      query = {
+        isActive: true,
+      };
+    }
     if (providerId) {
       const serviceProvider = await ServiceProvider.findById(providerId);
       if (!serviceProvider) {

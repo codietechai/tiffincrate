@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -24,39 +22,43 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
-import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
+import { Save, ArrowLeft } from "lucide-react";
 
-interface MenuItem {
+const DAYS = [
+  { key: "monday", label: "Monday" },
+  { key: "tuesday", label: "Tuesday" },
+  { key: "wednesday", label: "Wednesday" },
+  { key: "thursday", label: "Thursday" },
+  { key: "friday", label: "Friday" },
+  { key: "saturday", label: "Saturday" },
+  { key: "sunday", label: "Sunday" },
+];
+
+interface WeeklyItemInput {
   _id?: string;
   name: string;
   description: string;
-  price: number;
-  category: string;
-  isVegetarian: boolean;
-  isAvailable: boolean;
 }
 
 interface Menu {
   _id: string;
   name: string;
-  description: string;
-  items: MenuItem[];
-  validFrom: string;
-  validTo: string;
+  description?: string;
+  category: string;
+  weeklyItems: Partial<Record<string, WeeklyItemInput>>;
+  basePrice: number;
+  monthlyPlanPrice?: number;
+  imageUrl?: string[];
+  isAvailable: boolean;
+  isVegetarian: boolean;
   isActive: boolean;
+  weekType: string;
+  draft: boolean;
 }
 
 export default function EditMenuPage({ params }: { params: { id: string } }) {
   const [menu, setMenu] = useState<Menu | null>(null);
-  const [menuData, setMenuData] = useState({
-    name: "",
-    description: "",
-    validFrom: "",
-    validTo: "",
-    isActive: true,
-  });
-
-  const [items, setItems] = useState<MenuItem[]>([]);
+  const [menuData, setMenuData] = useState<Partial<Menu>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -67,10 +69,7 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
     { value: "breakfast", label: "Breakfast" },
     { value: "lunch", label: "Lunch" },
     { value: "dinner", label: "Dinner" },
-    { value: "snacks", label: "Snacks" },
-    { value: "beverages", label: "Beverages" },
   ];
-
   useEffect(() => {
     checkAuth();
     fetchMenu();
@@ -78,43 +77,66 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth/me");
-      if (response.ok) {
-        const data = await response.json();
+      const resp = await fetch("/api/auth/me");
+      if (resp.ok) {
+        const data = await resp.json();
         if (data.user.role !== "provider") {
           router.push("/");
-          return;
         }
       } else {
         router.push("/auth/login");
       }
-    } catch (error) {
-      console.error("Auth check error:", error);
+    } catch (err) {
+      console.error("Auth check error:", err);
       router.push("/auth/login");
     }
   };
 
   const fetchMenu = async () => {
     try {
-      const response = await fetch(`/api/menus/${params.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        const menuData = data.menu;
-
-        setMenu(menuData);
-        setMenuData({
-          name: menuData.name,
-          description: menuData.description || "",
-          validFrom: menuData.validFrom.split("T")[0],
-          validTo: menuData.validTo.split("T")[0],
-          isActive: menuData.isActive,
-        });
-        setItems(menuData.items || []);
-      } else {
+      const resp = await fetch(`/api/menus/${params.id}`);
+      if (!resp.ok) {
         setError("Menu not found");
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching menu:", error);
+      const data = await resp.json();
+      const m: Menu = data.menu;
+
+      setMenu(m);
+      setMenuData({
+        name: m.name,
+        description: m.description,
+        category: m.category,
+        basePrice: m.basePrice,
+        monthlyPlanPrice: m.monthlyPlanPrice,
+        imageUrl: m.imageUrl,
+        isAvailable: m.isAvailable,
+        isVegetarian: m.isVegetarian,
+        isActive: m.isActive,
+        weekType: m.weekType,
+        draft: m.draft,
+        weeklyItems: {},
+      });
+      // initialize weeklyItems in menuData
+      const wi: Record<string, WeeklyItemInput> = {};
+      for (const d of DAYS) {
+        const item = (m.weeklyItems as any)[d.key];
+        if (item) {
+          wi[d.key] = {
+            _id: item._id,
+            name: item.name,
+            description: item.description || "",
+          };
+        } else {
+          wi[d.key] = { name: "", description: "" };
+        }
+      }
+      setMenuData((prev) => ({
+        ...prev,
+        weeklyItems: wi,
+      }));
+    } catch (err) {
+      console.error("Fetch menu error:", err);
       setError("Failed to load menu");
     } finally {
       setLoading(false);
@@ -125,56 +147,51 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
     setMenuData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleItemChange = (index: number, field: string, value: any) => {
-    setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
-  };
-
-  const addItem = () => {
-    setItems((prev) => [
-      ...prev,
-      {
-        name: "",
-        description: "",
-        price: 0,
-        category: "lunch",
-        isVegetarian: false,
-        isAvailable: true,
-      },
-    ]);
-  };
-
-  const removeItem = (index: number) => {
-    if (items.length > 1) {
-      setItems((prev) => prev.filter((_, i) => i !== index));
-    }
+  const handleWeeklyItemChange = (
+    dayKey: string,
+    field: keyof WeeklyItemInput,
+    value: any
+  ) => {
+    setMenuData((prev) => {
+      const wi = prev.weeklyItems ?? {};
+      const prevItem = wi[dayKey] ?? { name: "", description: "" };
+      return {
+        ...prev,
+        weeklyItems: {
+          ...wi,
+          [dayKey]: { ...prevItem, [field]: value },
+        },
+      };
+    });
   };
 
   const validateForm = () => {
-    if (!menuData.name.trim()) {
+    if (!menuData.name || !menuData.name.trim()) {
       setError("Menu name is required");
       return false;
     }
-
-    if (!menuData.validFrom || !menuData.validTo) {
-      setError("Valid from and valid to dates are required");
+    if (!menuData.category) {
+      setError("Category is required");
       return false;
     }
-
-    if (new Date(menuData.validFrom) >= new Date(menuData.validTo)) {
-      setError("Valid to date must be after valid from date");
+    if (
+      menuData.basePrice === undefined ||
+      menuData.basePrice === null ||
+      menuData.basePrice < 0
+    ) {
+      setError("Base price must be a non-negative number");
       return false;
     }
-
-    const validItems = items.filter(
-      (item) => item.name.trim() && item.price > 0
-    );
-    if (validItems.length === 0) {
-      setError("At least one valid item is required");
+    // At least one valid daily item:
+    const wi = menuData.weeklyItems || {};
+    const hasAtLeastOne = DAYS.some((d) => {
+      const it = wi[d.key];
+      return it && it.name.trim();
+    });
+    if (!hasAtLeastOne) {
+      setError("At least one daily menu item is required");
       return false;
     }
-
     return true;
   };
 
@@ -182,39 +199,29 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
     e.preventDefault();
     setError("");
     setSuccess("");
-
     if (!validateForm()) return;
 
     setSaving(true);
-
     try {
-      const validItems = items.filter(
-        (item) => item.name.trim() && item.price > 0
-      );
-
-      const response = await fetch(`/api/menus/${params.id}`, {
+      const resp = await fetch(`/api/menus/${params.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...menuData,
-          items: validItems,
-        }),
+        body: JSON.stringify(menuData),
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
+      const data = await resp.json();
+      if (resp.ok) {
         setSuccess("Menu updated successfully!");
         setTimeout(() => {
           router.push("/dashboard/provider/menu");
-        }, 2000);
+        }, 1500);
       } else {
-        setError(data.error || "Failed to update menu");
+        setError(data.error || "Failed to update");
       }
-    } catch (error) {
-      setError("Network error. Please try again.");
+    } catch (err) {
+      setError("Network error");
+      console.error("Submit error:", err);
     } finally {
       setSaving(false);
     }
@@ -228,9 +235,7 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Alert variant="destructive">
-            <AlertDescription>
-              Menu not found or you don't have permission to edit it.
-            </AlertDescription>
+            <AlertDescription>Menu not found.</AlertDescription>
           </Alert>
         </div>
       </div>
@@ -240,7 +245,6 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex items-center gap-4">
           <Button variant="outline" onClick={() => router.back()}>
@@ -249,7 +253,7 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Edit Menu</h1>
-            <p className="text-gray-600">Update your menu details and items</p>
+            <p className="text-gray-600">Update your menu</p>
           </div>
         </div>
 
@@ -259,7 +263,6 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
           {success && (
             <Alert>
               <AlertDescription className="text-green-600">
@@ -268,225 +271,172 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
             </Alert>
           )}
 
-          {/* Menu Details */}
+          {/* Menu Main Fields */}
           <Card>
             <CardHeader>
-              <CardTitle>Menu Details</CardTitle>
-              <CardDescription>
-                Basic information about your menu
-              </CardDescription>
+              <CardTitle>Menu Info</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Menu Name *</Label>
-                  <Input
-                    id="name"
-                    placeholder="e.g., Weekly Lunch Menu"
-                    value={menuData.name}
-                    onChange={(e) =>
-                      handleMenuDataChange("name", e.target.value)
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="isActive">Status</Label>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="isActive"
-                      checked={menuData.isActive}
-                      onCheckedChange={(checked) =>
-                        handleMenuDataChange("isActive", checked)
-                      }
-                    />
-                    <Label htmlFor="isActive">
-                      {menuData.isActive ? "Active" : "Inactive"}
-                    </Label>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={menuData.name || ""}
+                  onChange={(e) => handleMenuDataChange("name", e.target.value)}
+                  required
+                />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe your menu offerings"
-                  value={menuData.description}
+                  value={menuData.description || ""}
                   onChange={(e) =>
                     handleMenuDataChange("description", e.target.value)
                   }
                 />
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Category *</Label>
+                  <Select
+                    value={menuData.category || ""}
+                    onValueChange={(v) => handleMenuDataChange("category", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="basePrice">Base Price *</Label>
+                  <Input
+                    id="basePrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={menuData.basePrice ?? ""}
+                    onChange={(e) =>
+                      handleMenuDataChange(
+                        "basePrice",
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
+                    required
+                  />
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="validFrom">Valid From *</Label>
+                  <Label htmlFor="isAvailable">Available</Label>
                   <Input
-                    id="validFrom"
-                    type="date"
-                    value={menuData.validFrom}
+                    type="checkbox"
+                    id="isAvailable"
+                    checked={menuData.isAvailable ?? false}
                     onChange={(e) =>
-                      handleMenuDataChange("validFrom", e.target.value)
+                      handleMenuDataChange("isAvailable", e.target.checked)
                     }
-                    required
                   />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="validTo">Valid To *</Label>
+                  <Label htmlFor="isVegetarian">Vegetarian</Label>
                   <Input
-                    id="validTo"
-                    type="date"
-                    value={menuData.validTo}
+                    type="checkbox"
+                    id="isVegetarian"
+                    checked={menuData.isVegetarian ?? false}
                     onChange={(e) =>
-                      handleMenuDataChange("validTo", e.target.value)
+                      handleMenuDataChange("isVegetarian", e.target.checked)
                     }
-                    required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="isActive">Active</Label>
+                <Input
+                  type="checkbox"
+                  id="isActive"
+                  checked={menuData.isActive ?? false}
+                  onChange={(e) =>
+                    handleMenuDataChange("isActive", e.target.checked)
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="weekType">Week Type</Label>
+                <Select
+                  value={menuData.weekType || ""}
+                  onValueChange={(v) => handleMenuDataChange("weekType", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="whole">Whole Week</SelectItem>
+                    <SelectItem value="weekdays">Weekdays</SelectItem>
+                    <SelectItem value="weekends">Weekends</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
 
-          {/* Menu Items */}
+          {/* Weekly Items */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Menu Items</CardTitle>
-                  <CardDescription>Update items in your menu</CardDescription>
-                </div>
-                <Button type="button" onClick={addItem} variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Item
-                </Button>
-              </div>
+              <CardTitle>Daily Items</CardTitle>
+              <CardDescription>
+                Enter a menu item (name + description) for each day
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {items.map((item, index) => (
-                <div key={index} className="border rounded-lg p-4 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-medium">Item #{index + 1}</h4>
-                    {items.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeItem(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {DAYS.map((d) => {
+                const wi = (menuData.weeklyItems ?? {})[d.key] || {
+                  name: "",
+                  description: "",
+                };
+                return (
+                  <div key={d.key} className="border rounded-lg p-4 space-y-4">
+                    <h4 className="font-medium">{d.label}</h4>
                     <div className="space-y-2">
-                      <Label>Item Name *</Label>
+                      <Label>Name</Label>
                       <Input
-                        placeholder="e.g., Chicken Biryani"
-                        value={item.name}
+                        value={wi.name}
                         onChange={(e) =>
-                          handleItemChange(index, "name", e.target.value)
+                          handleWeeklyItemChange(d.key, "name", e.target.value)
                         }
                       />
                     </div>
-
                     <div className="space-y-2">
-                      <Label>Price (₹) *</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={item.price || ""}
+                      <Label>Description</Label>
+                      <Textarea
+                        value={wi.description}
                         onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "price",
-                            parseFloat(e.target.value) || 0
+                          handleWeeklyItemChange(
+                            d.key,
+                            "description",
+                            e.target.value
                           )
                         }
                       />
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Textarea
-                      placeholder="Describe the item"
-                      value={item.description}
-                      onChange={(e) =>
-                        handleItemChange(index, "description", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Category</Label>
-                      <Select
-                        value={item.category}
-                        onValueChange={(value) =>
-                          handleItemChange(index, "category", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem
-                              key={category.value}
-                              value={category.value}
-                            >
-                              {category.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Vegetarian</Label>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={item.isVegetarian}
-                          onCheckedChange={(checked) =>
-                            handleItemChange(index, "isVegetarian", checked)
-                          }
-                        />
-                        <Label>{item.isVegetarian ? "Yes" : "No"}</Label>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Available</Label>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={item.isAvailable}
-                          onCheckedChange={(checked) =>
-                            handleItemChange(index, "isAvailable", checked)
-                          }
-                        />
-                        <Label>{item.isAvailable ? "Yes" : "No"}</Label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
           <div className="flex justify-end space-x-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-            >
+            <Button variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>
             <Button type="submit" disabled={saving}>
@@ -494,8 +444,7 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
                 "Updating..."
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Update Menu
+                  <Save className="mr-2 h-4 w-4" /> Update
                 </>
               )}
             </Button>
