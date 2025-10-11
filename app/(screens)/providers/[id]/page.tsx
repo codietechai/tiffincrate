@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
 import {
   Card,
   CardContent,
@@ -36,6 +36,15 @@ import {
   Phone,
   Mail,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import clsx from "clsx";
 
 interface MenuItem {
   _id: string;
@@ -96,12 +105,26 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isOrdering, setIsOrdering] = useState(false);
-  const [orderData, setOrderData] = useState({
+  const [orderData, setOrderData] = useState<{
+    deliveryAddress: string;
+    deliveryDate: string;
+    deliveryPeriod: "month" | "specific_days" | "custom_dates";
+    dates: string;
+    recurring?: number;
+    timeSlot: string;
+    notes: string;
+  }>({
     deliveryAddress: "",
+    deliveryPeriod: "month",
+    dates: "",
     deliveryDate: "",
     timeSlot: "",
     notes: "",
   });
+  const [multiDates, setMultiDates] = useState<Date[]>([]);
+  const [selectedDays, setSelectedDays] = useState<string[]>(
+    orderData.dates ? orderData.dates.split(",") : []
+  );
   const router = useRouter();
 
   useEffect(() => {
@@ -161,17 +184,21 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
     if (!user || user.role !== "consumer") return;
     try {
       if (isFavorite) {
-        await fetch(`/api/favorites?providerId=${params.id}`, {
+        const response = await fetch(`/api/favorites?providerId=${params.id}`, {
           method: "DELETE",
         });
-        setIsFavorite(false);
+        if (response.ok) {
+          setIsFavorite(false);
+        }
       } else {
-        await fetch("/api/favorites", {
+        const response = await fetch("/api/favorites", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ providerId: params.id }),
         });
-        setIsFavorite(true);
+        if (response.ok) {
+          setIsFavorite(true);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -219,6 +246,98 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
     return menus.filter((m) => m.category === selectedCategory);
   };
 
+  const handlePlaceOrder = () => {};
+
+  //  const handlePlaceOrder = async () => {
+  //   if (!user || user.role !== "consumer") {
+  //     router.push("/auth/login");
+  //     return;
+  //   }
+
+  //   if (cart.length === 0) {
+  //     alert("Please add items to cart");
+  //     return;
+  //   }
+
+  //   if (!orderData.deliveryAddress || !orderData.deliveryDate) {
+  //     alert("Please fill in delivery details");
+  //     return;
+  //   }
+
+  //   setIsOrdering(true);
+
+  //   try {
+  //     // Step 1: Create Razorpay order on backend
+  //     const razorpayResponse = await fetch("/api/razorpay/create-order", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         amount: getCartTotal(),
+  //         currency: "INR",
+  //       }),
+  //     });
+
+  //     const razorpayOrder = await razorpayResponse.json();
+  //     if (!razorpayResponse.ok) throw new Error(razorpayOrder.error);
+  //     console.log(295, razorpayOrder);
+  //     const options = {
+  //       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  //       amount: razorpayOrder.order.amount,
+  //       currency: razorpayOrder.order.currency,
+  //       name: "TiffinCrate",
+  //       description: `Order from ${provider?.businessName}`,
+  //       order_id: razorpayOrder.order.id,
+  //       handler: async (response: any) => {
+  //         console.log("Razorpay Payment Success:", response);
+  //         // response will have the 3 values
+  //         // {
+  //         //   razorpay_payment_id,
+  //         //   razorpay_order_id,
+  //         //   razorpay_signature
+  //         // }
+
+  //         const res = await fetch("/api/orders", {
+  //           method: "POST",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify({
+  //             providerId: params.id,
+  //             items: cart.map((item) => ({
+  //               menuItemId: item._id,
+  //               name: item.name,
+  //               price: item.price,
+  //               quantity: item.quantity,
+  //             })),
+  //             totalAmount: getCartTotal(),
+  //             deliveryAddress: orderData.deliveryAddress,
+  //             deliveryDate: orderData.deliveryDate,
+  //             timeSlot: orderData.timeSlot,
+  //             paymentMethod: "razorpay",
+  //             notes: orderData.notes,
+  //             razorpayOrderId: response.razorpay_order_id,
+  //             razorpayPaymentId: response.razorpay_payment_id,
+  //             razorpaySignature: response.razorpay_signature,
+  //           }),
+  //         });
+
+  //         const data = await res.json();
+  //         console.log("Order Response:", data);
+  //       },
+  //       prefill: {
+  //         name: user.name,
+  //         email: user.email,
+  //       },
+  //       theme: { color: "#3B82F6" },
+  //     };
+
+  //     const razorpay = new (window as any).Razorpay(options);
+  //     razorpay.open();
+  //   } catch (error) {
+  //     console.error("Error placing order:", error);
+  //     alert("Failed to place order");
+  //   } finally {
+  //     setIsOrdering(false);
+  //   }
+  // };
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -239,6 +358,28 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     );
+  const weekDays = [
+    { label: "Mon", value: "monday" },
+    { label: "Tue", value: "tuesday" },
+    { label: "Wed", value: "wednesday" },
+    { label: "Thu", value: "thursday" },
+    { label: "Fri", value: "friday" },
+    { label: "Sat", value: "saturday" },
+    { label: "Sun", value: "sunday" },
+  ];
+
+  const toggleDay = (day: string) => {
+    setSelectedDays((prev) => {
+      const updated = prev.includes(day)
+        ? prev.filter((d) => d !== day)
+        : [...prev, day];
+      setOrderData((prevOrder) => ({
+        ...prevOrder,
+        dates: updated.join(","),
+      }));
+      return updated;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
@@ -451,7 +592,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                       {cart.map((m) => (
                         <div
                           key={m._id}
-                          className="flex justify-between items-center border-b py-2"
+                          className="flex justify-between items-center py-2"
                         >
                           <span>{m.name}</span>
                           <div className="flex items-center gap-2">
@@ -473,12 +614,230 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                           </div>
                         </div>
                       ))}
-                      <div className="flex justify-between font-bold mt-4">
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium">
+                            Delivery Address
+                          </label>
+                          <div className="mt-1 space-y-2">
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Enter your delivery address"
+                                value={orderData.deliveryAddress}
+                                onChange={(e) =>
+                                  setOrderData((prev) => ({
+                                    ...prev,
+                                    deliveryAddress: e.target.value,
+                                  }))
+                                }
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() =>
+                                  router.push(
+                                    `/map-selector?returnUrl=${encodeURIComponent(
+                                      window.location.pathname
+                                    )}`
+                                  )
+                                }
+                                className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
+                              >
+                                <MapPin className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              Click the map icon to select location on map
+                            </p>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Delivery Period</Label>
+                          <Select
+                            value={orderData.deliveryPeriod}
+                            onValueChange={(
+                              value: "month" | "specific_days" | "custom_dates"
+                            ) =>
+                              setOrderData((prev) => ({
+                                ...prev,
+                                deliveryPeriod: value,
+                                dates: "",
+                                recurring: undefined,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select period" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="month">Monthly</SelectItem>
+                              <SelectItem value="specific_days">
+                                Specific Days
+                              </SelectItem>
+                              <SelectItem value="custom_dates">
+                                Custom Dates
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* For specific days (week selection + recurrence) */}
+                        {orderData.deliveryPeriod === "specific_days" && (
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Recurring Every (weeks)</Label>
+                              <Input
+                                type="number"
+                                placeholder="e.g. 1 for every week"
+                                value={orderData.recurring ?? ""}
+                                onChange={(e) =>
+                                  setOrderData((prev) => ({
+                                    ...prev,
+                                    recurring: Number(e.target.value),
+                                  }))
+                                }
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Select Days of the Week</Label>
+                              <div className="grid grid-cols-4 gap-2">
+                                {weekDays.map((day) => (
+                                  <Button
+                                    key={day.value}
+                                    type="button"
+                                    variant={
+                                      selectedDays.includes(day.value)
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    className={clsx(
+                                      "text-sm",
+                                      selectedDays.includes(day.value) &&
+                                        "bg-primary text-white"
+                                    )}
+                                    onClick={() => toggleDay(day.value)}
+                                  >
+                                    {day.label}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* For custom multiple dates */}
+                        {orderData.deliveryPeriod === "custom_dates" && (
+                          <div className="space-y-2">
+                            <Label>Select Custom Dates</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-start"
+                                >
+                                  {multiDates.length > 0
+                                    ? `${multiDates.length} date(s) selected`
+                                    : "Select Dates"}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0">
+                                <Calendar
+                                  mode="multiple"
+                                  selected={multiDates}
+                                  onSelect={(days) => {
+                                    setMultiDates(days || []);
+                                    setOrderData((prev) => ({
+                                      ...prev,
+                                      dates: (days || [])
+                                        .map((d) => format(d, "yyyy-MM-dd"))
+                                        .join(","),
+                                    }));
+                                  }}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="text-sm font-medium">
+                            Time Slot & Delivery Date
+                          </label>
+                          <div className="mt-1 space-y-2">
+                            <Select
+                              value={orderData.timeSlot} // use timeSlot directly
+                              onValueChange={(value) =>
+                                setOrderData((prev) => ({
+                                  ...prev,
+                                  timeSlot: value,
+                                }))
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select time slot" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="breakfast">
+                                  Breakfast (6:00 AM - 8:00 AM)
+                                </SelectItem>
+                                <SelectItem value="lunch">
+                                  Lunch (1:00 PM - 3:00 PM)
+                                </SelectItem>
+                                <SelectItem value="dinner">
+                                  Dinner (9:00 PM - 11:00 PM)
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {/* <Input
+                              type="date"
+                              value={orderData.deliveryDate}
+                              onChange={(e) =>
+                                setOrderData((prev) => ({
+                                  ...prev,
+                                  deliveryDate: e.target.value,
+                                }))
+                              }
+                              min={new Date().toISOString().slice(0, 10)}
+                            /> */}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium">
+                            Special Instructions (Optional)
+                          </label>
+                          <Textarea
+                            placeholder="Any special requests or notes"
+                            value={orderData.notes}
+                            onChange={(e) =>
+                              setOrderData((prev) => ({
+                                ...prev,
+                                notes: e.target.value,
+                              }))
+                            }
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                      <div className="my-4 border-b w-full"></div>
+                      <div className="flex justify-between font-bold mb-4">
                         <span>Total</span>
                         <span>₹{getCartTotal()}</span>
                       </div>
-                      <Button className="w-full mt-4 bg-orange-500 hover:bg-orange-600">
-                        Proceed to Pay
+                      <Button
+                        onClick={handlePlaceOrder}
+                        disabled={
+                          isOrdering ||
+                          !orderData.deliveryAddress ||
+                          !orderData.deliveryDate
+                        }
+                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                      >
+                        {isOrdering
+                          ? "Processing..."
+                          : `Place Order - ₹${getCartTotal()}`}
                       </Button>
                     </>
                   ) : (
