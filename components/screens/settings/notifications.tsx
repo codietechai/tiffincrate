@@ -20,6 +20,7 @@ const Notifications = ({
   preferences: any;
   handlePreferenceChange: (key: string, value: any) => void;
 }) => {
+  
   return (
     <TabsContent value="notifications" className="space-y-6">
       <Card>

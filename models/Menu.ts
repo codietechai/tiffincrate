@@ -1,44 +1,69 @@
-import mongoose, { model, models } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
-const weeklyMenuSchema = new mongoose.Schema(
-  {
-    monday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    tuesday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    wednesday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    thursday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    friday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    saturday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
-    sunday: {
-      type: mongoose.Types.ObjectId,
-      ref: "MenuItem",
-    },
+export interface IMenuItem {
+  name: string;
+  description?: string;
+  price: number;
+  category: "breakfast" | "lunch" | "dinner";
+  timeSlot: "breakfast" | "lunch" | "dinner";
+  isVegetarian: boolean;
+  isAvailable: boolean;
+  imageUrl?: string;
+}
+
+export interface IMenu extends Document {
+  providerId: mongoose.Types.ObjectId;
+  name: string;
+  description?: string;
+  items: IMenuItem[];
+  validFrom: Date;
+  validTo: Date;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const menuItemSchema = new Schema<IMenuItem>({
+  name: {
+    type: String,
+    required: true,
+    trim: true,
   },
-  { _id: false }
-);
+  description: {
+    type: String,
+    trim: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: ["breakfast", "lunch", "dinner"],
+  },
+  timeSlot: {
+    type: String,
+    required: true,
+    enum: ["breakfast", "lunch", "dinner"],
+  },
+  isVegetarian: {
+    type: Boolean,
+    default: false,
+  },
+  isAvailable: {
+    type: Boolean,
+    default: true,
+  },
+  imageUrl: String,
+});
 
-const menuSchema = new mongoose.Schema(
+const menuSchema = new Schema<IMenu>(
   {
     providerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: Schema.Types.ObjectId,
+      ref: "ServiceProvider",
       required: true,
     },
     name: {
@@ -46,29 +71,30 @@ const menuSchema = new mongoose.Schema(
       required: [true, "Menu name is required"],
       trim: true,
     },
-    description: { type: String, trim: true },
-    category: {
+    description: {
       type: String,
+      trim: true,
+    },
+    items: [menuItemSchema],
+    validFrom: {
+      type: Date,
       required: true,
-      enum: ["breakfast", "lunch", "dinner"],
+      default: Date.now,
     },
-    weeklyItems: weeklyMenuSchema,
-    basePrice: { type: Number, required: true, min: 0 },
-    monthlyPlanPrice: { type: Number },
-    imageUrl: [String],
-    isAvailable: { type: Boolean, default: true },
-    isVegetarian: { type: Boolean, default: true },
-    isActive: { type: Boolean, default: true },
-    weekType: {
-      type: String,
-      default: "whole",
-      enum: ["whole", "weekdays", "weekends"],
+    validTo: {
+      type: Date,
+      required: true,
     },
-    rating: { type: Number, min: 0, max: 5, default: 0 },
-    draft: { type: Boolean, default: false },
-    userRatingCount: { type: Number, default: 0 },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );
 
-export default models.Menu || model("Menu", menuSchema);
+// ✅ Explicitly define model type to prevent “too complex to represent” error
+const Menu: Model<IMenu> =
+  mongoose.models.Menu || mongoose.model<IMenu>("Menu", menuSchema);
+
+export default Menu;
