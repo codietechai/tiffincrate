@@ -1,18 +1,18 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IMenuItem {
   name: string;
   description?: string;
   price: number;
-  category: string;
+  category: "breakfast" | "lunch" | "dinner";
+  timeSlot: "breakfast" | "lunch" | "dinner";
   isVegetarian: boolean;
   isAvailable: boolean;
   imageUrl?: string;
 }
 
-export interface IMenu extends mongoose.Document {
-  _id: string;
-  providerId: string;
+export interface IMenu extends Document {
+  providerId: mongoose.Types.ObjectId;
   name: string;
   description?: string;
   items: IMenuItem[];
@@ -23,7 +23,7 @@ export interface IMenu extends mongoose.Document {
   updatedAt: Date;
 }
 
-const menuItemSchema = new mongoose.Schema({
+const menuItemSchema = new Schema<IMenuItem>({
   name: {
     type: String,
     required: true,
@@ -56,15 +56,13 @@ const menuItemSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  imageUrl: {
-    type: String,
-  },
+  imageUrl: String,
 });
 
-const menuSchema = new mongoose.Schema(
+const menuSchema = new Schema<IMenu>(
   {
     providerId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "ServiceProvider",
       required: true,
     },
@@ -92,10 +90,11 @@ const menuSchema = new mongoose.Schema(
       default: true,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export default mongoose.models.Menu ||
-  mongoose.model<IMenu>("Menu", menuSchema);
+// ✅ Explicitly define model type to prevent “too complex to represent” error
+const Menu: Model<IMenu> =
+  mongoose.models.Menu || mongoose.model<IMenu>("Menu", menuSchema);
+
+export default Menu;
