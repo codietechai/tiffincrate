@@ -64,8 +64,8 @@ export default function ProviderMenuPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const router = useRouter();
 
   useEffect(() => {
@@ -135,14 +135,19 @@ export default function ProviderMenuPage() {
         );
 
       const statusMatch =
-        !statusFilter ||
+        statusFilter === "all" ||
         (statusFilter === "active" && menu.isActive) ||
         (statusFilter === "inactive" && !menu.isActive);
 
-      const categoryMatch = !categoryFilter || menu.category === categoryFilter;
+      const categoryMatch =
+        categoryFilter === "all" || menu.category === categoryFilter;
 
       return searchMatch && statusMatch && categoryMatch;
     });
+
+  const getActiveMenus = () => {
+    return menus.filter((item) => item.isActive === true).length;
+  };
 
   if (loading) return <LoadingPage />;
 
@@ -162,6 +167,35 @@ export default function ProviderMenuPage() {
               Add Menu
             </Link>
           </Button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Menus</p>
+                  <p className="text-2xl font-bold">{menus.length}</p>
+                </div>
+                <div className="text-blue-500">📋</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Active Menus</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {getActiveMenus()}
+                  </p>
+                </div>
+                <div className="text-green-500">✅</div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filters */}
@@ -207,8 +241,8 @@ export default function ProviderMenuPage() {
               variant="outline"
               onClick={() => {
                 setSearchTerm("");
-                setCategoryFilter("");
-                setStatusFilter("");
+                setCategoryFilter("all");
+                setStatusFilter("all");
               }}
             >
               Clear Filters
@@ -295,13 +329,25 @@ export default function ProviderMenuPage() {
             ))
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600">No menus found</p>
-              <Button asChild className="mt-4">
-                <Link href="/dashboard/provider/menu/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Menu
-                </Link>
-              </Button>
+              <div className="text-6xl mb-4">📋</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm || categoryFilter || statusFilter
+                  ? "No menus found"
+                  : "No menus created yet"}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm || categoryFilter || statusFilter
+                  ? "Try adjusting your filters"
+                  : "Create your first menu to start offering your tiffin services"}
+              </p>
+              {!searchTerm && !categoryFilter && !statusFilter && (
+                <Button asChild>
+                  <Link href="/dashboard/provider/menu/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Your First Menu
+                  </Link>
+                </Button>
+              )}
             </div>
           )}
         </div>
