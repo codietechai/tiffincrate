@@ -1,42 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectMongoDB } from "@/lib/mongodb";
-import Menu from "@/models/Menu";
 import { Types } from "mongoose";
-
-import User from "@/models/User";
+import Menu from "@/models/Menu";
 import ServiceProvider from "@/models/ServiceProvider";
+import { connectMongoDB } from "@/lib/mongodb";
+import MenuItem from "@/models/MenuItem";
 
 export async function GET(request: NextRequest) {
   try {
-    await connectMongoDB();
+    const role = request.headers.get("x-user-role");
 
+    await connectMongoDB();
     const { searchParams } = new URL(request.url);
     const providerId = searchParams.get("providerId");
     const category = searchParams.get("category");
-    const query: any = { isActive: true };
-
+    let query: any = {};
+    if (role === "consumer") {
+      query = {
+        isActive: true,
+      };
+    }
     if (providerId) {
       const serviceProvider = await ServiceProvider.findById(providerId);
+      if (!serviceProvider) {
+        return NextResponse.json(
+          { error: "Provider not found" },
+          { status: 404 }
+        );
+      }
       query.providerId = new Types.ObjectId(serviceProvider.userId);
     }
-
+    if (category) query.category = category;
     const menus = await Menu.find(query)
       .populate("providerId", "businessName")
+      .populate({
+        path: "weeklyItems.monday weeklyItems.tuesday weeklyItems.wednesday weeklyItems.thursday weeklyItems.friday weeklyItems.saturday weeklyItems.sunday",
+        model: "MenuItem",
+      })
       .sort({ createdAt: -1 });
-
-    let responseMenus;
-    if (category) {
-      responseMenus = menus
-        .map((menu) => ({
-          ...menu.toObject(),
-          items: menu.items.filter((item: any) => item.category === category),
-        }))
-        .filter((menu) => menu.items.length > 0);
-    } else {
-      responseMenus = menus.map((menu) => menu.toObject());
-    }
-
-    return NextResponse.json({ menus: responseMenus });
+    return NextResponse.json({ menus });
   } catch (error) {
     console.error("Get menus error:", error);
     return NextResponse.json(
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
+
     if (role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -57,12 +59,22 @@ export async function POST(request: NextRequest) {
     await connectMongoDB();
     const menuData = await request.json();
 
-    const menu = new Menu({
+    const weekDays = Object.keys(menuData.weeklyItems);
+    const weeklyItems: any = {};
+
+    for (const day of weekDays) {
+      const itemData = menuData.weeklyItems[day];
+      if (itemData?.name) {
+        const menuItem = await MenuItem.create(itemData);
+        weeklyItems[day] = menuItem._id;
+      }
+    }
+
+    const menu = await Menu.create({
       ...menuData,
+      weeklyItems,
       providerId: userId,
     });
-
-    await menu.save();
 
     return NextResponse.json(
       { message: "Menu created successfully", menu },
