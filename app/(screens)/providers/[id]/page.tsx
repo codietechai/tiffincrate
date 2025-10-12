@@ -46,28 +46,32 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import clsx from "clsx";
 
-interface MenuItem {
-  _id: string;
+interface TMenuItem {
+  _id?: string;
   name: string;
   description?: string;
 }
 
-interface WeeklyMenu {
-  monday?: MenuItem;
-  tuesday?: MenuItem;
-  wednesday?: MenuItem;
-  thursday?: MenuItem;
-  friday?: MenuItem;
-  saturday?: MenuItem;
-  sunday?: MenuItem;
+export interface TWeeklyMenu {
+  monday?: TMenuItem;
+  tuesday?: TMenuItem;
+  wednesday?: TMenuItem;
+  thursday?: TMenuItem;
+  friday?: TMenuItem;
+  saturday?: TMenuItem;
+  sunday?: TMenuItem;
 }
 
-interface Menu {
+export interface TMenu {
   _id: string;
   name: string;
+  providerId?: {
+    _id: string;
+    businessName: string;
+  };
   description?: string;
   category: "breakfast" | "lunch" | "dinner";
-  weeklyItems: WeeklyMenu;
+  weeklyItems: TWeeklyMenu;
   basePrice: number;
   monthlyPlanPrice?: number;
   imageUrl?: string[];
@@ -76,9 +80,11 @@ interface Menu {
   isActive: boolean;
   weekType: "whole" | "weekdays" | "weekends";
   rating: number;
+  draft?: boolean;
+  userRatingCount?: number;
 }
 
-interface ServiceProvider {
+interface TServiceProvider {
   _id: string;
   businessName: string;
   description: string;
@@ -91,13 +97,13 @@ interface ServiceProvider {
   userId: { name: string; email: string; phone?: string };
 }
 
-interface CartItem extends Menu {
+interface CartItem extends TMenu {
   quantity: number;
 }
 
 export default function ProviderPage({ params }: { params: { id: string } }) {
-  const [provider, setProvider] = useState<ServiceProvider | null>(null);
-  const [menus, setMenus] = useState<Menu[]>([]);
+  const [provider, setProvider] = useState<TServiceProvider | null>(null);
+  const [menus, setMenus] = useState<TMenu[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -205,7 +211,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const addToCart = (menu: Menu) => {
+  const addToCart = (menu: TMenu) => {
     setCart((prev) => {
       const existing = prev.find((m) => m._id === menu._id);
       if (existing)
@@ -413,7 +419,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
           <div className="lg:col-span-2">
             <Tabs defaultValue="menu">
               <TabsList>
-                <TabsTrigger value="menu">Menu</TabsTrigger>
+                <TabsTrigger value="menu">TMenu</TabsTrigger>
                 <TabsTrigger value="reviews">Reviews</TabsTrigger>
                 <TabsTrigger value="info">Info</TabsTrigger>
               </TabsList>

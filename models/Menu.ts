@@ -45,7 +45,11 @@ const weeklyMenuSchema = new Schema<IWeeklyMenu>(
 
 const menuSchema = new Schema<IMenu>(
   {
-    providerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    providerId: {
+      type: Schema.Types.ObjectId,
+      ref: "ServiceProvider",
+      required: true,
+    },
     name: {
       type: String,
       required: [true, "Menu name is required"],

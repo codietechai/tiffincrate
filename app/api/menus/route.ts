@@ -13,12 +13,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const providerId = searchParams.get("providerId");
     const category = searchParams.get("category");
-    let query: any = {};
+    let query: any = { isAvailable: true };
     if (role === "consumer") {
       query = {
         isActive: true,
       };
     }
+    console.log("providerId", providerId);
     if (providerId) {
       const serviceProvider = await ServiceProvider.findById(providerId);
       if (!serviceProvider) {
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
           { status: 404 }
         );
       }
-      query.providerId = new Types.ObjectId(serviceProvider.userId);
+      query.providerId = new Types.ObjectId(serviceProvider._id);
     }
     if (category) query.category = category;
     const menus = await Menu.find(query)
@@ -58,7 +59,6 @@ export async function POST(request: NextRequest) {
 
     await connectMongoDB();
     const menuData = await request.json();
-
     const weekDays = Object.keys(menuData.weeklyItems);
     const weeklyItems: any = {};
 
@@ -70,10 +70,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const provider = await ServiceProvider.findOne({ userId });
+
     const menu = await Menu.create({
       ...menuData,
       weeklyItems,
-      providerId: userId,
+      providerId: provider._id,
     });
 
     return NextResponse.json(

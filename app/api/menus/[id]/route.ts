@@ -19,35 +19,10 @@ export async function GET(
 ) {
   try {
     await connectMongoDB();
-    console.log("params", params);
 
     const menu = await Menu.findById(params.id)
       .populate({
-        path: "weeklyItems.monday",
-        model: "MenuItem",
-      })
-      .populate({
-        path: "weeklyItems.tuesday",
-        model: "MenuItem",
-      })
-      .populate({
-        path: "weeklyItems.wednesday",
-        model: "MenuItem",
-      })
-      .populate({
-        path: "weeklyItems.thursday",
-        model: "MenuItem",
-      })
-      .populate({
-        path: "weeklyItems.friday",
-        model: "MenuItem",
-      })
-      .populate({
-        path: "weeklyItems.saturday",
-        model: "MenuItem",
-      })
-      .populate({
-        path: "weeklyItems.sunday",
+        path: "weeklyItems.monday weeklyItems.tuesday weeklyItems.wednesday weeklyItems.thursday weeklyItems.friday weeklyItems.saturday weeklyItems.sunday",
         model: "MenuItem",
       })
       .populate("providerId", "businessName");
