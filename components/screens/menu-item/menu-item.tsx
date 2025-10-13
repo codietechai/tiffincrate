@@ -3,7 +3,7 @@ import React from "react";
 import { MenuItemDetail } from "./menu-item-detail";
 import { FloatingCartButton } from "./floating-cart-button";
 
-const MenuItem = () => {
+const MenuItem = ({ params }: { params: { id: string } }) => {
   const addToCart = (item: any) => {
     // setCartItems((items) => {
     //   const existingItem = items.find((i) => i.id === item.id);
@@ -65,7 +65,6 @@ const MenuItem = () => {
   return (
     <>
       <MenuItemDetail onAddToCart={addToCart} />
-      <FloatingCartButton itemCount={2} totalAmount={100} />
     </>
   );
 };

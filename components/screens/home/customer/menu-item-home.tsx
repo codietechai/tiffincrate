@@ -7,10 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { TMenu } from "@/app/(screens)/providers/[id]/page";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const MenuItemHome = ({ menu }: { menu: TMenu }) => {
   const pathname = usePathname();
+  const router=useRouter()
   return (
     <Card
       key={menu._id}
@@ -70,7 +71,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
               </div>
             </div>
 
-            <Button size="sm" className="bg-primary text-primary-foreground">
+            <Button size="sm" className="bg-primary text-primary-foreground" onClick={()=>router.push(`/new-menu-item/${menu._id}`)}>
               View Details
             </Button>
           </div>

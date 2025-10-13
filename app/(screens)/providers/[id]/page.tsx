@@ -62,7 +62,7 @@ export interface TWeeklyMenu {
   sunday?: TMenuItem;
 }
 
-export interface TMenu {
+export interface Menu {
   _id: string;
   name: string;
   providerId?: {
@@ -84,7 +84,7 @@ export interface TMenu {
   userRatingCount?: number;
 }
 
-interface TServiceProvider {
+export interface TServiceProvider {
   _id: string;
   businessName: string;
   description: string;
@@ -97,13 +97,13 @@ interface TServiceProvider {
   userId: { name: string; email: string; phone?: string };
 }
 
-interface CartItem extends TMenu {
+export interface CartItem extends Menu {
   quantity: number;
 }
 
 export default function ProviderPage({ params }: { params: { id: string } }) {
   const [provider, setProvider] = useState<TServiceProvider | null>(null);
-  const [menus, setMenus] = useState<TMenu[]>([]);
+  const [menus, setMenus] = useState<Menu[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,7 +211,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const addToCart = (menu: TMenu) => {
+  const addToCart = (menu: Menu) => {
     setCart((prev) => {
       const existing = prev.find((m) => m._id === menu._id);
       if (existing)
@@ -399,7 +399,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
               {provider.businessName}
               {provider.isVerified && <Badge>Verified</Badge>}
             </CardTitle>
-            <CardDescription>by {provider.userId.name}</CardDescription>
+            <CardDescription>by {provider?.userId?.name}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="mb-4 text-gray-600">{provider.description}</p>
@@ -568,11 +568,11 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                   <CardContent>
                     <div className="space-y-2">
                       <div className="flex gap-2 items-center">
-                        <Mail className="h-4 w-4" /> {provider.userId.email}
+                        <Mail className="h-4 w-4" /> {provider.userId?.email}
                       </div>
-                      {provider.userId.phone && (
+                      {provider.userId?.phone && (
                         <div className="flex gap-2 items-center">
-                          <Phone className="h-4 w-4" /> {provider.userId.phone}
+                          <Phone className="h-4 w-4" /> {provider.userId?.phone}
                         </div>
                       )}
                     </div>
