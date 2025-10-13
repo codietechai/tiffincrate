@@ -1,3 +1,5 @@
+"use client";
+
 import { Dispatch, SetStateAction, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -24,8 +26,8 @@ import { THelpRequest } from "@/types";
 import { IUser } from "@/models/User";
 
 interface RequestCardProps {
-  request: THelpRequest; // replace with your Request type
-  user: IUser; // replace with your User type
+  request: THelpRequest;
+  user: IUser;
   updateStatus: (id: string, status: string) => void;
   addResponse: (id: string, message: string) => void;
   getStatusColor: (status: string) => string;
@@ -47,20 +49,23 @@ export default function RequestCard({
   setResponse,
 }: RequestCardProps) {
   const [open, setOpen] = useState(false);
+
   return (
     <Card
       key={request._id}
       className="cursor-pointer hover:shadow-md transition-shadow"
     >
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           {/* LEFT SIDE */}
-          <div className="flex-1">
-            {/* Title + badges */}
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-semibold">{request.subject}</h3>
+          <div className="flex-1 w-full">
+            {/* Title & Badges */}
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h3 className="font-semibold text-base sm:text-lg">
+                {request.subject}
+              </h3>
               <Badge className={getStatusColor(request.status)}>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 text-xs sm:text-sm">
                   {getStatusIcon(request.status)}
                   {request.status.replace("_", " ")}
                 </div>
@@ -72,10 +77,12 @@ export default function RequestCard({
             </div>
 
             {/* Message preview */}
-            <p className="text-gray-600 mb-3 line-clamp-2">{request.message}</p>
+            <p className="text-gray-600 mb-3 text-sm line-clamp-2">
+              {request.message}
+            </p>
 
             {/* Meta info */}
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500">
               <span>
                 From: {request.fromUserId.name} ({request.fromUserId.role})
               </span>
@@ -84,17 +91,15 @@ export default function RequestCard({
                   To: {request.toUserId.name} ({request.toUserId.role})
                 </span>
               )}
-              <span>•</span>
-              <span>{new Date(request.createdAt).toLocaleDateString()}</span>
-              <span>•</span>
-              <span>{request.responses.length} responses</span>
+              <span>• {new Date(request.createdAt).toLocaleDateString()}</span>
+              <span>• {request.responses.length} responses</span>
             </div>
           </div>
 
-          {/* RIGHT SIDE (controls + dialog) */}
-          <div className="flex items-center gap-2 ml-4">
+          {/* RIGHT SIDE */}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             {user &&
-              (user?.role === "admin" ||
+              (user.role === "admin" ||
                 request.toUserId?._id.toString() === user._id) &&
               request.status !== "resolved" &&
               request.status !== "closed" && (
@@ -102,8 +107,8 @@ export default function RequestCard({
                   value={request.status}
                   onValueChange={(value) => updateStatus(request._id, value)}
                 >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
+                  <SelectTrigger className="w-full sm:w-32 text-sm">
+                    <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="open">Open</SelectItem>
@@ -120,20 +125,22 @@ export default function RequestCard({
                   variant="outline"
                   size="sm"
                   onClick={() => setOpen(true)}
+                  className="w-full sm:w-auto"
                 >
                   <MessageCircle className="mr-2 h-4 w-4" />
                   View
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+
+              <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
+                  <DialogTitle className="flex flex-wrap items-center gap-2">
                     {request.subject}
                     <Badge className={getStatusColor(request.status)}>
                       {request.status.replace("_", " ")}
                     </Badge>
                   </DialogTitle>
-                  <DialogDescription>
+                  <DialogDescription className="text-sm text-gray-500">
                     Request #{request._id.slice(-8)} • {request.category}
                   </DialogDescription>
                 </DialogHeader>
@@ -141,24 +148,27 @@ export default function RequestCard({
                 <div className="space-y-6">
                   {/* Original message */}
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
                       <span className="font-medium">
                         {request.fromUserId.name}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs sm:text-sm text-gray-500">
                         {new Date(request.createdAt).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-gray-700">{request.message}</p>
+                    <p className="text-gray-700 text-sm">{request.message}</p>
                   </div>
 
                   {/* Responses */}
                   {request.responses.length > 0 && (
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Responses</h4>
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-base">Responses</h4>
                       {request.responses.map((resp: any, index: number) => (
-                        <div key={index} className="bg-blue-50 p-4 rounded-lg">
-                          <div className="flex justify-between items-start mb-2">
+                        <div
+                          key={index}
+                          className="bg-blue-50 p-3 rounded-lg text-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-1">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">
                                 {resp.userId.name}
@@ -169,7 +179,7 @@ export default function RequestCard({
                                 </Badge>
                               )}
                             </div>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-xs text-gray-500">
                               {new Date(resp.timestamp).toLocaleString()}
                             </span>
                           </div>
@@ -197,6 +207,7 @@ export default function RequestCard({
                             setResponse("");
                           }}
                           disabled={!response.trim()}
+                          className="w-full sm:w-auto"
                         >
                           <Send className="mr-2 h-4 w-4" />
                           Send Response

@@ -11,7 +11,7 @@ const LocationHeader = ({ isSticky }: { isSticky: boolean }) => {
       <div className="flex justify-between">
         <div>
           <div className="flex gap-2 items-center">
-            <NavigationIcon className="h-4 w-4 fill-[#ff1f01] text-[#ff1f01]" />
+            <NavigationIcon className="h-4 w-4 fill-primary text-primary" />
             <span className="font-extrabold">My Home</span>
             <ChevronDown className="h-4 w-4" />
           </div>
@@ -20,8 +20,8 @@ const LocationHeader = ({ isSticky }: { isSticky: boolean }) => {
           </div>
         </div>
         <div className="flex gap-3 items-center">
-          <Bell className="text-[#ff1f01]" size={20} />
-          <Settings className="text-[#ff1f01]" size={20} />
+          <Bell className="text-primary" size={20} />
+          <Settings className="text-primary" size={20} />
         </div>
       </div>
     </div>

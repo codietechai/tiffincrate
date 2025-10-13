@@ -30,16 +30,14 @@ export async function GET(request: NextRequest) {
         };
       }
     } else {
-      console.log("firstsssss");
       query = {
         $or: [{ fromUserId: userId }, { toUserId: userId }],
       };
     }
 
-    // if (status) query.status = status;
-    // if (type && type !== "all") query.type = type;
-    // if (priority) query.priority = priority;
-    console.log("userId", userId);
+    if (status && status !== "all") query.status = status;
+    if (type && type !== "all") query.type = type;
+    if (priority) query.priority = priority;
     const helpRequests = await HelpRequest.find(query)
       .populate("fromUserId", "name email role")
       .populate("toUserId", "name email role")

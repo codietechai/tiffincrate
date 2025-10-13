@@ -65,6 +65,7 @@ export default function HelpRequestsPage() {
   useEffect(() => {
     checkAuth();
     fetchHelpRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, typeFilter]);
 
   const checkAuth = async () => {
@@ -86,7 +87,7 @@ export default function HelpRequestsPage() {
     try {
       const params = new URLSearchParams();
       if (statusFilter) params.append("status", statusFilter);
-      if (typeFilter) params.append("type", typeFilter);
+      if (typeFilter && typeFilter !== "all") params.append("type", typeFilter);
       params.append("limit", "20");
 
       const response = await fetch(`/api/help-requests?${params}`);
@@ -114,6 +115,7 @@ export default function HelpRequestsPage() {
     if (newRequest.type === "consumer_to_provider") {
       fetchProviders();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newRequest.type]);
 
   const createHelpRequest = async (e: React.FormEvent) => {
@@ -261,48 +263,56 @@ export default function HelpRequestsPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Help Requests</h1>
-            <p className="text-gray-600">
+      <div className="mx-auto max-w-xl px-4 py-4">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex-1">
+            <h1 className="text-xl font-semibold text-gray-900">
+              Help Requests
+            </h1>
+            <p className="text-xs text-gray-500 mt-1">
               Manage support requests and communications
             </p>
           </div>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Request
+              <Button className="bg-primary text-white rounded-full px-3 py-2 shadow-md flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                <span className="text-sm">New</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+
+            <DialogContent className="max-w-lg rounded-2xl p-4 sm:p-6">
               <DialogHeader>
-                <DialogTitle>Create Help Request</DialogTitle>
-                <DialogDescription>
-                  Submit a new help request for support or assistance
+                <DialogTitle className="text-lg font-medium text-gray-800">
+                  Create Help Request
+                </DialogTitle>
+                <DialogDescription className="text-sm text-gray-500">
+                  Submit a new help request for assistance
                 </DialogDescription>
               </DialogHeader>
 
-              <form onSubmit={createHelpRequest} className="space-y-4">
+              <form onSubmit={createHelpRequest} className="mt-3 space-y-4">
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Request Type</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="type" className="text-xs">
+                      Request Type
+                    </Label>
                     <Select
                       value={newRequest.type}
                       onValueChange={(value) =>
                         setNewRequest((prev) => ({ ...prev, type: value }))
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue />
+                      <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
+                        <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin_support">
@@ -324,8 +334,8 @@ export default function HelpRequestsPage() {
 
                   {providers.length > 0 &&
                     newRequest.type === "consumer_to_provider" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="type">Select Provider</Label>
+                      <div>
+                        <Label className="text-xs">Provider</Label>
                         <Select
                           value={newRequest.toUserId}
                           onValueChange={(value) =>
@@ -335,12 +345,15 @@ export default function HelpRequestsPage() {
                             }))
                           }
                         >
-                          <SelectTrigger placeholder="Select Provider">
-                            <SelectValue />
+                          <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
+                            <SelectValue placeholder="Select provider" />
                           </SelectTrigger>
                           <SelectContent>
                             {providers.map((item) => (
-                              <SelectItem value={(item.userId as any)._id}>
+                              <SelectItem
+                                key={(item.userId as any)?._id}
+                                value={(item.userId as any)?._id}
+                              >
                                 {item.businessName}
                               </SelectItem>
                             ))}
@@ -349,16 +362,16 @@ export default function HelpRequestsPage() {
                       </div>
                     )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="priority">Priority</Label>
+                  <div>
+                    <Label className="text-xs">Priority</Label>
                     <Select
                       value={newRequest.priority}
                       onValueChange={(value) =>
                         setNewRequest((prev) => ({ ...prev, priority: value }))
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue />
+                      <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
+                        <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="low">Low</SelectItem>
@@ -370,16 +383,16 @@ export default function HelpRequestsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
+                <div>
+                  <Label className="text-xs">Category</Label>
                   <Select
                     value={newRequest.category}
                     onValueChange={(value) =>
                       setNewRequest((prev) => ({ ...prev, category: value }))
                     }
                   >
-                    <SelectTrigger>
-                      <SelectValue />
+                    <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
+                      <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="general">General</SelectItem>
@@ -391,11 +404,11 @@ export default function HelpRequestsPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
+                <div>
+                  <Label className="text-xs">Subject</Label>
                   <Input
                     id="subject"
-                    placeholder="Brief description of your issue"
+                    placeholder="Brief description"
                     value={newRequest.subject}
                     onChange={(e) =>
                       setNewRequest((prev) => ({
@@ -404,14 +417,15 @@ export default function HelpRequestsPage() {
                       }))
                     }
                     required
+                    className="mt-1 rounded-lg border border-gray-200"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
+                <div>
+                  <Label className="text-xs">Message</Label>
                   <Textarea
                     id="message"
-                    placeholder="Detailed description of your issue or request"
+                    placeholder="Detailed description"
                     value={newRequest.message}
                     onChange={(e) =>
                       setNewRequest((prev) => ({
@@ -421,10 +435,11 @@ export default function HelpRequestsPage() {
                     }
                     rows={4}
                     required
+                    className="mt-1 rounded-lg border border-gray-200"
                   />
                 </div>
 
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -432,7 +447,7 @@ export default function HelpRequestsPage() {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Create Request</Button>
+                  <Button type="submit">Create</Button>
                 </div>
               </form>
             </DialogContent>
@@ -440,25 +455,39 @@ export default function HelpRequestsPage() {
         </div>
 
         {success && (
-          <Alert className="mb-6">
-            <AlertDescription className="text-green-600">
-              {success}
-            </AlertDescription>
+          <Alert className="mb-3 border border-green-200 bg-green-50 text-green-700">
+            <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
 
-        <Tabs defaultValue="all" className="space-y-6">
-          <div className="flex justify-between items-center">
+        {/* Tabs */}
+        <div className="mb-3">
+          <Tabs defaultValue="all">
             <TabsList>
-              <TabsTrigger value="all">All Requests</TabsTrigger>
-              <TabsTrigger value="open">Open</TabsTrigger>
-              <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-              <TabsTrigger value="resolved">Resolved</TabsTrigger>
+              <TabsTrigger value="all" onClick={() => setStatusFilter("all")}>
+                All
+              </TabsTrigger>
+              <TabsTrigger value="open" onClick={() => setStatusFilter("open")}>
+                Open
+              </TabsTrigger>
+              <TabsTrigger
+                value="in_progress"
+                onClick={() => setStatusFilter("in_progress")}
+              >
+                In Progress
+              </TabsTrigger>
+              <TabsTrigger
+                value="resolved"
+                onClick={() => setStatusFilter("resolved")}
+              >
+                Resolved
+              </TabsTrigger>
             </TabsList>
 
-            <div className="flex gap-2">
+            {/* Filter select */}
+            <div className="flex justify-end my-3">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-40 rounded-full border border-gray-200 text-sm">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
@@ -468,95 +497,40 @@ export default function HelpRequestsPage() {
                     Provider Support
                   </SelectItem>
                   <SelectItem value="consumer_to_provider">
-                    Consumer to Provider
+                    To Provider
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <TabsContent value="all" className="space-y-4">
-            {helpRequests.length > 0 ? (
-              helpRequests.map((request) => (
-                <RequestCard
-                  response={response}
-                  setResponse={setResponse}
-                  request={request}
-                  user={user}
-                  updateStatus={updateStatus}
-                  addResponse={addResponse}
-                  getStatusColor={getStatusColor}
-                  getStatusIcon={getStatusIcon}
-                  getPriorityColor={getPriorityColor}
-                />
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No help requests found
-                </h3>
-                <p className="text-gray-600">
-                  Create a new help request to get started
-                </p>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="open" className="space-y-4">
-            {helpRequests
-              .filter((req) => req.status === "open")
-              .map((request) => (
-                <RequestCard
-                  response={response}
-                  setResponse={setResponse}
-                  request={request}
-                  user={user}
-                  updateStatus={updateStatus}
-                  addResponse={addResponse}
-                  getStatusColor={getStatusColor}
-                  getStatusIcon={getStatusIcon}
-                  getPriorityColor={getPriorityColor}
-                />
-              ))}
-          </TabsContent>
-
-          <TabsContent value="in_progress" className="space-y-4">
-            {helpRequests
-              .filter((req) => req.status === "in_progress")
-              .map((request) => (
-                <RequestCard
-                  response={response}
-                  setResponse={setResponse}
-                  request={request}
-                  user={user}
-                  updateStatus={updateStatus}
-                  addResponse={addResponse}
-                  getStatusColor={getStatusColor}
-                  getStatusIcon={getStatusIcon}
-                  getPriorityColor={getPriorityColor}
-                />
-              ))}
-          </TabsContent>
-
-          <TabsContent value="resolved" className="space-y-4">
-            {helpRequests
-              .filter((req) => req.status === "resolved")
-              .map((request) => (
-                <RequestCard
-                  response={response}
-                  setResponse={setResponse}
-                  request={request}
-                  user={user}
-                  updateStatus={updateStatus}
-                  addResponse={addResponse}
-                  getStatusColor={getStatusColor}
-                  getStatusIcon={getStatusIcon}
-                  getPriorityColor={getPriorityColor}
-                />
-              ))}
-          </TabsContent>
-        </Tabs>
+            <div className="space-y-2">
+              {helpRequests.length > 0 ? (
+                helpRequests.map((request) => (
+                  <RequestCard
+                    response={response}
+                    setResponse={setResponse}
+                    request={request}
+                    user={user}
+                    updateStatus={updateStatus}
+                    addResponse={addResponse}
+                    getStatusColor={getStatusColor}
+                    getStatusIcon={getStatusIcon}
+                    getPriorityColor={getPriorityColor}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No help requests found
+                  </h3>
+                  <p className="text-gray-600">
+                    Create a new help request to get started
+                  </p>
+                </div>
+              )}
+            </div>
+          </Tabs>
+        </div>
       </div>
     </div>
   );

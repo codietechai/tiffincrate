@@ -4,7 +4,7 @@ import MenuItemHome from "../home/customer/menu-item-home";
 import { TMenu } from "@/app/(screens)/providers/[id]/page";
 import VegNonVegSwitch from "../home/customer/veg-switch";
 import { IServiceProvider } from "@/models/ServiceProvider";
-import LocationHeader from "../home/customer/location";
+import LocationHeader from "../home/customer/location-header";
 
 const SingleProvider = ({ id }: { id: string }) => {
   const [isSticky, setIsSticky] = useState(false);

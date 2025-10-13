@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import TypewriterText from "./animated-text";
 import SearchDialog from "./search-dialog";
-import LocationHeader from "./location";
+import LocationHeader from "./location-header";
 
 const HomeHeader = () => {
   const [isSticky, setIsSticky] = useState(false);
@@ -41,7 +41,7 @@ const HomeHeader = () => {
         <div className="border-border border-2 rounded-lg relative">
           <Search className="text-[#b7b7b7] absolute top-2 left-3" />
           <div className="h-8 w-[1px] bg-border block absolute top-1 right-[38px]"></div>
-          <Mic className="text-[#ff1f01] absolute top-3 right-3 h-4 w-4" />
+          <Mic className="text-primary absolute top-3 right-3 h-4 w-4" />
           <TypewriterText />
         </div>
       </div>

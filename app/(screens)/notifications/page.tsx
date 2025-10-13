@@ -3,31 +3,31 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import {
   Bell,
   Check,
   CheckCheck,
-  Trash2,
   Package,
   CreditCard,
   CircleAlert as AlertCircle,
   Gift,
   MessageCircle,
   Star,
-  Users,
   Shield,
+  Filter,
+  X,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface Notification {
   _id: string;
@@ -43,10 +43,12 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState<"unread" | "read">("unread");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [filters, setFilters] = useState<string[]>([]);
   const router = useRouter();
 
+  // 🔹 Auth + Fetch
   useEffect(() => {
     checkAuth();
     fetchNotifications();
@@ -67,11 +69,9 @@ export default function NotificationsPage() {
     }
   };
 
-  const fetchNotifications = async (unreadOnly = false) => {
+  const fetchNotifications = async () => {
     try {
-      const response = await fetch(
-        `/api/notifications?unreadOnly=${unreadOnly}`
-      );
+      const response = await fetch(`/api/notifications`);
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications);
@@ -84,25 +84,19 @@ export default function NotificationsPage() {
     }
   };
 
+  // 🔹 Mark notifications as read
   const markAsRead = async (notificationIds: string[]) => {
     try {
       const response = await fetch("/api/notifications", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          notificationIds,
-          markAsRead: true,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationIds, markAsRead: true }),
       });
 
       if (response.ok) {
         setNotifications((prev) =>
-          prev.map((notification) =>
-            notificationIds.includes(notification._id)
-              ? { ...notification, isRead: true }
-              : notification
+          prev.map((n) =>
+            notificationIds.includes(n._id) ? { ...n, isRead: true } : n
           )
         );
         setUnreadCount((prev) => Math.max(0, prev - notificationIds.length));
@@ -116,25 +110,20 @@ export default function NotificationsPage() {
     try {
       const response = await fetch("/api/notifications", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          markAsRead: true,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markAsRead: true }),
       });
 
       if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((notification) => ({ ...notification, isRead: true }))
-        );
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
         setUnreadCount(0);
       }
     } catch (error) {
-      console.error("Error marking all notifications as read:", error);
+      console.error("Error marking all as read:", error);
     }
   };
 
+  // 🔹 Helpers
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "order":
@@ -177,23 +166,41 @@ export default function NotificationsPage() {
     }
   };
 
+  // 🔹 Filtering logic
+  const toggleFilter = (type: string) => {
+    setFilters((prev) =>
+      prev.includes(type) ? prev.filter((f) => f !== type) : [...prev, type]
+    );
+  };
+
+  const removeFilter = (filter: string) => {
+    setFilters((prev) => prev.filter((f) => f !== filter));
+  };
+
   const getFilteredNotifications = () => {
-    if (activeTab === "all") return notifications;
-    if (activeTab === "unread") return notifications.filter((n) => !n.isRead);
-    return notifications.filter((n) => n.type === activeTab);
+    return notifications.filter((n) => {
+      const matchesRead =
+        activeTab === "read"
+          ? n.isRead
+          : activeTab === "unread"
+          ? !n.isRead
+          : true;
+      const matchesFilter = filters.length ? filters.includes(n.type) : true;
+      return matchesRead && matchesFilter;
+    });
   };
 
   if (loading) return <LoadingPage />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
+    <div className="min-h-screen">
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-4 lg:mb-8 flex justify-between items-center flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <Bell className="h-8 w-8" />
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2">
+              <Bell className="h-6 w-6 lg:h-8 lg:w-8" />
               Notifications
               {unreadCount > 0 && (
                 <Badge variant="destructive" className="ml-2">
@@ -201,36 +208,65 @@ export default function NotificationsPage() {
                 </Badge>
               )}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 hidden lg:block">
               Stay updated with your orders and account activity
             </p>
           </div>
 
-          {unreadCount > 0 && (
-            <Button onClick={markAllAsRead} variant="outline">
-              <CheckCheck className="mr-2 h-4 w-4" />
-              Mark All Read
-            </Button>
-          )}
-        </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {["order", "payment", "system", "promotion"].map((type) => (
+                  <DropdownMenuCheckboxItem
+                    key={type}
+                    checked={filters.includes(type)}
+                    onCheckedChange={() => toggleFilter(type)}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-6"
-        >
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="all">All</TabsTrigger>
+            {unreadCount > 0 && (
+              <Button onClick={markAllAsRead} variant="outline">
+                <CheckCheck className="mr-2 h-4 w-4" />
+                Mark All Read
+              </Button>
+            )}
+          </div>
+        </div>
+        {filters.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-5">
+            {filters.map((filter) => (
+              <Badge
+                key={filter}
+                variant="default"
+                className="flex items-center gap-1 text-sm px-4 py-1 rounded-full"
+              >
+                {filter}
+                <X
+                  className="h-3 w-3 cursor-pointer hover:text-destructive transition"
+                  onClick={() => removeFilter(filter)}
+                />
+              </Badge>
+            ))}
+          </div>
+        )}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="unread">
               Unread {unreadCount > 0 && `(${unreadCount})`}
             </TabsTrigger>
-            <TabsTrigger value="order">Orders</TabsTrigger>
-            <TabsTrigger value="payment">Payments</TabsTrigger>
-            <TabsTrigger value="system">System</TabsTrigger>
-            <TabsTrigger value="promotion">Offers</TabsTrigger>
+            <TabsTrigger value="read">Read</TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="space-y-4">
+          <TabsContent value={activeTab} className="space-y-4 mt-4">
             {getFilteredNotifications().length > 0 ? (
               getFilteredNotifications().map((notification) => (
                 <Card
@@ -254,7 +290,7 @@ export default function NotificationsPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
+                          <div>
                             <h3
                               className={`font-medium ${
                                 !notification.isRead
@@ -275,19 +311,13 @@ export default function NotificationsPage() {
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-2 ml-4">
-                            <Badge
-                              className={`${getTypeGradient(
-                                notification.type
-                              )} text-white`}
-                              variant="secondary"
-                            >
-                              {notification.type}
-                            </Badge>
-                            {!notification.isRead && (
-                              <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
-                            )}
-                          </div>
+                          <Badge
+                            className={`${getTypeGradient(
+                              notification.type
+                            )} text-white`}
+                          >
+                            {notification.type}
+                          </Badge>
                         </div>
 
                         <div className="flex items-center justify-between mt-3">
@@ -320,12 +350,10 @@ export default function NotificationsPage() {
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {activeTab === "unread"
                     ? "No unread notifications"
-                    : "No notifications"}
+                    : "No read notifications"}
                 </h3>
                 <p className="text-gray-600">
-                  {activeTab === "unread"
-                    ? "All caught up! Check back later for updates."
-                    : "You'll see notifications about your orders and account here."}
+                  You're all caught up! Check back later for updates.
                 </p>
               </div>
             )}
