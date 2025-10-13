@@ -167,7 +167,33 @@ export function MenuItemDetail({ onAddToCart }: MenuItemDetailProps) {
     document.body.appendChild(script);
   }, []);
 
-  console.log(menu);
+const getNextWeekdayDates = (days: string[], countWeeks = 1) => {
+  const today = new Date();
+  const dates: Date[] = [];
+
+  const dayMap: Record<string, number> = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+  };
+
+  for (let i = 0; i < countWeeks; i++) {
+    days.forEach((day) => {
+      const targetDay = dayMap[day];
+      const diff = (targetDay + 7 - today.getDay()) % 7 + i * 7;
+      const nextDate = new Date(today);
+      nextDate.setDate(today.getDate() + diff);
+      dates.push(nextDate);
+    });
+  }
+
+  return dates;
+};
+
   if (loading) return <p className="p-6">Loading menu...</p>;
   if (error) return <p className="p-6 text-red-600">{error}</p>;
   if (!menu) return <p className="p-6">No menu found.</p>;
@@ -179,35 +205,34 @@ export function MenuItemDetail({ onAddToCart }: MenuItemDetailProps) {
     }
 
     let deliveryDate = "";
+let deliveryDates: string[] = [];
 
-    if (orderData.deliveryPeriod === "month") {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      deliveryDate = tomorrow.toISOString().split("T")[0];
-    } else if (
-      orderData.deliveryPeriod === "specific_days" &&
-      selectedDays.length > 0
-    ) {
-      const today = new Date();
-      const targetDay = dayMap[selectedDays[0]];
-      const diff = (targetDay + 7 - today.getDay()) % 7 || 7;
-      const nextDate = new Date();
-      nextDate.setDate(today.getDate() + diff);
-      deliveryDate = nextDate.toISOString().split("T")[0];
-    } else if (
-      orderData.deliveryPeriod === "custom_dates" &&
-      multiDates.length > 0
-    ) {
-      deliveryDate = format(multiDates[0], "yyyy-MM-dd");
-    }
+if (orderData.deliveryPeriod === "month") {
+  // For monthly, just take tomorrow as first delivery
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  deliveryDates = [tomorrow.toISOString().split("T")[0]];
+} else if (
+  orderData.deliveryPeriod === "specific_days" &&
+  selectedDays.length > 0
+) {
+  const today = new Date();
+  deliveryDates = selectedDays.map((day) => {
+    const targetDay = dayMap[day];
+    const diff = (targetDay + 7 - today.getDay()) % 7 || 7;
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + diff);
+    return nextDate.toISOString().split("T")[0];
+  });
+} else if (
+  orderData.deliveryPeriod === "custom_dates" &&
+  multiDates.length > 0
+) {
+  deliveryDates = multiDates.map((d) => format(d, "yyyy-MM-dd"));
+}
+
 
     const autoTimeSlot = menu?.category; // "breakfast" | "lunch" | "dinner"
-
-    const orderPayload = {
-      ...orderData,
-      deliveryDate,
-      timeSlot: autoTimeSlot,
-    };
 
     setIsOrdering(true);
 
@@ -246,7 +271,7 @@ export function MenuItemDetail({ onAddToCart }: MenuItemDetailProps) {
               ],
               totalAmount: menu.basePrice,
               deliveryAddress: orderData.deliveryAddress,
-              deliveryDate,
+              deliveryDates,
               timeSlot: autoTimeSlot, // ✅ directly using "breakfast"/"lunch"/"dinner"
               paymentMethod: "razorpay",
               notes: orderData.notes,

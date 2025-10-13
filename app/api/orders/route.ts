@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
         customerName: consumer.name,
         providerName: provider.businessName,
         totalAmount: totalAmount,
-        deliveryDate: new Date(deliveryDate).toLocaleDateString(),
+        deliveryDates: new Date(deliveryDate).toLocaleDateString(),
       };
 
       // Send email to consumer
