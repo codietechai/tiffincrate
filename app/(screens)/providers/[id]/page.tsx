@@ -45,46 +45,11 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import clsx from "clsx";
+import { MenuService } from "@/services/menu-service";
+import { ReviewService } from "@/services/review-service";
+import { TMenu } from "@/types";
 
-interface TMenuItem {
-  _id?: string;
-  name: string;
-  description?: string;
-}
-
-export interface TWeeklyMenu {
-  monday?: TMenuItem;
-  tuesday?: TMenuItem;
-  wednesday?: TMenuItem;
-  thursday?: TMenuItem;
-  friday?: TMenuItem;
-  saturday?: TMenuItem;
-  sunday?: TMenuItem;
-}
-
-export interface TMenu {
-  _id: string;
-  name: string;
-  providerId?: {
-    _id: string;
-    businessName: string;
-  };
-  description?: string;
-  category: "breakfast" | "lunch" | "dinner";
-  weeklyItems: TWeeklyMenu;
-  basePrice: number;
-  monthlyPlanPrice?: number;
-  imageUrl?: string[];
-  isAvailable: boolean;
-  isVegetarian: boolean;
-  isActive: boolean;
-  weekType: "whole" | "weekdays" | "weekends";
-  rating: number;
-  draft?: boolean;
-  userRatingCount?: number;
-}
-
-interface TServiceProvider {
+export interface TServiceProvider {
   _id: string;
   businessName: string;
   description: string;
@@ -157,25 +122,19 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
     const res = await fetch(`/api/providers/${params.id}`);
     if (res.ok) {
       const data = await res.json();
-      setProvider(data.provider);
+      setProvider(data.data);
     }
   };
 
   const fetchMenus = async () => {
-    const res = await fetch(`/api/menus?providerId=${params.id}`);
-    if (res.ok) {
-      const data = await res.json();
-      setMenus(data.menus);
-    }
+    const res = await MenuService.fetchMenus(params.id);
+    setMenus(res?.data);
     setLoading(false);
   };
 
   const fetchReviews = async () => {
-    const res = await fetch(`/api/reviews?providerId=${params.id}`);
-    if (res.ok) {
-      const data = await res.json();
-      setReviews(data.reviews);
-    }
+    const res = await ReviewService.fetchReviews({ id: params.id });
+    setReviews(res.data);
   };
 
   const checkFavoriteStatus = async () => {

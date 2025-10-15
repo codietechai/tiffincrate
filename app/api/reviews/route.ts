@@ -21,7 +21,10 @@ export async function GET(request: NextRequest) {
       .populate("orderId", "totalAmount createdAt")
       .sort({ createdAt: -1 });
 
-    return NextResponse.json({ reviews });
+    return NextResponse.json({
+      data: reviews,
+      message: "Reviews fetched successfully",
+    });
   } catch (error) {
     console.error("Get reviews error:", error);
     return NextResponse.json(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Review from "@/models/Review";
 import ServiceProvider from "@/models/ServiceProvider";
+import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +36,6 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit);
 
-    // Apply search filter if provided
     if (search) {
       reviews = reviews.filter(
         (review) =>
@@ -49,12 +49,10 @@ export async function GET(request: NextRequest) {
 
     const total = await Review.countDocuments(query);
 
-    // Get all providers for filter dropdown
     const providers = await ServiceProvider.find({}, "businessName").sort({
       businessName: 1,
     });
 
-    // Calculate review statistics
     const stats = await Review.aggregate([
       {
         $group: {
@@ -76,7 +74,7 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({
-      reviews,
+      data: reviews,
       providers,
       pagination: {
         current: page,
@@ -89,13 +87,11 @@ export async function GET(request: NextRequest) {
         totalReviews: stats[0]?.totalReviews || 0,
         ratingDistribution: ratingCounts,
       },
+      message: SUCCESSMESSAGE.REVIEWS_FETCH,
     });
   } catch (error) {
-    console.error("Get admin reviews error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error(ERRORMESSAGE.REVIEWS_FETCH_FAILED, error);
+    return NextResponse.json({ error: ERRORMESSAGE.INTERNAL }, { status: 500 });
   }
 }
 
@@ -106,12 +102,9 @@ export async function DELETE(request: NextRequest) {
 
     await Review.findByIdAndDelete(reviewId);
 
-    return NextResponse.json({ message: "Review deleted successfully" });
+    return NextResponse.json({ message: SUCCESSMESSAGE.REVIEW_DELETE });
   } catch (error) {
     console.error("Delete review error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: ERRORMESSAGE.INTERNAL }, { status: 500 });
   }
 }

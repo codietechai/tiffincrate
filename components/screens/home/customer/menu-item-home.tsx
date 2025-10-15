@@ -1,13 +1,12 @@
 "use client";
-
 import { IndianRupee, Star } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { TMenu } from "@/app/(screens)/providers/[id]/page";
 import { usePathname } from "next/navigation";
+import { TMenu } from "@/types";
 
 const MenuItemHome = ({ menu }: { menu: TMenu }) => {
   const pathname = usePathname();

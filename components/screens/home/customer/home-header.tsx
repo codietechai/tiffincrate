@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  NavigationIcon,
-  ChevronDown,
-  Bell,
-  Settings,
-  Search,
-  Mic,
-} from "lucide-react";
+import { Search, Mic } from "lucide-react";
 import TypewriterText from "./animated-text";
 import SearchDialog from "./search-dialog";
 import LocationHeader from "./location-header";
@@ -46,7 +39,6 @@ const HomeHeader = () => {
         </div>
       </div>
 
-      {/* Spacer to avoid layout jump when fixed */}
       {isSticky && <div className="h-14"></div>}
       <SearchDialog open={modal} onOpenChange={(open) => setModal(open)} />
     </div>

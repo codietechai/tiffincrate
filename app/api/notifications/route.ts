@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Notification from "@/models/Notification";
+import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      notifications,
+      data: notifications,
       pagination: {
         current: page,
         total: Math.ceil(total / limit),
@@ -38,13 +39,11 @@ export async function GET(request: NextRequest) {
         totalRecords: total,
       },
       unreadCount,
+      message: SUCCESSMESSAGE.NOTIFICATIONS_FETCH,
     });
   } catch (error) {
     console.error("Get notifications error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: ERRORMESSAGE.INTERNAL }, { status: 500 });
   }
 }
 
@@ -63,12 +62,11 @@ export async function PATCH(request: NextRequest) {
 
     await Notification.updateMany(updateQuery, { isRead: markAsRead });
 
-    return NextResponse.json({ message: "Notifications updated successfully" });
+    return NextResponse.json({
+      message: SUCCESSMESSAGE.NOTIFICATION_MARK_READ,
+    });
   } catch (error) {
     console.error("Update notifications error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: ERRORMESSAGE.INTERNAL }, { status: 500 });
   }
 }

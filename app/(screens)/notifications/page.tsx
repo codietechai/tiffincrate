@@ -28,8 +28,9 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { NotificationService } from "@/services/notification-service";
 
-interface Notification {
+interface TNotification {
   _id: string;
   title: string;
   message: string;
@@ -40,7 +41,7 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<TNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"unread" | "read">("unread");
@@ -48,7 +49,6 @@ export default function NotificationsPage() {
   const [filters, setFilters] = useState<string[]>([]);
   const router = useRouter();
 
-  // 🔹 Auth + Fetch
   useEffect(() => {
     checkAuth();
     fetchNotifications();
@@ -71,12 +71,10 @@ export default function NotificationsPage() {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch(`/api/notifications`);
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.notifications);
-        setUnreadCount(data.unreadCount);
-      }
+      const data = await NotificationService.fetchNotifications();
+
+      setNotifications(data.data);
+      setUnreadCount(data.unreadCount);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     } finally {
@@ -84,16 +82,13 @@ export default function NotificationsPage() {
     }
   };
 
-  // 🔹 Mark notifications as read
-  const markAsRead = async (notificationIds: string[]) => {
+  const markAsRead = async (notificationIds?: string[]) => {
     try {
-      const response = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notificationIds, markAsRead: true }),
-      });
+      let payload: any = {};
+      payload = { id: notificationIds };
+      await NotificationService.markAsRead(payload);
 
-      if (response.ok) {
+      if (notificationIds) {
         setNotifications((prev) =>
           prev.map((n) =>
             notificationIds.includes(n._id) ? { ...n, isRead: true } : n
@@ -106,24 +101,6 @@ export default function NotificationsPage() {
     }
   };
 
-  const markAllAsRead = async () => {
-    try {
-      const response = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markAsRead: true }),
-      });
-
-      if (response.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-        setUnreadCount(0);
-      }
-    } catch (error) {
-      console.error("Error marking all as read:", error);
-    }
-  };
-
-  // 🔹 Helpers
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "order":
@@ -166,7 +143,6 @@ export default function NotificationsPage() {
     }
   };
 
-  // 🔹 Filtering logic
   const toggleFilter = (type: string) => {
     setFilters((prev) =>
       prev.includes(type) ? prev.filter((f) => f !== type) : [...prev, type]
@@ -196,18 +172,21 @@ export default function NotificationsPage() {
     <div className="min-h-screen">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-xl px-4 py-4">
         <div className="mb-4 lg:mb-8 flex justify-between items-center flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <Bell className="h-6 w-6 lg:h-8 lg:w-8" />
-              Notifications
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5 lg:h-8 lg:w-8" />
+              <h1 className="text-xl font-semibold text-gray-900">
+                Notifications
+              </h1>
+
               {unreadCount > 0 && (
                 <Badge variant="destructive" className="ml-2">
                   {unreadCount}
                 </Badge>
               )}
-            </h1>
+            </div>
             <p className="text-gray-600 hidden lg:block">
               Stay updated with your orders and account activity
             </p>
@@ -234,7 +213,7 @@ export default function NotificationsPage() {
             </DropdownMenu>
 
             {unreadCount > 0 && (
-              <Button onClick={markAllAsRead} variant="outline">
+              <Button onClick={() => markAsRead()} variant="outline">
                 <CheckCheck className="mr-2 h-4 w-4" />
                 Mark All Read
               </Button>

@@ -63,7 +63,7 @@ export default function ConsumerDashboard() {
       const response = await fetch("/api/providers?limit=4");
       if (response.ok) {
         const data = await response.json();
-        setProviders(data.providers);
+        setProviders(data.data);
       }
     } catch (error) {
       console.error("Error fetching providers:", error);
@@ -213,30 +213,34 @@ export default function ConsumerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {providers.map((provider: any) => (
-                  <div
-                    key={provider._id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">{provider.businessName}</p>
-                      <p className="text-sm text-gray-500">
-                        {provider.cuisine.slice(0, 2).join(", ")}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm">
-                          ⭐ {provider.rating.toFixed(1)}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          • {provider.totalOrders} orders
-                        </span>
+                {providers &&
+                  providers.length === 0 &&
+                  providers.map((provider: any) => (
+                    <div
+                      key={provider._id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{provider.businessName}</p>
+                        <p className="text-sm text-gray-500">
+                          {provider.cuisine.slice(0, 2).join(", ")}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-sm">
+                            ⭐ {provider.rating.toFixed(1)}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            • {provider.totalOrders} orders
+                          </span>
+                        </div>
                       </div>
+                      <Button size="sm" asChild>
+                        <Link href={`/providers/${provider._id}`}>
+                          View Menu
+                        </Link>
+                      </Button>
                     </div>
-                    <Button size="sm" asChild>
-                      <Link href={`/providers/${provider._id}`}>View Menu</Link>
-                    </Button>
-                  </div>
-                ))}
+                  ))}
               </div>
             </CardContent>
           </Card>

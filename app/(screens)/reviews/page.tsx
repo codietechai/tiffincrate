@@ -19,38 +19,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-// import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import { Search, Star, Trash2, Filter } from "lucide-react";
-
-interface Review {
-  _id: string;
-  consumerId: {
-    name: string;
-    email: string;
-  };
-  providerId: {
-    businessName: string;
-  };
-  orderId: {
-    totalAmount: number;
-    createdAt: string;
-  };
-  rating: number;
-  comment?: string;
-  isVerified: boolean;
-  createdAt: string;
-}
-
-interface Provider {
-  _id: string;
-  businessName: string;
-}
+import { ReviewService } from "@/services/review-service";
+import { TProvider, TReview } from "@/types";
+import { Progress } from "@/components/ui/progress";
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [providers, setProviders] = useState<Provider[]>([]);
+  const [reviews, setReviews] = useState<TReview[]>([]);
+  const [providers, setProviders] = useState<TProvider[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,24 +61,19 @@ export default function ReviewsPage() {
 
   const fetchReviews = async () => {
     try {
-      const params = new URLSearchParams();
-      if (providerFilter) params.append("providerId", providerFilter);
-      if (ratingFilter) params.append("rating", ratingFilter);
-      params.append("sortBy", sortBy);
-      params.append("sortOrder", sortOrder);
-      params.append("limit", "20");
+      const data = await ReviewService.fetchReviews({
+        id: providerFilter,
+        ratingFilter: ratingFilter,
+        role: user?.role,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        limit: "20",
+      });
 
-      const endpoint =
-        user?.role === "admin" ? "/api/admin/reviews" : "/api/reviews";
-      const response = await fetch(`${endpoint}?${params}`);
-
-      if (response.ok) {
-        const data = await response.json();
-        setReviews(data.reviews);
-        setStats(data.stats);
-        if (data.providers) {
-          setProviders(data.providers);
-        }
+      setReviews(data.data);
+      setStats(data.stats);
+      if (data.providers) {
+        setProviders(data.providers);
       }
     } catch (error) {
       console.error("Error fetching reviews:", error);
@@ -113,17 +86,8 @@ export default function ReviewsPage() {
     if (!confirm("Are you sure you want to delete this review?")) return;
 
     try {
-      const response = await fetch("/api/admin/reviews", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ reviewId }),
-      });
-
-      if (response.ok) {
-        setReviews((prev) => prev.filter((review) => review._id !== reviewId));
-      }
+      await ReviewService.deleteReview(reviewId);
+      setReviews((prev) => prev.filter((review) => review._id !== reviewId));
     } catch (error) {
       console.error("Error deleting review:", error);
     }

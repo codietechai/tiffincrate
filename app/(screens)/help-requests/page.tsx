@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -32,11 +31,14 @@ import {
   CircleCheck as CheckCircle,
   Circle as XCircle,
   TriangleAlert as AlertTriangle,
+  HandHelping,
 } from "lucide-react";
 import { THelpRequest } from "@/types";
 import RequestCard from "@/components/screens/help-request/request-card";
-import { ProviderService } from "@/services/providerService";
+import { ProviderService } from "@/services/provider-service";
 import { IServiceProvider } from "@/models/ServiceProvider";
+import { HelpRequestService } from "@/services/help-request-service";
+import { SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export default function HelpRequestsPage() {
   const [helpRequests, setHelpRequests] = useState<THelpRequest[]>([]);
@@ -65,7 +67,6 @@ export default function HelpRequestsPage() {
   useEffect(() => {
     checkAuth();
     fetchHelpRequests();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, typeFilter]);
 
   const checkAuth = async () => {
@@ -85,16 +86,13 @@ export default function HelpRequestsPage() {
 
   const fetchHelpRequests = async () => {
     try {
-      const params = new URLSearchParams();
-      if (statusFilter) params.append("status", statusFilter);
-      if (typeFilter && typeFilter !== "all") params.append("type", typeFilter);
-      params.append("limit", "20");
+      const data = await HelpRequestService.fetchHelpRequests({
+        statusFilter,
+        typeFilter,
+        limit: "20",
+      });
 
-      const response = await fetch(`/api/help-requests?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setHelpRequests(data.helpRequests);
-      }
+      setHelpRequests(data.data);
     } catch (error) {
       console.error("Error fetching help requests:", error);
     } finally {
@@ -115,7 +113,6 @@ export default function HelpRequestsPage() {
     if (newRequest.type === "consumer_to_provider") {
       fetchProviders();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newRequest.type]);
 
   const createHelpRequest = async (e: React.FormEvent) => {
@@ -124,40 +121,21 @@ export default function HelpRequestsPage() {
     setSuccess("");
 
     try {
-      const payload = { ...newRequest };
-      if (
-        payload.type === "admin_support" ||
-        payload.type === "provider_support"
-      ) {
-        delete (payload as any).toUserId;
-      }
-      const response = await fetch("/api/help-requests", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      HelpRequestService.createHelpRequest(newRequest);
+
+      setSuccess(SUCCESSMESSAGE.HELPREQUEST_CREATE);
+      setNewRequest({
+        type: "admin_support",
+        subject: "",
+        message: "",
+        priority: "medium",
+        category: "general",
+        toUserId: "",
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess("Help request created successfully");
-        setNewRequest({
-          type: "admin_support",
-          subject: "",
-          message: "",
-          priority: "medium",
-          category: "general",
-          toUserId: "",
-        });
-        setIsDialogOpen(false);
-        fetchHelpRequests();
-      } else {
-        setError(data.error || "Failed to create help request");
-      }
-    } catch (error) {
-      setError("Network error. Please try again.");
+      setIsDialogOpen(false);
+      fetchHelpRequests();
+    } catch (error: any) {
+      setError(error.error || "Network error. Please try again.");
     }
   };
 
@@ -264,12 +242,14 @@ export default function HelpRequestsPage() {
       <Navbar />
 
       <div className="mx-auto max-w-xl px-4 py-4">
-        {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex-1">
-            <h1 className="text-xl font-semibold text-gray-900">
-              Help Requests
-            </h1>
+            <div className="flex items-center gap-2">
+              <HandHelping className="h-5 w-5 lg:h-8 lg:w-8" />
+              <h1 className="text-xl font-semibold text-gray-900">
+                Help Requests
+              </h1>
+            </div>
             <p className="text-xs text-gray-500 mt-1">
               Manage support requests and communications
             </p>

@@ -12,7 +12,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Trash2, TriangleAlert as AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { AuthService } from "@/services/authService";
+import { AuthService } from "@/services/auth-service";
 import { ConfirmationModal } from "@/components/common/confirmation-modal";
 
 const Account = ({

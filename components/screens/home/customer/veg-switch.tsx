@@ -1,8 +1,6 @@
 "use client";
-
 import { motion } from "framer-motion";
 import { Leaf, Drumstick } from "lucide-react";
-import { useEffect, useState } from "react";
 
 interface VegNonVegSwitchProps {
   filters: { isVegetarian: boolean };

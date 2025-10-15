@@ -13,7 +13,7 @@ export class SettingsService {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to register");
+        throw new Error(error.error);
       }
 
       const setting = await response.json();
@@ -38,7 +38,7 @@ export class SettingsService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to register");
+        throw new Error(error.error);
       }
 
       return response.json();
