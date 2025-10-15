@@ -19,7 +19,6 @@ export async function GET(
 ) {
   try {
     await connectMongoDB();
-
     const menu = await Menu.findById(params.id)
       .populate({
         path: "weeklyItems.monday weeklyItems.tuesday weeklyItems.wednesday weeklyItems.thursday weeklyItems.friday weeklyItems.saturday weeklyItems.sunday",

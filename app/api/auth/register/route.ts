@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     // If role is provider, create service provider profile
     if ((role === "provider" || role === "delivery_partner") && businessData) {
       if (role === "provider") {
+        console.log(role)
         const serviceProvider = new ServiceProvider({
           userId: user._id,
           businessName: businessData.businessName,

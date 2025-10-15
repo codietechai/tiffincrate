@@ -235,7 +235,7 @@ export default function ConsumerDashboard() {
                         </div>
                       </div>
                       <Button size="sm" asChild>
-                        <Link href={`/providers/${provider._id}`}>
+                        <Link href={`/new-provider/${provider._id}`}>
                           View Menu
                         </Link>
                       </Button>

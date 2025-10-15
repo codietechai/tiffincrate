@@ -62,7 +62,7 @@ export interface TServiceProvider {
   userId: { name: string; email: string; phone?: string };
 }
 
-interface CartItem extends TMenu {
+export interface CartItem extends TMenu {
   quantity: number;
 }
 
@@ -358,7 +358,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
               {provider.businessName}
               {provider.isVerified && <Badge>Verified</Badge>}
             </CardTitle>
-            <CardDescription>by {provider.userId.name}</CardDescription>
+            <CardDescription>by {provider?.userId?.name}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="mb-4 text-gray-600">{provider.description}</p>
@@ -527,11 +527,11 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                   <CardContent>
                     <div className="space-y-2">
                       <div className="flex gap-2 items-center">
-                        <Mail className="h-4 w-4" /> {provider.userId.email}
+                        <Mail className="h-4 w-4" /> {provider.userId?.email}
                       </div>
-                      {provider.userId.phone && (
+                      {provider.userId?.phone && (
                         <div className="flex gap-2 items-center">
-                          <Phone className="h-4 w-4" /> {provider.userId.phone}
+                          <Phone className="h-4 w-4" /> {provider.userId?.phone}
                         </div>
                       )}
                     </div>
