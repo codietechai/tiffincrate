@@ -105,7 +105,7 @@ export default function AdminProvidersPage() {
       const response = await fetch("/api/admin/providers");
       if (response.ok) {
         const data = await response.json();
-        setProviders(data.providers);
+        setProviders(data.data);
       }
     } catch (error) {
       console.error("Error fetching providers:", error);

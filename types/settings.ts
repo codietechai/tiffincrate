@@ -26,5 +26,5 @@ export type TSettings = {
   };
 };
 
-export type TProvider = TSettings["provider"];
-export type TNotifications = TSettings["notifications"];
+export type TProviderSettings = TSettings["provider"];
+export type TNotificationSettings = TSettings["notifications"];

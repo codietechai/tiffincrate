@@ -1,7 +1,8 @@
+import { ERRORMESSAGE } from "@/constants/response-messages";
 import { IServiceProvider } from "@/models/ServiceProvider";
 
 export class ProviderService {
-  private static baseUrl = "/api";
+  private static baseUrl = "/api/providers";
 
   static async fetchProviders(): Promise<{
     data: IServiceProvider[];
@@ -16,13 +17,37 @@ export class ProviderService {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to register");
+        throw new Error(error.error);
       }
 
-      const setting = await response.json();
-      return setting;
+      const data = await response.json();
+      return data;
     } catch (error) {
-      console.log("Error fetching settings:", error);
+      console.log(ERRORMESSAGE.PROVIDERS_FETCH, error);
+      throw error;
+    }
+  }
+
+  static async fetchProvider(id: string): Promise<{
+    data: IServiceProvider;
+    message: string;
+  }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.log(ERRORMESSAGE.PROVIDER_NOT_FOUND, error);
       throw error;
     }
   }
@@ -43,8 +68,8 @@ export class ProviderService {
         throw new Error(error.error || "Failed to register");
       }
 
-      const setting = await response.json();
-      return setting;
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.log("Error fetching settings:", error);
       throw error;

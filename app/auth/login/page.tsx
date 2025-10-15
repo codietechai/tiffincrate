@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ChefHat, Mail, Lock, Apple, Eye, EyeOff } from "lucide-react";
-import { AuthService } from "@/services/authService";
+import { AuthService } from "@/services/auth-service";
 
 type LoginFormValues = {
   email: string;
@@ -60,7 +60,7 @@ export default function LoginPage() {
           router.push("/");
       }
     } catch (err: any) {
-      setServerError(err.message || "Registration failed");
+      setServerError(err.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -164,14 +164,13 @@ export default function LoginPage() {
                     })}
                   />
 
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3 text-gray-400"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-400"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-red-500 text-sm">

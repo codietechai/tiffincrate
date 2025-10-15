@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import ServiceProvider from "@/models/ServiceProvider";
+import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(
   request: NextRequest,
@@ -16,17 +17,16 @@ export async function GET(
 
     if (!provider) {
       return NextResponse.json(
-        { error: "Provider not found" },
+        { error: ERRORMESSAGE.PROVIDER_NOT_FOUND },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ provider });
+    return NextResponse.json({
+      data: provider,
+      message: SUCCESSMESSAGE.PROVIDER_FETCH,
+    });
   } catch (error) {
-    console.error("Get provider error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: ERRORMESSAGE.INTERNAL }, { status: 500 });
   }
 }

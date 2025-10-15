@@ -1,17 +1,16 @@
 "use client";
-
 import { IndianRupee, Star } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { TMenu } from "@/app/(screens)/providers/[id]/page";
 import { usePathname, useRouter } from "next/navigation";
+import { TMenu } from "@/types";
 
 const MenuItemHome = ({ menu }: { menu: TMenu }) => {
   const pathname = usePathname();
-  const router=useRouter()
+  const router = useRouter();
   return (
     <Card
       key={menu._id}
@@ -71,7 +70,11 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
               </div>
             </div>
 
-            <Button size="sm" className="bg-primary text-primary-foreground" onClick={()=>router.push(`/new-menu-item/${menu._id}`)}>
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground"
+              onClick={() => router.push(`/new-menu-item/${menu._id}`)}
+            >
               View Details
             </Button>
           </div>

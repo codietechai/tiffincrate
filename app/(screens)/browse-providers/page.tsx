@@ -85,7 +85,7 @@ export default function BrowseProvidersPage() {
       const response = await fetch("/api/providers?limit=50");
       if (response.ok) {
         const data = await response.json();
-        setProviders(data.providers);
+        setProviders(data.data);
       }
     } catch (error) {
       console.error("Error fetching providers:", error);
@@ -317,7 +317,9 @@ export default function BrowseProvidersPage() {
                         </Badge>
                       )}
                     </CardTitle>
-                    <CardDescription>by {provider?.userId?.name}</CardDescription>
+                    <CardDescription>
+                      by {provider?.userId?.name}
+                    </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">

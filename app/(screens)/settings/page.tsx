@@ -11,7 +11,7 @@ import { Settings } from "lucide-react";
 import Notifications from "@/components/screens/settings/notifications";
 import Preferences from "@/components/screens/settings/preferences";
 import Privacy from "@/components/screens/settings/privacy";
-import { SettingsService } from "@/services/settingService";
+import { SettingsService } from "@/services/setting-service";
 import Account from "@/components/screens/settings/account";
 import { TSettings } from "@/types";
 

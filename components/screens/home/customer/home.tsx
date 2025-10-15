@@ -7,38 +7,8 @@ import VegNonVegSwitch from "./veg-switch";
 import { Types } from "mongoose";
 import { Badge } from "@/components/ui/badge";
 import MenuItemHome from "./menu-item-home";
-import { TMenu } from "@/app/(screens)/providers/[id]/page";
-
-export interface IWeeklyMenu {
-  monday?: Types.ObjectId | string;
-  tuesday?: Types.ObjectId | string;
-  wednesday?: Types.ObjectId | string;
-  thursday?: Types.ObjectId | string;
-  friday?: Types.ObjectId | string;
-  saturday?: Types.ObjectId | string;
-  sunday?: Types.ObjectId | string;
-}
-
-export interface IMenu {
-  _id: string;
-  providerId: string;
-  name: string;
-  description?: string;
-  category: "breakfast" | "lunch" | "dinner";
-  weeklyItems: IWeeklyMenu;
-  basePrice: number;
-  monthlyPlanPrice?: number;
-  imageUrl?: string[];
-  isAvailable: boolean;
-  isVegetarian: boolean;
-  isActive: boolean;
-  weekType: "whole" | "weekdays" | "weekends";
-  rating: number;
-  draft: boolean;
-  userRatingCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { TMenu } from "@/types";
+import { MenuService } from "@/services/menu-service";
 
 const Home = () => {
   const [filters, setFilters] = useState({
@@ -51,10 +21,11 @@ const Home = () => {
   );
 
   const fetchMenus = async () => {
-    const res = await fetch(`/api/menus`);
-    if (res.ok) {
-      const data = await res.json();
-      setMenus(data.menus);
+    try {
+      const res = await MenuService.fetchMenus();
+      setMenus(res.data);
+    } catch (error) {
+      console.log(error);
     }
   };
   useEffect(() => {

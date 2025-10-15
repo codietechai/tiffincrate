@@ -3,13 +3,13 @@ import { connectMongoDB } from "@/lib/mongodb";
 import HelpRequest from "@/models/HelpRequest";
 import Notification from "@/models/Notification";
 import User from "@/models/User";
+import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
 
-    console.log("userId", userId);
     await connectMongoDB();
 
     const { searchParams } = new URL(request.url);
@@ -49,18 +49,19 @@ export async function GET(request: NextRequest) {
     const total = await HelpRequest.countDocuments(query);
 
     return NextResponse.json({
-      helpRequests,
+      data: helpRequests,
       pagination: {
         current: page,
         total: Math.ceil(total / limit),
         count: helpRequests.length,
         totalRecords: total,
       },
+      message: SUCCESSMESSAGE.HELPREQUESTS_FETCH,
     });
   } catch (error) {
     console.error("Get help requests error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: ERRORMESSAGE.HELPREQUEST_FETCH_FAILED },
       { status: 500 }
     );
   }
@@ -119,14 +120,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "Help request created successfully", helpRequest },
+      { message: SUCCESSMESSAGE.HELPREQUEST_CREATE, helpRequest },
       { status: 201 }
     );
   } catch (error) {
     console.error("Create help request error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: ERRORMESSAGE.INTERNAL }, { status: 500 });
   }
 }
