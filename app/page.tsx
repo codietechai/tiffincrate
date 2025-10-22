@@ -194,7 +194,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {providers.map((provider) => (
+              {/* {providers.map((provider) => (
                 <Card
                   key={provider._id}
                   className="hover:shadow-lg transition-shadow"
@@ -278,7 +278,7 @@ export default function HomePage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              ))} */}
             </div>
           )}
         </div>

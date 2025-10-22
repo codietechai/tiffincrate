@@ -1,5 +1,4 @@
 "use client";
-
 import { Settings2 } from "lucide-react";
 import HomeHeader from "./home-header";
 import { useEffect, useState } from "react";
@@ -10,7 +9,7 @@ import MenuItemHome from "./menu-item-home";
 import { TMenu } from "@/types";
 import { MenuService } from "@/services/menu-service";
 
-const Home = () => {
+const ConsumerHome = () => {
   const [filters, setFilters] = useState({
     isVegetarian: true,
   });
@@ -53,4 +52,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default ConsumerHome;

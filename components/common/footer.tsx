@@ -1,69 +1,105 @@
 "use client";
-import { CookingPotIcon, Heart, ShoppingCart, User } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import {
+  ShoppingBag,
+  Bike,
+  UtensilsCrossed,
+  BarChart3,
+  SettingsIcon,
+  CookingPotIcon,
+  ShoppingCart,
+  Heart,
+  User,
+} from "lucide-react";
+import Link from "next/link";
+import React, { useEffect, useRef, useState } from "react";
+import {} from "lucide-react";
 
 const Footer = () => {
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  const handleScroll = () => {
-    const currentScrollY = window.scrollY;
-
-    if (currentScrollY > lastScrollY && currentScrollY > 100) {
-      setIsVisible(false);
-    } else {
-      setIsVisible(true);
-    }
-
-    setLastScrollY(currentScrollY);
-  };
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setIsVisible(
+        currentScrollY < lastScrollY.current || currentScrollY < 100
+      );
+      lastScrollY.current = currentScrollY;
+    };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
+
   const options = [
     {
-      icon: (
-        <CookingPotIcon className="h-4 w-4 md:h-6 md:w-6" color="#ff1f01" />
-      ),
-      text: "Menu",
+      id: "menu",
+      label: "Menu",
+      icon: <UtensilsCrossed className="h-5 w-5" />,
       href: "/menu",
     },
     {
-      icon: <ShoppingCart className="h-4 w-4 md:h-6 md:w-6" color="#ff1f01" />,
-      text: "Orders",
-      href: "/orders",
+      id: "orders",
+      label: "Orders",
+      icon: <ShoppingBag className="h-5 w-5" />,
+      href: "/home",
     },
     {
-      icon: <Heart className="h-4 w-4 md:h-6 md:w-6" color="#ff1f01" />,
-      text: "Favouraties",
-      href: "/menu",
+      id: "delivery",
+      label: "Delivery",
+      icon: <Bike className="h-5 w-5" />,
+      href: "/delivery-info",
     },
     {
-      icon: <User className="h-4 w-4 md:h-6 md:w-6" color="#ff1f01" />,
-      text: "Profile",
-      href: "/menu",
+      id: "analytics",
+      label: "Analytics",
+      icon: <BarChart3 className="h-5 w-5" />,
+      href: "/analytics",
+    },
+    {
+      id: "favorites",
+      label: "Favorites",
+      icon: <Heart className="h-5 w-5" />,
+      href: "/favorites",
+    },
+    {
+      id: "profile",
+      label: "Profile",
+      icon: <User className="h-5 w-5" />,
+      href: "/profile",
+    },
+    {
+      id: "settings",
+      label: "Settings",
+      icon: <SettingsIcon className="h-5 w-5" />,
+      href: "/provider-settings",
     },
   ];
+
+  console.log("window.location.pathname", window.location.pathname);
+
   return (
-    <div
-      className={`fixed bottom-0 left-0 w-full bg-white shadow-md transition-transform duration-300 ${
+    <nav
+      className={`fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-md border-t border-gray-200 shadow-md transition-transform duration-300 ${
         isVisible ? "translate-y-0" : "translate-y-full"
       }`}
     >
       <div className="max-w-[1100px] mx-auto flex justify-between px-6 py-3">
-        {options.map((item, i) => (
-          <div
-            key={i}
-            className="flex cursor-pointer flex-col items-center text-gray-700 hover:text-black transition-colors"
+        {options.map((item) => (
+          <Link
+            href={item.href}
+            key={item.label}
+            className={`flex flex-col items-center text-sm ${
+              item.href === window.location.pathname
+                ? "text-orange-600"
+                : "text-gray-700 hover:text-black"
+            } transition-colors`}
           >
             {item.icon}
-            <span className="text-xs md:text-sm mt-1">{item.text}</span>
-          </div>
+            <span className="text-xs mt-1">{item.label}</span>
+          </Link>
         ))}
       </div>
-    </div>
+    </nav>
   );
 };
 
