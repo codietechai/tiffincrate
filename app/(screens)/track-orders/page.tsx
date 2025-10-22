@@ -43,7 +43,7 @@ interface Order {
   totalAmount: number;
   status: string;
   deliveryAddress: any;
-  deliveryDate: string;
+  deliveryInfo: any;
   paymentStatus: string;
   createdAt: string;
   notes?: string;
@@ -294,10 +294,57 @@ export default function TrackOrdersPage() {
                       </p>
                     </div>
                     <div>
-                      <h4 className="font-medium mb-1">Delivery Date:</h4>
+                      <h4 className="font-medium mb-1">Next Delivery On:</h4>
                       <p className="text-sm text-gray-600">
-                        {new Date(order.deliveryDate).toLocaleDateString()} at{" "}
-                        {new Date(order.deliveryDate).toLocaleTimeString()}
+                        {(() => {
+                          const today = new Date();
+                          const deliveryInfo = order.deliveryInfo;
+                          const type = deliveryInfo.type;
+
+                          if (type === "month") {
+                            // Just show the startDate
+                            return new Date(deliveryInfo.startDate).toLocaleDateString();
+                          }
+
+                          if (type === "custom_dates" && Array.isArray(deliveryInfo.dates)) {
+                            const upcoming = deliveryInfo.dates
+                              .map((d: string | number | Date) => new Date(d))
+                              .filter((d: Date) => d >= today)
+                              .sort((a: { getTime: () => number; }, b: { getTime: () => number; }) => a.getTime() - b.getTime())[0];
+
+                            return upcoming
+                              ? upcoming.toLocaleDateString()
+                              : "No upcoming deliveries";
+                          }
+
+                          if (type === "specific_days" && Array.isArray(deliveryInfo.days)) {
+                            const dayMap: Record<string, number> = {
+                              sunday: 0,
+                              monday: 1,
+                              tuesday: 2,
+                              wednesday: 3,
+                              thursday: 4,
+                              friday: 5,
+                              saturday: 6,
+                            };
+
+                            const todayDay = today.getDay(); 
+                            const upcomingDates: Date[] = deliveryInfo.days.map((day: string) => {
+                              const targetDay = dayMap[day.toLowerCase()];
+                              const diff = (targetDay + 7 - todayDay) % 7;
+                              const nextDate = new Date(today);
+                              nextDate.setDate(today.getDate() + diff);
+                              return nextDate;
+                            });
+
+                            const earliest = upcomingDates.sort((a, b) => a.getTime() - b.getTime())[0];
+                            return earliest
+                              ? earliest.toLocaleDateString()
+                              : "No upcoming deliveries";
+                          }
+
+                          return "Invalid delivery info";
+                        })()}
                       </p>
                     </div>
                   </div>

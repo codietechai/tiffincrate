@@ -13,6 +13,24 @@ import {
   getOrderConfirmationSMS,
 } from "@/lib/notifications";
 
+function getOrderTypeSummary(deliveryInfo: {
+  type: "month" | "specific_days" | "custom_dates";
+  startDate?: string;
+  days?: string[];
+  dates?: string[];
+}) {
+  switch (deliveryInfo.type) {
+    case "month":
+      return `Monthly from ${deliveryInfo.startDate || "start date unknown"}`;
+    case "specific_days":
+      return `Specific days: ${deliveryInfo.days?.join(", ")}`;
+    case "custom_dates":
+      return `Custom dates: ${deliveryInfo.dates?.join(", ")}`;
+    default:
+      return "Unknown";
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
@@ -52,17 +70,20 @@ export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
+
     if (role !== "consumer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await connectMongoDB();
+
     const {
       providerId,
       items,
       totalAmount,
       deliveryAddress,
-      deliveryDate,
+      orderType,         
+      deliveryInfo,      
       timeSlot,
       paymentMethod,
       notes,
@@ -71,6 +92,7 @@ export async function POST(request: NextRequest) {
       razorpaySignature,
     } = await request.json();
 
+    console.log(95,'helloooooooooooooooooooooooooooo',deliveryInfo)
     if (paymentMethod === "razorpay") {
       const isValidPayment = verifyRazorpayPayment(
         razorpayOrderId,
@@ -94,8 +116,9 @@ export async function POST(request: NextRequest) {
         typeof deliveryAddress === "string"
           ? { address: deliveryAddress, latitude: 0, longitude: 0 }
           : deliveryAddress,
-      deliveryDate,
-      timeSlot: timeSlot,
+      orderType,        // <-- updated
+      deliveryInfo,     // <-- updated
+      timeSlot,
       paymentMethod,
       notes,
       consumerId: userId,
@@ -103,6 +126,7 @@ export async function POST(request: NextRequest) {
       status: "confirmed",
     });
 
+    console.log(226,'fewfwefwewefwefwfwfw')
     await order.save();
 
     const [consumer, provider] = await Promise.all([
@@ -112,7 +136,6 @@ export async function POST(request: NextRequest) {
 
     // Create notifications
     await Promise.all([
-      // Consumer notification
       new Notification({
         userId: userId,
         title: "Order Confirmed",
@@ -121,7 +144,6 @@ export async function POST(request: NextRequest) {
         data: { orderId: order._id, providerId },
       }).save(),
 
-      // Provider notification
       new Notification({
         userId: provider.userId._id,
         title: "New Order Received",
@@ -133,12 +155,14 @@ export async function POST(request: NextRequest) {
 
     // Send email and SMS notifications
     try {
+      const orderTypeSummary = getOrderTypeSummary(deliveryInfo);
+
       const orderNotificationData = {
         orderId: order._id.toString().slice(-8),
         customerName: consumer.name,
         providerName: provider.businessName,
-        totalAmount: totalAmount,
-        deliveryDates: new Date(deliveryDate).toLocaleDateString(),
+        totalAmount,
+        order_type: orderTypeSummary,
       };
 
       // Send email to consumer
@@ -157,7 +181,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Auto-assign delivery partner if provider doesn't self-deliver
+      // Auto-assign delivery partner
       if (!provider.operatingHours[timeSlot]?.selfDelivery) {
         try {
           await fetch("/api/delivery/auto-assign", {
@@ -171,7 +195,6 @@ export async function POST(request: NextRequest) {
       }
     } catch (notificationError) {
       console.error("Notification error:", notificationError);
-      // Don't fail the order creation if notifications fail
     }
 
     return NextResponse.json(

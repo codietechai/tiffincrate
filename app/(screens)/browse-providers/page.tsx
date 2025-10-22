@@ -85,7 +85,8 @@ export default function BrowseProvidersPage() {
       const response = await fetch("/api/providers?limit=50");
       if (response.ok) {
         const data = await response.json();
-        setProviders(data.data);
+        console.log(data)
+        setProviders(data.providers);
       }
     } catch (error) {
       console.error("Error fetching providers:", error);
@@ -191,7 +192,7 @@ export default function BrowseProvidersPage() {
 
   const getAllCuisines = () => {
     const cuisines = new Set<string>();
-    providers.forEach((provider) => {
+    providers?.forEach((provider) => {
       provider.cuisine.forEach((c) => cuisines.add(c));
     });
     return Array.from(cuisines).sort();
@@ -199,7 +200,7 @@ export default function BrowseProvidersPage() {
 
   const getAllAreas = () => {
     const areas = new Set<string>();
-    providers.forEach((provider) => {
+    providers?.forEach((provider) => {
       provider.deliveryAreas.forEach((a) => areas.add(a));
     });
     return Array.from(areas).sort();
@@ -296,7 +297,7 @@ export default function BrowseProvidersPage() {
 
         <div className="mb-4 flex justify-between items-center">
           <p className="text-gray-600">
-            Showing {filteredProviders.length} of {providers.length} providers
+            Showing {filteredProviders?.length} of {providers?.length} providers
           </p>
         </div>
 
@@ -387,7 +388,7 @@ export default function BrowseProvidersPage() {
                 </div>
 
                 <div className="mt-4">
-                  <Link href={`/providers/${provider._id}`}>
+                  <Link href={`/new-provider/${provider._id}`}>
                     <Button className="w-full">View Menu & Order</Button>
                   </Link>
                 </div>

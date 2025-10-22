@@ -58,7 +58,7 @@ interface IMenu {
   category: "breakfast" | "lunch" | "dinner";
   weeklyItems: IWeeklyMenu;
   basePrice: number;
-  providerId:string| null,
+  providerId: string | null,
   monthlyPlanPrice?: number;
   imageUrl: string[];
   isAvailable: boolean;
@@ -86,7 +86,7 @@ const dayMap: Record<string, number> = {
   saturday: 6,
 };
 
-export function MenuItemDetail({ onAddToCart }: MenuItemDetailProps) {
+export function MenuItemDetail() {
   const [user, setUser] = useState<any>(null);
   const params = useParams();
   const router = useRouter();
@@ -167,32 +167,32 @@ export function MenuItemDetail({ onAddToCart }: MenuItemDetailProps) {
     document.body.appendChild(script);
   }, []);
 
-const getNextWeekdayDates = (days: string[], countWeeks = 1) => {
-  const today = new Date();
-  const dates: Date[] = [];
+  const getNextWeekdayDates = (days: string[], countWeeks = 1) => {
+    const today = new Date();
+    const dates: Date[] = [];
 
-  const dayMap: Record<string, number> = {
-    sunday: 0,
-    monday: 1,
-    tuesday: 2,
-    wednesday: 3,
-    thursday: 4,
-    friday: 5,
-    saturday: 6,
+    const dayMap: Record<string, number> = {
+      sunday: 0,
+      monday: 1,
+      tuesday: 2,
+      wednesday: 3,
+      thursday: 4,
+      friday: 5,
+      saturday: 6,
+    };
+
+    for (let i = 0; i < countWeeks; i++) {
+      days.forEach((day) => {
+        const targetDay = dayMap[day];
+        const diff = (targetDay + 7 - today.getDay()) % 7 + i * 7;
+        const nextDate = new Date(today);
+        nextDate.setDate(today.getDate() + diff);
+        dates.push(nextDate);
+      });
+    }
+
+    return dates;
   };
-
-  for (let i = 0; i < countWeeks; i++) {
-    days.forEach((day) => {
-      const targetDay = dayMap[day];
-      const diff = (targetDay + 7 - today.getDay()) % 7 + i * 7;
-      const nextDate = new Date(today);
-      nextDate.setDate(today.getDate() + diff);
-      dates.push(nextDate);
-    });
-  }
-
-  return dates;
-};
 
   if (loading) return <p className="p-6">Loading menu...</p>;
   if (error) return <p className="p-6 text-red-600">{error}</p>;
@@ -203,33 +203,6 @@ const getNextWeekdayDates = (days: string[], countWeeks = 1) => {
       router.push("/auth/login");
       return;
     }
-
-    let deliveryDate = "";
-let deliveryDates: string[] = [];
-
-if (orderData.deliveryPeriod === "month") {
-  // For monthly, just take tomorrow as first delivery
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  deliveryDates = [tomorrow.toISOString().split("T")[0]];
-} else if (
-  orderData.deliveryPeriod === "specific_days" &&
-  selectedDays.length > 0
-) {
-  const today = new Date();
-  deliveryDates = selectedDays.map((day) => {
-    const targetDay = dayMap[day];
-    const diff = (targetDay + 7 - today.getDay()) % 7 || 7;
-    const nextDate = new Date(today);
-    nextDate.setDate(today.getDate() + diff);
-    return nextDate.toISOString().split("T")[0];
-  });
-} else if (
-  orderData.deliveryPeriod === "custom_dates" &&
-  multiDates.length > 0
-) {
-  deliveryDates = multiDates.map((d) => format(d, "yyyy-MM-dd"));
-}
 
 
     const autoTimeSlot = menu?.category; // "breakfast" | "lunch" | "dinner"
@@ -256,6 +229,18 @@ if (orderData.deliveryPeriod === "month") {
         name: "TiffinCrate",
         order_id: razorpayOrder.order.id,
         handler: async (response: any) => {
+
+          let deliveryInfo: any = { type: orderData.deliveryPeriod };
+
+          if (orderData.deliveryPeriod === "month") {
+            deliveryInfo.startDate = new Date().toISOString().split("T")[0]; // today's date
+          } else if (orderData.deliveryPeriod === "specific_days") {
+            deliveryInfo.days = selectedDays;
+          } else if (orderData.deliveryPeriod === "custom_dates") {
+            deliveryInfo.dates = multiDates.map((date) =>
+              date.toISOString().split("T")[0]
+            );
+          }
           await fetch("/api/orders", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -271,8 +256,9 @@ if (orderData.deliveryPeriod === "month") {
               ],
               totalAmount: menu.basePrice,
               deliveryAddress: orderData.deliveryAddress,
-              deliveryDates,
-              timeSlot: autoTimeSlot, // ✅ directly using "breakfast"/"lunch"/"dinner"
+              orderType: orderData.deliveryPeriod,
+              deliveryInfo: deliveryInfo,
+              timeSlot: autoTimeSlot,
               paymentMethod: "razorpay",
               notes: orderData.notes,
               razorpayOrderId: response.razorpay_order_id,

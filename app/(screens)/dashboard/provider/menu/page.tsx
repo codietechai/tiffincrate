@@ -127,7 +127,7 @@ export default function ProviderMenuPage() {
   };
 
   const getFilteredMenus = () =>
-    menus.filter((menu) => {
+    menus?.filter((menu) => {
       const searchMatch =
         menu.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         Object.values(menu.weeklyItems).some((item) =>
@@ -146,7 +146,7 @@ export default function ProviderMenuPage() {
     });
 
   const getActiveMenus = () => {
-    return menus.filter((item) => item.isActive === true).length;
+    return menus?.filter((item) => item.isActive === true).length;
   };
 
   if (loading) return <LoadingPage />;
@@ -176,7 +176,7 @@ export default function ProviderMenuPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Menus</p>
-                  <p className="text-2xl font-bold">{menus.length}</p>
+                  <p className="text-2xl font-bold">{menus?.length}</p>
                 </div>
                 <div className="text-blue-500">📋</div>
               </div>
@@ -252,8 +252,8 @@ export default function ProviderMenuPage() {
 
         {/* Menu List */}
         <div className="space-y-6">
-          {getFilteredMenus().length ? (
-            getFilteredMenus().map((menu) => (
+          {getFilteredMenus()?.length ? (
+            getFilteredMenus()?.map((menu) => (
               <Card key={menu._id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">

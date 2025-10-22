@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextRequest } from "next/server";
 import { jwtVerify, SignJWT } from "jose";
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!||'hello world');
 
 export async function hashPassword(password: string): Promise<string> {
   return await bcrypt.hash(password, 12);

@@ -63,7 +63,8 @@ export default function ConsumerDashboard() {
       const response = await fetch("/api/providers?limit=4");
       if (response.ok) {
         const data = await response.json();
-        setProviders(data.data);
+        console.log(data);
+        setProviders(data.providers);
       }
     } catch (error) {
       console.error("Error fetching providers:", error);
@@ -91,6 +92,7 @@ export default function ConsumerDashboard() {
     }
   };
 
+  console.log(providers)
   if (loading) return <LoadingPage />;
 
   return (
@@ -214,7 +216,6 @@ export default function ConsumerDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {providers &&
-                  providers.length === 0 &&
                   providers.map((provider: any) => (
                     <div
                       key={provider._id}
