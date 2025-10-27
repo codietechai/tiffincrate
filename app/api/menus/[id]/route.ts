@@ -48,6 +48,7 @@ export async function PATCH(
     const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
 
+    console.log("rolessssss", role);
     if (role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -60,27 +61,19 @@ export async function PATCH(
       return NextResponse.json({ error: "Menu not found" }, { status: 404 });
     }
 
-    if (menu.providerId.toString() !== userId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // Handle weeklyItems: for each day, if an object is provided, either create or update MenuItem
     const newWeeklyItems: Partial<Record<string, any>> = {};
 
     if (updateData.weeklyItems) {
       for (const day of DAYS) {
         const dayItem = updateData.weeklyItems[day];
         if (dayItem) {
-          // dayItem might have id (existing) or fresh data
           if (dayItem._id) {
-            // existing MenuItem, update it
             await MenuItem.findByIdAndUpdate(dayItem._id, {
               name: dayItem.name,
               description: dayItem.description,
             });
             newWeeklyItems[day] = dayItem._id;
           } else {
-            // create new MenuItem
             const created = await MenuItem.create({
               name: dayItem.name,
               description: dayItem.description,
@@ -91,7 +84,6 @@ export async function PATCH(
       }
     }
 
-    // Prepare the rest of the menu-level updates (category, basePrice, etc.)
     const allowedFields = [
       "name",
       "description",
@@ -150,16 +142,6 @@ export async function DELETE(
     if (!menu) {
       return NextResponse.json({ error: "Menu not found" }, { status: 404 });
     }
-
-    if (menu.providerId.toString() !== userId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // Optionally delete associated MenuItems?
-    // If you want to cascade delete the menuItem docs referenced (monday, tuesday, …),
-    // you can do that here. But be cautious: those items might be reused or referenced elsewhere.
-    // For example:
-    // for each day in menu.weeklyItems, if non-null, delete that MenuItem.
 
     await Menu.findByIdAndDelete(params.id);
 
