@@ -241,7 +241,7 @@ export default function HelpRequestsPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="mx-auto max-w-xl px-4 py-4">
+      <div className="mx-auto max-w-xl lg:max-w-4xl px-4 py-4">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-2">

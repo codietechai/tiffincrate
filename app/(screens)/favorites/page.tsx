@@ -94,19 +94,23 @@ export default function FavoritesPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Heart className="h-8 w-8 text-red-500" />
-            My Favorite Providers
-          </h1>
-          <p className="text-gray-600">
-            Your saved tiffin providers for quick access
-          </p>
+      <div className="max-w-xl lg:max-w-4xl px-4 py-4">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <Heart className="h-8 w-8 text-red-500" />
+              <h1 className="text-xl font-semibold text-gray-900">
+                My Favorite Providers
+              </h1>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Your saved tiffin providers for quick access
+            </p>
+          </div>
         </div>
 
         {favorites.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {favorites.map((provider) => (
               <Card
                 key={provider._id}
@@ -115,7 +119,7 @@ export default function FavoritesPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="flex text-lg items-center gap-2 mb-0">
                         {provider.businessName}
                         {provider.isVerified && (
                           <Badge variant="default" className="text-xs">

@@ -1,7 +1,9 @@
 import { Bell, ChevronDown, NavigationIcon, Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 const LocationHeader = ({ isSticky }: { isSticky: boolean }) => {
+  const router = useRouter();
   return (
     <div
       className={`transition-all duration-300 ${
@@ -20,8 +22,16 @@ const LocationHeader = ({ isSticky }: { isSticky: boolean }) => {
           </div>
         </div>
         <div className="flex gap-3 items-center">
-          <Bell className="text-primary" size={20} />
-          <Settings className="text-primary" size={20} />
+          <Bell
+            className="text-primary cursor-pointer"
+            size={20}
+            onClick={() => router.push("/notifications")}
+          />
+          <Settings
+            className="text-primary cursor-pointer"
+            size={20}
+            onClick={() => router.push("/provider-settings")}
+          />
         </div>
       </div>
     </div>

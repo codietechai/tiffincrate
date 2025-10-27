@@ -1,15 +1,26 @@
 import { ERRORMESSAGE } from "@/constants/response-messages";
 import { IServiceProvider } from "@/models/ServiceProvider";
+import {
+  TFetchProvidersResponse,
+  TProvider,
+  TProviderQueryData,
+} from "@/types";
+import { TPagination } from "@/types/common";
 
 export class ProviderService {
   private static baseUrl = "/api/providers";
 
-  static async fetchProviders(): Promise<{
-    data: IServiceProvider[];
-    message: string;
-  }> {
+  static async fetchProviders(
+    queryData: TProviderQueryData
+  ): Promise<TFetchProvidersResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}`, {
+      const params = new URLSearchParams({
+        search: queryData.search,
+        cuisine: queryData.cuisine,
+        page: queryData.page,
+        limit: queryData.limit,
+      } as any).toString();
+      const response = await fetch(`${this.baseUrl}?${params}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

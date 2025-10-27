@@ -6,6 +6,8 @@ import LocationHeader from "../home/customer/location-header";
 import { MenuService } from "@/services/menu-service";
 import { TMenu, TProvider } from "@/types";
 import { ProviderService } from "@/services/provider-service";
+import { CheifHatIcon } from "@/components/common/icons";
+import { Badge } from "@/components/ui/badge";
 
 const SingleProvider = ({ id }: { id: string }) => {
   const [isSticky, setIsSticky] = useState(false);
@@ -54,26 +56,30 @@ const SingleProvider = ({ id }: { id: string }) => {
   }, []);
 
   return (
-    <div className="px-4 py-3 bg-white shadow-sm">
-      <LocationHeader isSticky={isSticky} />
-      <div className="mt-5">
-        <div className="py-3 space-y-2">
-          <h2 className="text-2xl font-bold">{provider?.businessName}</h2>
-          <p className="">
+    <div className="mx-auto max-w-xl lg:max-w-4xl px-4 py-4">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <CheifHatIcon className="h-5 w-5 lg:h-8 lg:w-8" />
+            <h1 className="text-xl font-semibold text-gray-900">
+              {provider?.businessName}
+            </h1>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">{provider?.description}</p>
+          <p className="flex gap-2 flex-wrap mt-3">
             {provider?.cuisine?.map((item) => (
-              <p>item</p>
+              <Badge>{item}</Badge>
             ))}
           </p>
-          <p className="text-xs text-[#666]">{provider?.description}</p>
         </div>
-        <div className="mb-4">
-          <VegNonVegSwitch filters={filters} setFilters={setFilters} />
-        </div>
-
-        {filteredMenus.map((menu) => (
-          <MenuItemHome menu={menu} />
-        ))}
       </div>
+      <div className="mb-4">
+        <VegNonVegSwitch filters={filters} setFilters={setFilters} />
+      </div>
+
+      {filteredMenus.map((menu) => (
+        <MenuItemHome menu={menu} />
+      ))}
     </div>
   );
 };

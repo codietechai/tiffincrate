@@ -17,23 +17,37 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
       className="bg-background border border-border rounded-xl shadow-sm mb-4"
     >
       <CardContent className="flex flex-col sm:flex-row gap-4 p-4">
-        <Image
-          src={menu.imageUrl?.[0] || "/placeholder.jpg"}
-          alt={menu.name}
-          height={100}
-          width={100}
-          className="h-24 w-24 rounded-lg object-cover"
-        />
+        <div className="flex gap-3">
+          <Image
+            src={menu.imageUrl?.[0] || "/placeholder.jpg"}
+            alt={menu.name}
+            height={50}
+            width={50}
+            className="h-[50px] w-[50px] rounded-lg object-cover"
+          />
+          <div className="lg:hidden">
+            <h3 className="font-semibold text-lg mb-1">
+              {menu.name}{" "}
+              {/* {pathname.includes("home") &&
+                `by ${menu.providerId?.businessName}`} */}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-2">
+              {menu.description}
+            </p>
+          </div>
+        </div>
 
         <div className="flex-1">
-          <h3 className="font-semibold text-lg mb-1">
-            {menu.name}{" "}
-            {pathname.includes("home") && `by ${menu.providerId?.businessName}`}
-          </h3>
-          <p className="text-sm text-muted-foreground mb-2">
-            {menu.description}
-          </p>
-
+          <div className="hidden lg:block">
+            <h3 className="font-semibold text-lg mb-1">
+              {menu.name}{" "}
+              {pathname.includes("home") &&
+                `by ${menu.providerId?.businessName}`}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-2">
+              {menu.description}
+            </p>
+          </div>
           <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
             <Star size={14} fill="#FFD700" color="#FFD700" />
             <span>

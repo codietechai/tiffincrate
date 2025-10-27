@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import MenuItemHome from "./menu-item-home";
 import { TMenu } from "@/types";
 import { MenuService } from "@/services/menu-service";
+import FilterDrawer from "../provider/filter-drawer";
 
 const ConsumerHome = () => {
   const [filters, setFilters] = useState({
@@ -39,6 +40,7 @@ const ConsumerHome = () => {
           <h3 className="font-bold text-lg">Filters</h3>
           <Settings2 className="text-muted-foreground" />
         </div>
+        {/* <FilterDrawer /> */}
 
         <div className="mb-4">
           <VegNonVegSwitch filters={filters} setFilters={setFilters} />

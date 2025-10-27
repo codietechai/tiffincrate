@@ -339,7 +339,6 @@ export default function MenuDrawerForm({
               ))}
             </div>
 
-            {/* Footer */}
             <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-4">
               <Button type="submit" className="flex-1 h-11" disabled={saving}>
                 {saving
