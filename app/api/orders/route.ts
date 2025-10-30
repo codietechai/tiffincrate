@@ -4,7 +4,6 @@ import Order from "@/models/Order";
 import ServiceProvider from "@/models/ServiceProvider";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 import { verifyRazorpayPayment } from "@/lib/razorpay";
 import {
   sendEmail,
@@ -48,6 +47,8 @@ export async function GET(request: NextRequest) {
       query.providerId = userId;
     }
     // Admin can see all orders
+
+    
 
     if (status) query.status = status;
 
