@@ -181,7 +181,6 @@ export default function OrderHistoryPage() {
   };
 
   const handleReorder = async (order: Order) => {
-    // This would typically redirect to the provider's page with the items pre-selected
     router.push(`/providers/${order.providerId}`);
   };
 
@@ -403,7 +402,7 @@ export default function OrderHistoryPage() {
                   </div>
 
                   <div className="flex gap-2 mt-4 pt-4 border-t">
-                    <Button variant="outline" size="sm" onClick={()=>router.push('/order-detail')}>
+                    <Button variant="outline" size="sm" onClick={()=>router.push(`/order-detail/${order._id}`)}>
                       <Eye className="mr-2 h-4 w-4" />
                       View Details
                     </Button>

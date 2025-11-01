@@ -3,6 +3,7 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import ServiceProvider from "@/models/ServiceProvider";
 import User from "@/models/User";
+import DeliveryOrder from "@/models/deliveryOrders";
 import Notification from "@/models/Notification";
 import { verifyRazorpayPayment } from "@/lib/razorpay";
 import {
@@ -11,6 +12,93 @@ import {
   getOrderConfirmationEmail,
   getOrderConfirmationSMS,
 } from "@/lib/notifications";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Kolkata");
+
+export const createDeliveryOrders = async (orderId: string, deliveryInfo: any) => {
+  const deliveryOrders: any[] = [];
+
+  console.log("🩵 deliveryInfo received:", deliveryInfo);
+
+  const tz = "Asia/Kolkata";
+
+  if (deliveryInfo?.type === "month") {
+    const startDate = deliveryInfo.startDate
+      ? dayjs.tz(deliveryInfo.startDate, tz).startOf("day")
+      : dayjs().tz(tz).startOf("month");
+
+    const endDate = startDate.endOf("month");
+    let current = startDate;
+
+    while (current.isBefore(endDate) || current.isSame(endDate)) {
+
+      const localDate = new Date(current.format("YYYY-MM-DD") + "T00:00:00+05:30");
+      deliveryOrders.push({
+        orderId,
+        deliveryStatus: "pending",
+        deliveryDate: localDate,
+      });
+      current = current.add(1, "day");
+    }
+  }
+
+  else if (deliveryInfo?.type === "specific_days") {
+    const { days } = deliveryInfo;
+    const start = dayjs().tz(tz).startOf("month");
+    const end = start.endOf("month");
+
+    const dayMap: Record<string, number> = {
+      sunday: 0,
+      monday: 1,
+      tuesday: 2,
+      wednesday: 3,
+      thursday: 4,
+      friday: 5,
+      saturday: 6,
+    };
+
+    const targetDays = (days || []).map((d: string) => dayMap[d.toLowerCase()]);
+    let current = start;
+
+    while (current.isBefore(end) || current.isSame(end)) {
+      if (targetDays.includes(current.day())) {
+        const localDate = new Date(current.format("YYYY-MM-DD") + "T00:00:00+05:30");
+        deliveryOrders.push({
+          orderId,
+          deliveryStatus: "pending",
+          deliveryDate: localDate,
+        });
+      }
+      current = current.add(1, "day");
+    }
+  }
+
+  else if (deliveryInfo?.type === "custom_dates" && Array.isArray(deliveryInfo.dates)) {
+    for (const dateStr of deliveryInfo.dates) {
+      const localDate = new Date(`${dateStr}`);
+      deliveryOrders.push({
+        orderId,
+        deliveryStatus: "pending",
+        deliveryDate: localDate,
+      });
+    }
+  }
+
+
+  if (deliveryOrders.length > 0) {
+    await DeliveryOrder.insertMany(deliveryOrders);
+    console.log(`✅ Created ${deliveryOrders.length} delivery orders for order ${orderId}`);
+  } else {
+    console.log("⚠️ No delivery orders generated for:", deliveryInfo);
+  }
+
+  return deliveryOrders;
+};
 
 function getOrderTypeSummary(deliveryInfo: {
   type: "month" | "specific_days" | "custom_dates";
@@ -67,6 +155,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
@@ -83,8 +172,8 @@ export async function POST(request: NextRequest) {
       items,
       totalAmount,
       deliveryAddress,
-      orderType,         
-      deliveryInfo,      
+      orderType,
+      deliveryInfo,
       timeSlot,
       paymentMethod,
       notes,
@@ -93,7 +182,6 @@ export async function POST(request: NextRequest) {
       razorpaySignature,
     } = await request.json();
 
-    console.log(95,'helloooooooooooooooooooooooooooo',deliveryInfo)
     if (paymentMethod === "razorpay") {
       const isValidPayment = verifyRazorpayPayment(
         razorpayOrderId,
@@ -117,8 +205,8 @@ export async function POST(request: NextRequest) {
         typeof deliveryAddress === "string"
           ? { address: deliveryAddress, latitude: 0, longitude: 0 }
           : deliveryAddress,
-      orderType,        // <-- updated
-      deliveryInfo,     // <-- updated
+      orderType,
+      deliveryInfo,
       timeSlot,
       paymentMethod,
       notes,
@@ -127,18 +215,21 @@ export async function POST(request: NextRequest) {
       status: "confirmed",
     });
 
-    console.log(226,'fewfwefwewefwefwfwfw')
     await order.save();
 
+    // ✅ Create Delivery Orders based on deliveryInfo
+    await createDeliveryOrders(order._id, deliveryInfo);
+
+    // Fetch related users
     const [consumer, provider] = await Promise.all([
       User.findById(userId),
       ServiceProvider.findById(providerId).populate("userId"),
     ]);
 
-    // Create notifications
+    // Notifications for both consumer and provider
     await Promise.all([
       new Notification({
-        userId: userId,
+        userId,
         title: "Order Confirmed",
         message: `Your order from ${provider.businessName} has been confirmed.`,
         type: "order",
@@ -154,10 +245,9 @@ export async function POST(request: NextRequest) {
       }).save(),
     ]);
 
-    // Send email and SMS notifications
+    // Optional: send email and SMS
     try {
       const orderTypeSummary = getOrderTypeSummary(deliveryInfo);
-
       const orderNotificationData = {
         orderId: order._id.toString().slice(-8),
         customerName: consumer.name,
@@ -166,33 +256,21 @@ export async function POST(request: NextRequest) {
         order_type: orderTypeSummary,
       };
 
-      // Send email to consumer
       const emailData = getOrderConfirmationEmail(orderNotificationData);
-      await sendEmail({
-        to: consumer.email,
-        ...emailData,
-      });
+      await sendEmail({ to: consumer.email, ...emailData });
 
-      // Send SMS to consumer if phone number exists
       if (consumer.phone) {
         const smsMessage = getOrderConfirmationSMS(orderNotificationData);
-        await sendSMS({
-          to: consumer.phone,
-          message: smsMessage,
-        });
+        await sendSMS({ to: consumer.phone, message: smsMessage });
       }
 
-      // Auto-assign delivery partner
+      // If provider doesn’t handle self-delivery, auto-assign
       if (!provider.operatingHours[timeSlot]?.selfDelivery) {
-        try {
-          await fetch("/api/delivery/auto-assign", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: order._id }),
-          });
-        } catch (assignError) {
-          console.error("Auto-assign delivery error:", assignError);
-        }
+        await fetch("/api/delivery/auto-assign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: order._id }),
+        });
       }
     } catch (notificationError) {
       console.error("Notification error:", notificationError);

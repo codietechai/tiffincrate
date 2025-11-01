@@ -198,91 +198,102 @@ export function MenuItemDetail() {
   if (error) return <p className="p-6 text-red-600">{error}</p>;
   if (!menu) return <p className="p-6">No menu found.</p>;
 
-  const handlePlaceOrder = async () => {
-    if (!user || user.role !== "consumer") {
-      router.push("/auth/login");
-      return;
+const handlePlaceOrder = async () => {
+  if (!user || user.role !== "consumer") {
+    router.push("/auth/login");
+    return;
+  }
+
+  const autoTimeSlot = menu?.category; // "breakfast" | "lunch" | "dinner"
+  setIsOrdering(true);
+
+  try {
+    // Determine total number of delivery days
+    let totalDays = 0;
+    let deliveryInfo: any = { type: orderData.deliveryPeriod };
+
+    if (orderData.deliveryPeriod === "month") {
+      // assume 30 days for monthly plan
+      totalDays = 30;
+      deliveryInfo.startDate = new Date().toISOString().split("T")[0];
+    } else if (orderData.deliveryPeriod === "specific_days") {
+      // count selected weekdays for 4 weeks (1 month)
+      totalDays = selectedDays.length * 4;
+      deliveryInfo.days = selectedDays;
+    } else if (orderData.deliveryPeriod === "custom_dates") {
+      // count manually selected dates
+      totalDays = multiDates.length;
+      deliveryInfo.dates = multiDates.map((date) =>
+        date.toLocaleDateString("en-CA")
+      );
     }
 
+    const totalAmount = menu.basePrice * totalDays;
 
-    const autoTimeSlot = menu?.category; // "breakfast" | "lunch" | "dinner"
+    // Create Razorpay order for full amount
+    const razorpayResponse = await fetch("/api/razorpay/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount: totalAmount,
+        currency: "INR",
+      }),
+    });
 
-    setIsOrdering(true);
+    const razorpayOrder = await razorpayResponse.json();
+    if (!razorpayResponse.ok) throw new Error(razorpayOrder.error);
 
-    try {
-      const razorpayResponse = await fetch("/api/razorpay/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: menu.basePrice,
-          currency: "INR",
-        }),
-      });
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      amount: razorpayOrder.order.amount,
+      currency: razorpayOrder.order.currency,
+      name: "TiffinCrate",
+      order_id: razorpayOrder.order.id,
+      handler: async (response: any) => {
+        await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            providerId: menu.providerId,
+            items: [
+              {
+                menuItemId: menu._id,
+                name: menu.name,
+                price: menu.basePrice,
+                quantity: totalDays,
+              },
+            ],
+            totalAmount,
+            deliveryAddress: orderData.deliveryAddress,
+            orderType: orderData.deliveryPeriod,
+            deliveryInfo,
+            timeSlot: autoTimeSlot,
+            paymentMethod: "razorpay",
+            notes: orderData.notes,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          }),
+        });
+        router.push("/order-history");
+      },
+      prefill: {
+        name: user.name,
+        email: user.email,
+      },
+      theme: { color: "#3B82F6" },
+    };
 
-      const razorpayOrder = await razorpayResponse.json();
-      if (!razorpayResponse.ok) throw new Error(razorpayOrder.error);
+    const razorpay = new (window as any).Razorpay(options);
+    razorpay.open();
+  } catch (error) {
+    console.error(error);
+    alert("Failed to place order");
+  } finally {
+    setIsOrdering(false);
+  }
+};
 
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: razorpayOrder.order.amount,
-        currency: razorpayOrder.order.currency,
-        name: "TiffinCrate",
-        order_id: razorpayOrder.order.id,
-        handler: async (response: any) => {
-
-          let deliveryInfo: any = { type: orderData.deliveryPeriod };
-
-          if (orderData.deliveryPeriod === "month") {
-            deliveryInfo.startDate = new Date().toISOString().split("T")[0]; // today's date
-          } else if (orderData.deliveryPeriod === "specific_days") {
-            deliveryInfo.days = selectedDays;
-          } else if (orderData.deliveryPeriod === "custom_dates") {
-            deliveryInfo.dates = multiDates.map((date) =>
-              date.toISOString().split("T")[0]
-            );
-          }
-          await fetch("/api/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              providerId: menu.providerId,
-              items: [
-                {
-                  menuItemId: menu._id,
-                  name: menu.name,
-                  price: menu.basePrice,
-                  quantity: 1,
-                },
-              ],
-              totalAmount: menu.basePrice,
-              deliveryAddress: orderData.deliveryAddress,
-              orderType: orderData.deliveryPeriod,
-              deliveryInfo: deliveryInfo,
-              timeSlot: autoTimeSlot,
-              paymentMethod: "razorpay",
-              notes: orderData.notes,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-            }),
-          });
-        },
-        prefill: {
-          name: user.name,
-          email: user.email,
-        },
-        theme: { color: "#3B82F6" },
-      };
-
-      const razorpay = new (window as any).Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      console.error(error);
-      alert("Failed to place order");
-    } finally {
-      setIsOrdering(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-white pb-32">
