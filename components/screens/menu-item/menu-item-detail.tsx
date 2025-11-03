@@ -205,15 +205,37 @@ export function MenuItemDetail() {
     }
 
     const autoTimeSlot = menu?.category; // "breakfast" | "lunch" | "dinner"
-
     setIsOrdering(true);
 
     try {
+      // Determine total number of delivery days
+      let totalDays = 0;
+      let deliveryInfo: any = { type: orderData.deliveryPeriod };
+
+      if (orderData.deliveryPeriod === "month") {
+        // assume 30 days for monthly plan
+        totalDays = 30;
+        deliveryInfo.startDate = new Date().toISOString().split("T")[0];
+      } else if (orderData.deliveryPeriod === "specific_days") {
+        // count selected weekdays for 4 weeks (1 month)
+        totalDays = selectedDays.length * 4;
+        deliveryInfo.days = selectedDays;
+      } else if (orderData.deliveryPeriod === "custom_dates") {
+        // count manually selected dates
+        totalDays = multiDates.length;
+        deliveryInfo.dates = multiDates.map((date) =>
+          date.toLocaleDateString("en-CA")
+        );
+      }
+
+      const totalAmount = menu.basePrice * totalDays;
+
+      // Create Razorpay order for full amount
       const razorpayResponse = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: menu.basePrice,
+          amount: totalAmount,
           currency: "INR",
         }),
       });
@@ -228,17 +250,6 @@ export function MenuItemDetail() {
         name: "TiffinCrate",
         order_id: razorpayOrder.order.id,
         handler: async (response: any) => {
-          let deliveryInfo: any = { type: orderData.deliveryPeriod };
-
-          if (orderData.deliveryPeriod === "month") {
-            deliveryInfo.startDate = new Date().toISOString().split("T")[0]; // today's date
-          } else if (orderData.deliveryPeriod === "specific_days") {
-            deliveryInfo.days = selectedDays;
-          } else if (orderData.deliveryPeriod === "custom_dates") {
-            deliveryInfo.dates = multiDates.map(
-              (date) => date.toISOString().split("T")[0]
-            );
-          }
           await fetch("/api/orders", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -249,13 +260,13 @@ export function MenuItemDetail() {
                   menuItemId: menu._id,
                   name: menu.name,
                   price: menu.basePrice,
-                  quantity: 1,
+                  quantity: totalDays,
                 },
               ],
-              totalAmount: menu.basePrice,
+              totalAmount,
               deliveryAddress: orderData.deliveryAddress,
               orderType: orderData.deliveryPeriod,
-              deliveryInfo: deliveryInfo,
+              deliveryInfo,
               timeSlot: autoTimeSlot,
               paymentMethod: "razorpay",
               notes: orderData.notes,
@@ -264,6 +275,7 @@ export function MenuItemDetail() {
               razorpaySignature: response.razorpay_signature,
             }),
           });
+          router.push("/order-history");
         },
         prefill: {
           name: user.name,
