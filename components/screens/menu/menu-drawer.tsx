@@ -283,9 +283,7 @@ export default function MenuDrawerForm({
 
             {/* Week Type */}
             <div>
-              <Label className="font-semibold text-lg mb-2 block">
-                Week Type
-              </Label>
+              <Label className="font-semibold mb-2 block">Week Type</Label>
               <RadioGroup
                 value={watch("weekType")}
                 onValueChange={(val) =>
@@ -310,7 +308,7 @@ export default function MenuDrawerForm({
 
             {/* Weekly Items */}
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold">Weekly Items</h3>
+              <h3 className="font-semibold">Weekly Items</h3>
               {DAYS.map((d) => (
                 <div
                   key={d.key}

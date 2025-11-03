@@ -156,9 +156,9 @@ export default function ProviderMenuPage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-4 flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold">Menu Management</h1>
+            <h1 className="text-3xl font-semibold">Menu Management</h1>
             <p className="text-gray-600">Manage your weekly menus</p>
           </div>
           <Button asChild>
@@ -170,13 +170,13 @@ export default function ProviderMenuPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Menus</p>
-                  <p className="text-2xl font-bold">{menus?.length}</p>
+                  <p className="text-xl font-semibold">{menus?.length}</p>
                 </div>
                 <div className="text-blue-500">📋</div>
               </div>
@@ -188,7 +188,7 @@ export default function ProviderMenuPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Active Menus</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-xl font-semibold text-green-600">
                     {getActiveMenus()}
                   </p>
                 </div>
@@ -199,7 +199,7 @@ export default function ProviderMenuPage() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-8">
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle>Filters</CardTitle>
           </CardHeader>
@@ -330,7 +330,7 @@ export default function ProviderMenuPage() {
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📋</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="font-medium text-gray-900 mb-2">
                 {searchTerm || categoryFilter || statusFilter
                   ? "No menus found"
                   : "No menus created yet"}

@@ -92,9 +92,9 @@ export default function ProviderDashboard() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-4 flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-semibold text-gray-900">
               Provider Dashboard
             </h1>
             <p className="text-gray-600">
@@ -110,7 +110,7 @@ export default function ProviderDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -119,7 +119,7 @@ export default function ProviderDashboard() {
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 {analytics?.totalOrders || 0}
               </div>
               <p className="text-xs text-muted-foreground">Orders received</p>
@@ -134,7 +134,7 @@ export default function ProviderDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 ₹{(analytics?.totalRevenue || 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">Revenue earned</p>
@@ -149,7 +149,7 @@ export default function ProviderDashboard() {
               <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4.8</div>
+              <div className="text-xl font-semibold">4.8</div>
               <p className="text-xs text-muted-foreground">Customer rating</p>
             </CardContent>
           </Card>
@@ -162,7 +162,7 @@ export default function ProviderDashboard() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 {analytics?.ordersByStatus?.find(
                   (item: any) => item._id === "pending"
                 )?.count || 0}

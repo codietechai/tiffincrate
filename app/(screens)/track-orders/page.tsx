@@ -177,8 +177,8 @@ export default function TrackOrdersPage() {
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold text-gray-900">
             Track Your Orders
           </h1>
           <p className="text-gray-600">
@@ -187,7 +187,7 @@ export default function TrackOrdersPage() {
         </div>
 
         {/* Filter */}
-        <Card className="mb-8">
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle>Filter Orders</CardTitle>
           </CardHeader>
@@ -235,7 +235,9 @@ export default function TrackOrdersPage() {
                       </CardDescription>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold">₹{order.totalAmount}</p>
+                      <p className="text-xl font-semibold">
+                        ₹{order.totalAmount}
+                      </p>
                       <Badge
                         className={getPaymentStatusColor(order.paymentStatus)}
                       >
@@ -303,21 +305,34 @@ export default function TrackOrdersPage() {
 
                           if (type === "month") {
                             // Just show the startDate
-                            return new Date(deliveryInfo.startDate).toLocaleDateString();
+                            return new Date(
+                              deliveryInfo.startDate
+                            ).toLocaleDateString();
                           }
 
-                          if (type === "custom_dates" && Array.isArray(deliveryInfo.dates)) {
+                          if (
+                            type === "custom_dates" &&
+                            Array.isArray(deliveryInfo.dates)
+                          ) {
                             const upcoming = deliveryInfo.dates
                               .map((d: string | number | Date) => new Date(d))
                               .filter((d: Date) => d >= today)
-                              .sort((a: { getTime: () => number; }, b: { getTime: () => number; }) => a.getTime() - b.getTime())[0];
+                              .sort(
+                                (
+                                  a: { getTime: () => number },
+                                  b: { getTime: () => number }
+                                ) => a.getTime() - b.getTime()
+                              )[0];
 
                             return upcoming
                               ? upcoming.toLocaleDateString()
                               : "No upcoming deliveries";
                           }
 
-                          if (type === "specific_days" && Array.isArray(deliveryInfo.days)) {
+                          if (
+                            type === "specific_days" &&
+                            Array.isArray(deliveryInfo.days)
+                          ) {
                             const dayMap: Record<string, number> = {
                               sunday: 0,
                               monday: 1,
@@ -328,16 +343,20 @@ export default function TrackOrdersPage() {
                               saturday: 6,
                             };
 
-                            const todayDay = today.getDay(); 
-                            const upcomingDates: Date[] = deliveryInfo.days.map((day: string) => {
-                              const targetDay = dayMap[day.toLowerCase()];
-                              const diff = (targetDay + 7 - todayDay) % 7;
-                              const nextDate = new Date(today);
-                              nextDate.setDate(today.getDate() + diff);
-                              return nextDate;
-                            });
+                            const todayDay = today.getDay();
+                            const upcomingDates: Date[] = deliveryInfo.days.map(
+                              (day: string) => {
+                                const targetDay = dayMap[day.toLowerCase()];
+                                const diff = (targetDay + 7 - todayDay) % 7;
+                                const nextDate = new Date(today);
+                                nextDate.setDate(today.getDate() + diff);
+                                return nextDate;
+                              }
+                            );
 
-                            const earliest = upcomingDates.sort((a, b) => a.getTime() - b.getTime())[0];
+                            const earliest = upcomingDates.sort(
+                              (a, b) => a.getTime() - b.getTime()
+                            )[0];
                             return earliest
                               ? earliest.toLocaleDateString()
                               : "No upcoming deliveries";
@@ -386,7 +405,7 @@ export default function TrackOrdersPage() {
           ) : (
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="font-medium text-gray-900 mb-2">
                 {statusFilter
                   ? `No ${statusFilter} orders found`
                   : "No orders found"}

@@ -234,8 +234,8 @@ export default function AdminProvidersPage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold text-gray-900">
             Provider Management
           </h1>
           <p className="text-gray-600">Verify and manage service providers</p>
@@ -256,13 +256,13 @@ export default function AdminProvidersPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Providers</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-xl font-semibold">{stats.total}</p>
                 </div>
                 <Store className="h-8 w-8 text-blue-500" />
               </div>
@@ -274,7 +274,7 @@ export default function AdminProvidersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Verified</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-xl font-semibold text-green-600">
                     {stats.verified}
                   </p>
                 </div>
@@ -288,7 +288,7 @@ export default function AdminProvidersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Unverified</p>
-                  <p className="text-2xl font-bold text-yellow-600">
+                  <p className="text-xl font-semibold text-yellow-600">
                     {stats.unverified}
                   </p>
                 </div>
@@ -302,7 +302,7 @@ export default function AdminProvidersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Active</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-xl font-semibold text-blue-600">
                     {stats.active}
                   </p>
                 </div>
@@ -316,7 +316,7 @@ export default function AdminProvidersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Inactive</p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-xl font-semibold text-red-600">
                     {stats.inactive}
                   </p>
                 </div>
@@ -327,7 +327,7 @@ export default function AdminProvidersPage() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-8">
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle>Filter Providers</CardTitle>
           </CardHeader>
@@ -391,7 +391,7 @@ export default function AdminProvidersPage() {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold">
+                        <h3 className="font-semibold">
                           {provider.businessName}
                         </h3>
                         <Badge
@@ -512,7 +512,7 @@ export default function AdminProvidersPage() {
           ) : (
             <div className="text-center py-12">
               <Store className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="font-medium text-gray-900 mb-2">
                 No providers found
               </h3>
               <p className="text-gray-600">

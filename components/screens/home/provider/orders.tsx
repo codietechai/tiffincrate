@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import StatsGrid from "@/components/common/stats-grid";
 
 interface OrderItem {
   name: string;
@@ -155,6 +156,7 @@ export function OrdersPage() {
     };
     return labels[status];
   };
+  const [loading, setLoading] = useState(false);
 
   const stats = [
     {
@@ -361,34 +363,8 @@ export function OrdersPage() {
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label}>
-              <CardContent className="pt-4 md:pt-6 pb-4 md:pb-6 px-3 md:px-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                  <div className="flex-1">
-                    <p className="text-gray-500 text-xs md:text-sm">
-                      {stat.label}
-                    </p>
-                    <p className="mt-1 md:mt-2 text-lg md:text-2xl">
-                      {stat.value}
-                    </p>
-                  </div>
-                  <div
-                    className={`${stat.bgColor} ${stat.color} p-2 md:p-3 rounded-lg w-fit`}
-                  >
-                    <Icon className="w-4 h-4 md:w-6 md:h-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <StatsGrid stats={stats} isLoading={loading} />
 
-      {/* Orders */}
       <div>
         <h2 className="mb-4 px-1">Tiffin Orders</h2>
         <Tabs defaultValue="all">

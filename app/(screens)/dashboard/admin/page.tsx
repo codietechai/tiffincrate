@@ -93,22 +93,24 @@ export default function AdminDashboard() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold text-gray-900">
+            Admin Dashboard
+          </h1>
           <p className="text-gray-600">
             Monitor platform performance and manage operations
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 {analytics?.totalUsers || 0}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -128,7 +130,7 @@ export default function AdminDashboard() {
               <Store className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 {analytics?.totalProviders || 0}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -148,7 +150,7 @@ export default function AdminDashboard() {
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 {analytics?.totalOrders || 0}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -168,7 +170,7 @@ export default function AdminDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 ₹{(analytics?.totalRevenue || 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">

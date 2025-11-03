@@ -91,9 +91,9 @@ export default function DeliveryEarningsPage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-4 flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-semibold text-gray-900">
               Earnings Dashboard
             </h1>
             <p className="text-gray-600">
@@ -125,7 +125,7 @@ export default function DeliveryEarningsPage() {
         </div>
 
         {/* Earnings Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
           <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -134,7 +134,7 @@ export default function DeliveryEarningsPage() {
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-700">
+              <div className="text-xl font-semibold text-green-700">
                 ₹{earnings?.total || 0}
               </div>
               <p className="text-xs text-green-600">All time earnings</p>
@@ -147,7 +147,7 @@ export default function DeliveryEarningsPage() {
               <Calendar className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-700">
+              <div className="text-xl font-semibold text-blue-700">
                 ₹{earnings?.thisMonth || 0}
               </div>
               <p className="text-xs text-blue-600 flex items-center">
@@ -163,7 +163,7 @@ export default function DeliveryEarningsPage() {
               <Package className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-700">
+              <div className="text-xl font-semibold text-purple-700">
                 {earnings?.totalDeliveries || 0}
               </div>
               <p className="text-xs text-purple-600">Completed deliveries</p>
@@ -178,7 +178,7 @@ export default function DeliveryEarningsPage() {
               <TrendingUp className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-700">
+              <div className="text-xl font-semibold text-yellow-700">
                 ₹{earnings?.averagePerDelivery?.toFixed(0) || 0}
               </div>
               <p className="text-xs text-yellow-600">Average earning</p>

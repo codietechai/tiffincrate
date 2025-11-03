@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import { Heart, Star, ChefHat, MapPin, TrendingUp, Trash2 } from "lucide-react";
+import TitleHeader from "@/components/common/title-header";
 
 interface ServiceProvider {
   _id: string;
@@ -95,20 +96,11 @@ export default function FavoritesPage() {
       <Navbar />
 
       <div className="max-w-xl lg:max-w-4xl px-4 py-4">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <Heart className="h-8 w-8 text-red-500" />
-              <h1 className="text-xl font-semibold text-gray-900">
-                My Favorite Providers
-              </h1>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Your saved tiffin providers for quick access
-            </p>
-          </div>
-        </div>
-
+        <TitleHeader
+          title="My Favorite Providers"
+          icon={<Heart />}
+          description="Your saved tiffin providers for quick access"
+        />
         {favorites.length > 0 ? (
           <div className="grid grid-cols-1 gap-6">
             {favorites.map((provider) => (
@@ -119,7 +111,7 @@ export default function FavoritesPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="flex text-lg items-center gap-2 mb-0">
+                      <CardTitle className="flex items-center gap-2 mb-0">
                         {provider.businessName}
                         {provider.isVerified && (
                           <Badge variant="default" className="text-xs">

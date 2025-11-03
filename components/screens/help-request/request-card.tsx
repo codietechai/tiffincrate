@@ -61,9 +61,7 @@ export default function RequestCard({
           <div className="flex-1 w-full">
             {/* Title & Badges */}
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <h3 className="font-semibold text-base sm:text-lg">
-                {request.subject}
-              </h3>
+              <h3 className="font-semibold sm:text-lg">{request.subject}</h3>
               <Badge className={getStatusColor(request.status)}>
                 <div className="flex items-center gap-1 text-xs sm:text-sm">
                   {getStatusIcon(request.status)}
@@ -162,7 +160,7 @@ export default function RequestCard({
                   {/* Responses */}
                   {request.responses.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="font-medium text-base">Responses</h4>
+                      <h4 className="font-medium">Responses</h4>
                       {request.responses.map((resp: any, index: number) => (
                         <div
                           key={index}

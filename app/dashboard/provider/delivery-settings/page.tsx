@@ -126,8 +126,8 @@ export default function DeliverySettingsPage() {
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold text-gray-900 flex items-center gap-2">
             <Truck className="h-8 w-8 text-orange-600" />
             Delivery Settings
           </h1>
@@ -162,9 +162,9 @@ export default function DeliverySettingsPage() {
                   >
                     <CardHeader>
                       <CardTitle className="flex items-center gap-3">
-                        <span className="text-2xl">{slotInfo.icon}</span>
+                        <span className="text-xl">{slotInfo.icon}</span>
                         <div>
-                          <h3 className="text-xl font-bold capitalize">
+                          <h3 className="text-xl font-semibold capitalize">
                             {slot}
                           </h3>
                           <p className="text-sm text-gray-600 flex items-center gap-2">

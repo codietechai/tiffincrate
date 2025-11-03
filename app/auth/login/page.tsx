@@ -74,7 +74,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-3 mb-4">
             <ChefHat className="h-10 w-10 text-white/95" />
             <div>
-              <h2 className="text-2xl md:text-3xl font-extrabold">
+              <h2 className="text-xl md:text-3xl font-extrabold">
                 TiffinCrate
               </h2>
               <p className="text-xs md:text-sm opacity-90">
@@ -83,7 +83,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <h3 className="text-xl md:text-2xl font-bold mb-2 text-center md:text-left">
+          <h3 className="text-xl md:text-xl font-semibold mb-2 text-center md:text-left">
             Welcome back
           </h3>
           <p className="md:max-w-xs text-sm mb-4 text-center md:text-left opacity-90">
@@ -119,7 +119,9 @@ export default function LoginPage() {
             <div className="flex items-center gap-3 mb-6">
               <ChefHat className="h-10 w-10 text-red-500" />
               <div>
-                <h1 className="text-2xl font-bold">Sign in to TiffinCrate</h1>
+                <h1 className="text-xl font-semibold">
+                  Sign in to TiffinCrate
+                </h1>
                 <p className="text-sm text-gray-500">
                   Enter your account details below
                 </p>

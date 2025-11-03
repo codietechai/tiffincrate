@@ -58,7 +58,7 @@ interface IMenu {
   category: "breakfast" | "lunch" | "dinner";
   weeklyItems: IWeeklyMenu;
   basePrice: number;
-  providerId: string | null,
+  providerId: string | null;
   monthlyPlanPrice?: number;
   imageUrl: string[];
   isAvailable: boolean;
@@ -184,7 +184,7 @@ export function MenuItemDetail() {
     for (let i = 0; i < countWeeks; i++) {
       days.forEach((day) => {
         const targetDay = dayMap[day];
-        const diff = (targetDay + 7 - today.getDay()) % 7 + i * 7;
+        const diff = ((targetDay + 7 - today.getDay()) % 7) + i * 7;
         const nextDate = new Date(today);
         nextDate.setDate(today.getDate() + diff);
         dates.push(nextDate);
@@ -203,7 +203,6 @@ export function MenuItemDetail() {
       router.push("/auth/login");
       return;
     }
-
 
     const autoTimeSlot = menu?.category; // "breakfast" | "lunch" | "dinner"
 
@@ -229,7 +228,6 @@ export function MenuItemDetail() {
         name: "TiffinCrate",
         order_id: razorpayOrder.order.id,
         handler: async (response: any) => {
-
           let deliveryInfo: any = { type: orderData.deliveryPeriod };
 
           if (orderData.deliveryPeriod === "month") {
@@ -237,8 +235,8 @@ export function MenuItemDetail() {
           } else if (orderData.deliveryPeriod === "specific_days") {
             deliveryInfo.days = selectedDays;
           } else if (orderData.deliveryPeriod === "custom_dates") {
-            deliveryInfo.dates = multiDates.map((date) =>
-              date.toISOString().split("T")[0]
+            deliveryInfo.dates = multiDates.map(
+              (date) => date.toISOString().split("T")[0]
             );
           }
           await fetch("/api/orders", {
@@ -320,7 +318,7 @@ export function MenuItemDetail() {
           <div className="p-6 space-y-6">
             {/* Title + Description */}
             <div>
-              <h1 className="text-2xl font-semibold mb-2">{menu.name}</h1>
+              <h1 className="text-xl font-semibold mb-2">{menu.name}</h1>
               <p className="text-gray-600">{menu.description}</p>
             </div>
 
@@ -330,7 +328,7 @@ export function MenuItemDetail() {
             <Accordion type="single" collapsible>
               {Object.entries(menu.weeklyItems).map(([day, item]) => (
                 <AccordionItem key={day} value={day}>
-                  <AccordionTrigger className="capitalize font-medium text-base">
+                  <AccordionTrigger className="capitalize font-medium">
                     {day}
                   </AccordionTrigger>
                   <AccordionContent>
@@ -344,7 +342,7 @@ export function MenuItemDetail() {
             {/* Pricing */}
             <div className="flex items-center gap-2">
               <IndianRupee className="h-4 w-4 text-orange-600" />
-              <span className="font-semibold text-lg">{menu.basePrice}</span>
+              <span className="font-semibold">{menu.basePrice}</span>
               <span className="text-gray-500 ml-1">per meal</span>
             </div>
 

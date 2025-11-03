@@ -39,6 +39,7 @@ import { ProviderService } from "@/services/provider-service";
 import { IServiceProvider } from "@/models/ServiceProvider";
 import { HelpRequestService } from "@/services/help-request-service";
 import { SUCCESSMESSAGE } from "@/constants/response-messages";
+import TitleHeader from "@/components/common/title-header";
 
 export default function HelpRequestsPage() {
   const [helpRequests, setHelpRequests] = useState<THelpRequest[]>([]);
@@ -242,197 +243,193 @@ export default function HelpRequestsPage() {
       <Navbar />
 
       <div className="mx-auto max-w-xl lg:max-w-4xl px-4 py-4">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <HandHelping className="h-5 w-5 lg:h-8 lg:w-8" />
-              <h1 className="text-xl font-semibold text-gray-900">
-                Help Requests
-              </h1>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Manage support requests and communications
-            </p>
-          </div>
+        <TitleHeader
+          title="Help Requests"
+          icon={<HandHelping />}
+          description=" Manage support requests and communications"
+          rightComponent={
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary text-white rounded-full px-3 py-2 shadow-md flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span className="text-sm">New</span>
+                </Button>
+              </DialogTrigger>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary text-white rounded-full px-3 py-2 shadow-md flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                <span className="text-sm">New</span>
-              </Button>
-            </DialogTrigger>
+              <DialogContent className="max-w-lg rounded-2xl p-4 sm:p-6">
+                <DialogHeader>
+                  <DialogTitle className="font-medium text-gray-800">
+                    Create Help Request
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-gray-500">
+                    Submit a new help request for assistance
+                  </DialogDescription>
+                </DialogHeader>
 
-            <DialogContent className="max-w-lg rounded-2xl p-4 sm:p-6">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-medium text-gray-800">
-                  Create Help Request
-                </DialogTitle>
-                <DialogDescription className="text-sm text-gray-500">
-                  Submit a new help request for assistance
-                </DialogDescription>
-              </DialogHeader>
+                <form onSubmit={createHelpRequest} className="mt-3 space-y-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
 
-              <form onSubmit={createHelpRequest} className="mt-3 space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="type" className="text-xs">
-                      Request Type
-                    </Label>
-                    <Select
-                      value={newRequest.type}
-                      onValueChange={(value) =>
-                        setNewRequest((prev) => ({ ...prev, type: value }))
-                      }
-                    >
-                      <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin_support">
-                          Admin Support
-                        </SelectItem>
-                        {user?.role === "consumer" && (
-                          <>
-                            <SelectItem value="provider_support">
-                              Provider Support
-                            </SelectItem>
-                            <SelectItem value="consumer_to_provider">
-                              To Provider
-                            </SelectItem>
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {providers.length > 0 &&
-                    newRequest.type === "consumer_to_provider" && (
-                      <div>
-                        <Label className="text-xs">Provider</Label>
-                        <Select
-                          value={newRequest.toUserId}
-                          onValueChange={(value) =>
-                            setNewRequest((prev) => ({
-                              ...prev,
-                              toUserId: value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
-                            <SelectValue placeholder="Select provider" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {providers.map((item) => (
-                              <SelectItem
-                                key={(item.userId as any)?._id}
-                                value={(item.userId as any)?._id}
-                              >
-                                {item.businessName}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="type" className="text-xs">
+                        Request Type
+                      </Label>
+                      <Select
+                        value={newRequest.type}
+                        onValueChange={(value) =>
+                          setNewRequest((prev) => ({ ...prev, type: value }))
+                        }
+                      >
+                        <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin_support">
+                            Admin Support
+                          </SelectItem>
+                          {user?.role === "consumer" && (
+                            <>
+                              <SelectItem value="provider_support">
+                                Provider Support
                               </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                              <SelectItem value="consumer_to_provider">
+                                To Provider
+                              </SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {providers.length > 0 &&
+                      newRequest.type === "consumer_to_provider" && (
+                        <div>
+                          <Label className="text-xs">Provider</Label>
+                          <Select
+                            value={newRequest.toUserId}
+                            onValueChange={(value) =>
+                              setNewRequest((prev) => ({
+                                ...prev,
+                                toUserId: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
+                              <SelectValue placeholder="Select provider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {providers.map((item) => (
+                                <SelectItem
+                                  key={(item.userId as any)?._id}
+                                  value={(item.userId as any)?._id}
+                                >
+                                  {item.businessName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                    <div>
+                      <Label className="text-xs">Priority</Label>
+                      <Select
+                        value={newRequest.priority}
+                        onValueChange={(value) =>
+                          setNewRequest((prev) => ({
+                            ...prev,
+                            priority: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
                   <div>
-                    <Label className="text-xs">Priority</Label>
+                    <Label className="text-xs">Category</Label>
                     <Select
-                      value={newRequest.priority}
+                      value={newRequest.category}
                       onValueChange={(value) =>
-                        setNewRequest((prev) => ({ ...prev, priority: value }))
+                        setNewRequest((prev) => ({ ...prev, category: value }))
                       }
                     >
                       <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
-                        <SelectValue placeholder="Select priority" />
+                        <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="urgent">Urgent</SelectItem>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="technical">Technical</SelectItem>
+                        <SelectItem value="billing">Billing</SelectItem>
+                        <SelectItem value="order">Order</SelectItem>
+                        <SelectItem value="account">Account</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                <div>
-                  <Label className="text-xs">Category</Label>
-                  <Select
-                    value={newRequest.category}
-                    onValueChange={(value) =>
-                      setNewRequest((prev) => ({ ...prev, category: value }))
-                    }
-                  >
-                    <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="technical">Technical</SelectItem>
-                      <SelectItem value="billing">Billing</SelectItem>
-                      <SelectItem value="order">Order</SelectItem>
-                      <SelectItem value="account">Account</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <Label className="text-xs">Subject</Label>
+                    <Input
+                      id="subject"
+                      placeholder="Brief description"
+                      value={newRequest.subject}
+                      onChange={(e) =>
+                        setNewRequest((prev) => ({
+                          ...prev,
+                          subject: e.target.value,
+                        }))
+                      }
+                      required
+                      className="mt-1 rounded-lg border border-gray-200"
+                    />
+                  </div>
 
-                <div>
-                  <Label className="text-xs">Subject</Label>
-                  <Input
-                    id="subject"
-                    placeholder="Brief description"
-                    value={newRequest.subject}
-                    onChange={(e) =>
-                      setNewRequest((prev) => ({
-                        ...prev,
-                        subject: e.target.value,
-                      }))
-                    }
-                    required
-                    className="mt-1 rounded-lg border border-gray-200"
-                  />
-                </div>
+                  <div>
+                    <Label className="text-xs">Message</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Detailed description"
+                      value={newRequest.message}
+                      onChange={(e) =>
+                        setNewRequest((prev) => ({
+                          ...prev,
+                          message: e.target.value,
+                        }))
+                      }
+                      rows={4}
+                      required
+                      className="mt-1 rounded-lg border border-gray-200"
+                    />
+                  </div>
 
-                <div>
-                  <Label className="text-xs">Message</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Detailed description"
-                    value={newRequest.message}
-                    onChange={(e) =>
-                      setNewRequest((prev) => ({
-                        ...prev,
-                        message: e.target.value,
-                      }))
-                    }
-                    rows={4}
-                    required
-                    className="mt-1 rounded-lg border border-gray-200"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit">Create</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">Create</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          }
+        />
 
         {success && (
           <Alert className="mb-3 border border-green-200 bg-green-50 text-green-700">
@@ -500,7 +497,7 @@ export default function HelpRequestsPage() {
               ) : (
                 <div className="text-center py-12">
                   <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <h3 className="font-medium text-gray-900 mb-2">
                     No help requests found
                   </h3>
                   <p className="text-gray-600">

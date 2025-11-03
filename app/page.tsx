@@ -82,12 +82,12 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-4xl md:text-6xl font-semibold mb-6">
               Fresh, Home-Cooked
               <br />
               <span className="text-yellow-300">Tiffin Services</span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100">
+            <p className="text-xl md:text-xl mb-4 text-blue-100">
               Connect with local tiffin providers and enjoy delicious, healthy
               meals delivered to your doorstep
             </p>
@@ -120,7 +120,7 @@ export default function HomePage() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-semibold text-gray-900 mb-4">
               Why Choose TiffinCrate?
             </h2>
             <p className="text-xl text-gray-600">
@@ -167,7 +167,7 @@ export default function HomePage() {
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-semibold text-gray-900 mb-4">
               Featured Tiffin Providers
             </h2>
             <p className="text-xl text-gray-600">
@@ -287,10 +287,10 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-16 bg-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">
+          <h2 className="text-3xl font-semibold mb-4">
             Ready to Start Your Journey?
           </h2>
-          <p className="text-xl mb-8 text-blue-100">
+          <p className="text-xl mb-4 text-blue-100">
             Join thousands of happy customers and providers on TiffinCrate
           </p>
           {!user && (
@@ -323,7 +323,7 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center mb-4 md:mb-0">
               <ChefHat className="h-8 w-8 text-blue-400" />
-              <span className="ml-2 text-xl font-bold">TiffinCrate</span>
+              <span className="ml-2 text-xl font-semibold">TiffinCrate</span>
             </div>
             <div className="text-gray-400 text-sm">
               © 2024 TiffinCrate. All rights reserved.

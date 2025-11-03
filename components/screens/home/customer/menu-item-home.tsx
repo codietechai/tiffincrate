@@ -26,7 +26,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
             className="h-[50px] w-[50px] rounded-lg object-cover"
           />
           <div className="lg:hidden">
-            <h3 className="font-semibold text-lg mb-1">
+            <h3 className="font-semibold mb-1">
               {menu.name}{" "}
               {/* {pathname.includes("home") &&
                 `by ${menu.providerId?.businessName}`} */}
@@ -39,7 +39,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
 
         <div className="flex-1">
           <div className="hidden lg:block">
-            <h3 className="font-semibold text-lg mb-1">
+            <h3 className="font-semibold mb-1">
               {menu.name}{" "}
               {pathname.includes("home") &&
                 `by ${menu.providerId?.businessName}`}

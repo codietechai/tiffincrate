@@ -162,7 +162,7 @@ export function MenuItemDetail({ onAddToCart }: MenuItemDetailProps) {
                         }`}
                       />
                     </div>
-                    <h1 className="text-2xl font-semibold">{menuItem.name}</h1>
+                    <h1 className="text-xl font-semibold">{menuItem.name}</h1>
                   </div>
                   <p className="text-gray-600">{menuItem.description}</p>
                 </div>
@@ -271,7 +271,7 @@ export function MenuItemDetail({ onAddToCart }: MenuItemDetailProps) {
                     value={day.key}
                     className="border-b"
                   >
-                    <AccordionTrigger className="py-3 px-2 font-medium text-base">
+                    <AccordionTrigger className="py-3 px-2 font-medium">
                       {day.label}
                     </AccordionTrigger>
                     <AccordionContent className="px-2 pb-3 text-sm space-y-1">

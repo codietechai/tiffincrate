@@ -177,8 +177,8 @@ export default function DeliveryDashboard() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold text-gray-900">
             Delivery Dashboard
           </h1>
           <p className="text-gray-600">
@@ -187,7 +187,7 @@ export default function DeliveryDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
           <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -196,7 +196,7 @@ export default function DeliveryDashboard() {
               <Package className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-700">
+              <div className="text-xl font-semibold text-blue-700">
                 {analytics?.todayDeliveries || 0}
               </div>
               <p className="text-xs text-blue-600">Completed today</p>
@@ -211,7 +211,7 @@ export default function DeliveryDashboard() {
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-700">
+              <div className="text-xl font-semibold text-green-700">
                 ₹{analytics?.todayEarnings || 0}
               </div>
               <p className="text-xs text-green-600">Earned today</p>
@@ -226,7 +226,7 @@ export default function DeliveryDashboard() {
               <Star className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-700">
+              <div className="text-xl font-semibold text-yellow-700">
                 {analytics?.averageRating?.toFixed(1) || "0.0"}
               </div>
               <p className="text-xs text-yellow-600">Customer rating</p>
@@ -241,7 +241,7 @@ export default function DeliveryDashboard() {
               <Truck className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-700">
+              <div className="text-xl font-semibold text-purple-700">
                 {
                   assignments.filter(
                     (a: any) => !["delivered", "failed"].includes(a.status)
@@ -254,7 +254,7 @@ export default function DeliveryDashboard() {
         </div>
 
         {/* Time Slot Filter */}
-        <Card className="mb-8 bg-gradient-to-r from-white to-orange-50 border-orange-200">
+        <Card className="mb-4 bg-gradient-to-r from-white to-orange-50 border-orange-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-orange-600" />
@@ -304,7 +304,7 @@ export default function DeliveryDashboard() {
 
         {/* Delivery Assignments */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-semibold text-gray-900">
             {selectedSlot
               ? `${
                   selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)
@@ -322,7 +322,7 @@ export default function DeliveryDashboard() {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold">
+                        <h3 className="font-semibold">
                           Order #{assignment.orderId._id.slice(-8)}
                         </h3>
                         <Badge className={getStatusColor(assignment.status)}>
@@ -338,7 +338,7 @@ export default function DeliveryDashboard() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold">
+                      <p className="font-semibold">
                         ₹{assignment.orderId.totalAmount}
                       </p>
                       <p className="text-sm text-gray-500">

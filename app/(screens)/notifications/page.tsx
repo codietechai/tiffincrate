@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NotificationService } from "@/services/notification-service";
+import TitleHeader from "@/components/common/title-header";
 
 interface TNotification {
   _id: string;
@@ -173,53 +174,40 @@ export default function NotificationsPage() {
       <Navbar />
 
       <div className="mx-auto max-w-xl px-4 py-4">
-        <div className="mb-4 lg:mb-8 flex justify-between items-center flex-wrap gap-4">
-          <div>
+        <TitleHeader
+          description="Stay updated with your orders"
+          title="Notifications"
+          icon={<Bell />}
+          rightComponent={
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 lg:h-8 lg:w-8" />
-              <h1 className="text-xl font-semibold text-gray-900">
-                Notifications
-              </h1>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {["order", "payment", "system", "promotion"].map((type) => (
+                    <DropdownMenuCheckboxItem
+                      key={type}
+                      checked={filters.includes(type)}
+                      onCheckedChange={() => toggleFilter(type)}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {unreadCount > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  {unreadCount}
-                </Badge>
+                <Button onClick={() => markAsRead()} variant="outline">
+                  <CheckCheck className="mr-2 h-4 w-4" />
+                  Mark All Read
+                </Button>
               )}
             </div>
-            <p className="text-gray-600 hidden lg:block">
-              Stay updated with your orders and account activity
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {["order", "payment", "system", "promotion"].map((type) => (
-                  <DropdownMenuCheckboxItem
-                    key={type}
-                    checked={filters.includes(type)}
-                    onCheckedChange={() => toggleFilter(type)}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {unreadCount > 0 && (
-              <Button onClick={() => markAsRead()} variant="outline">
-                <CheckCheck className="mr-2 h-4 w-4" />
-                Mark All Read
-              </Button>
-            )}
-          </div>
-        </div>
+          }
+        />
         {filters.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-5">
             {filters.map((filter) => (
@@ -325,13 +313,13 @@ export default function NotificationsPage() {
               ))
             ) : (
               <div className="text-center py-12">
-                <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <Bell className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+                <h3 className="font-medium text-gray-900 mb-1">
                   {activeTab === "unread"
                     ? "No unread notifications"
                     : "No read notifications"}
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-sm lg:text-base">
                   You're all caught up! Check back later for updates.
                 </p>
               </div>

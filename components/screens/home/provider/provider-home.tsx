@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DeliveryInfo } from "../../delivery/provider/delivery-info";
+import { OrdersPage } from "./orders";
 
 const ProviderHome = () => {
   const [notificationCount] = useState(5);
@@ -89,11 +90,7 @@ const ProviderHome = () => {
           </Button>
         </div>
       </header>
-      {/* <Analytics /> */}
-      {/* <OrdersPage /> */}
-      {/* <ProviderSettings /> */}
-      {/* <MenuManagement /> */}
-      <DeliveryInfo />
+      <OrdersPage />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 "use client";
-
+import { Package, Truck, Clock, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
-import { Search, Calendar, Package, Star, RotateCcw, Eye } from "lucide-react";
+import { Search, Calendar, Star, RotateCcw, Eye } from "lucide-react";
+import StatsGrid from "@/components/common/stats-grid";
 
 interface Order {
   _id: string;
@@ -181,7 +182,6 @@ export default function OrderHistoryPage() {
   };
 
   const handleReorder = async (order: Order) => {
-    // This would typically redirect to the provider's page with the items pre-selected
     router.push(`/providers/${order.providerId}`);
   };
 
@@ -210,75 +210,52 @@ export default function OrderHistoryPage() {
 
   const stats = getOrderStats();
 
+  const statsData = [
+    {
+      label: "Total Orders",
+      value: stats.total,
+      icon: Package,
+      bgColor: "bg-blue-100",
+      color: "text-blue-500",
+    },
+    {
+      label: "Delivered",
+      value: stats.delivered,
+      icon: Truck,
+      bgColor: "bg-green-100",
+      color: "text-green-500",
+    },
+    {
+      label: "Active",
+      value: stats.pending,
+      icon: Clock,
+      bgColor: "bg-yellow-100",
+      color: "text-blue-500",
+    },
+    {
+      label: "Total Spent",
+      value: `₹${getTotalSpent().toLocaleString()}`,
+      icon: Wallet,
+      bgColor: "bg-purple-100",
+      color: "text-purple-500",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Order History</h1>
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold text-gray-900">
+            Order History
+          </h1>
           <p className="text-gray-600">View and manage all your past orders</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-                <Package className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
+        <StatsGrid stats={statsData} />
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Delivered</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {stats.delivered}
-                  </p>
-                </div>
-                <Package className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {stats.pending}
-                  </p>
-                </div>
-                <Package className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Spent</p>
-                  <p className="text-2xl font-bold">
-                    ₹{getTotalSpent().toLocaleString()}
-                  </p>
-                </div>
-                <Package className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-8">
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle>Filter Orders</CardTitle>
           </CardHeader>
@@ -336,7 +313,6 @@ export default function OrderHistoryPage() {
           </CardContent>
         </Card>
 
-        {/* Orders List */}
         <div className="space-y-4">
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order) => (
@@ -357,7 +333,9 @@ export default function OrderHistoryPage() {
                       </CardDescription>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold">₹{order.totalAmount}</p>
+                      <p className="text-xl font-semibold">
+                        ₹{order.totalAmount}
+                      </p>
                       <Badge
                         className={getPaymentStatusColor(order.paymentStatus)}
                       >
@@ -399,7 +377,7 @@ export default function OrderHistoryPage() {
                         {new Date(order.deliveryDate).toLocaleDateString()}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {order.deliveryAddress}
+                        {JSON.stringify(order.deliveryAddress)}
                       </p>
                     </div>
                   </div>
@@ -433,7 +411,7 @@ export default function OrderHistoryPage() {
           ) : (
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="font-medium text-gray-900 mb-2">
                 No orders found
               </h3>
               <p className="text-gray-600 mb-4">

@@ -16,7 +16,7 @@ export function FloatingCartButton({
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pointer-events-none z-50">
       <div className="max-w-2xl mx-auto pointer-events-auto">
         <Button
-          className="w-full bg-orange-600 hover:bg-orange-700 shadow-lg h-14 text-base"
+          className="w-full bg-orange-600 hover:bg-orange-700 shadow-lg h-14"
           size="lg"
         >
           <div className="flex items-center justify-between w-full">

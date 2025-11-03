@@ -36,7 +36,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 
-
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -50,8 +49,8 @@ export default function RegisterPage() {
     address: "",
   });
 
-const [addresses, setAddresses] = useState<string[]>([]);
-const [currentAddress, setCurrentAddress] = useState("");
+  const [addresses, setAddresses] = useState<string[]>([]);
+  const [currentAddress, setCurrentAddress] = useState("");
 
   const [businessData, setBusinessData] = useState({
     businessName: "",
@@ -165,10 +164,12 @@ const [currentAddress, setCurrentAddress] = useState("");
           className="max-w-md text-center space-y-4"
         >
           <ChefHat className="h-12 w-12 mx-auto" />
-          <h1 className="text-4xl font-bold tracking-tight">Join TiffinCrate</h1>
+          <h1 className="text-4xl font-semibold tracking-tight">
+            Join TiffinCrate
+          </h1>
           <p className="text-sm text-white/80">
-            Sign up to serve, deliver, or enjoy fresh home meals.  
-            Start your culinary journey today 🍱
+            Sign up to serve, deliver, or enjoy fresh home meals. Start your
+            culinary journey today 🍱
           </p>
         </motion.div>
       </div>
@@ -183,7 +184,7 @@ const [currentAddress, setCurrentAddress] = useState("");
         >
           <Card className="bg-transparent border-none">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+              <CardTitle className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                 Create Account
               </CardTitle>
               <CardDescription>
@@ -252,7 +253,11 @@ const [currentAddress, setCurrentAddress] = useState("");
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-3 text-gray-400"
                       >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -319,61 +324,60 @@ const [currentAddress, setCurrentAddress] = useState("");
                 </div>
 
                 {/* Address bubbles for delivery partner */}
-{formData.role === "delivery_partner" && (
-  <div className="space-y-4">
-    <Label htmlFor="addresses">Delivery Addresses</Label>
+                {formData.role === "delivery_partner" && (
+                  <div className="space-y-4">
+                    <Label htmlFor="addresses">Delivery Addresses</Label>
 
-    <div className="flex flex-wrap gap-2 border rounded-md p-2 min-h-[46px] bg-white">
-      {addresses.map((addr, index) => (
-        <span
-          key={index}
-          className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm"
-        >
-          {addr}
-          <button
-            type="button"
-            onClick={() =>
-              setAddresses(addresses.filter((_, i) => i !== index))
-            }
-            className="hover:text-red-600"
-          >
-            ×
-          </button>
-        </span>
-      ))}
+                    <div className="flex flex-wrap gap-2 border rounded-md p-2 min-h-[46px] bg-white">
+                      {addresses.map((addr, index) => (
+                        <span
+                          key={index}
+                          className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm"
+                        >
+                          {addr}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAddresses(
+                                addresses.filter((_, i) => i !== index)
+                              )
+                            }
+                            className="hover:text-red-600"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
 
-      <input
-        type="text"
-        value={currentAddress}
-        onChange={(e) => setCurrentAddress(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === ",") {
-            e.preventDefault();
-            const trimmed = currentAddress.trim();
-            if (trimmed && !addresses.includes(trimmed)) {
-              setAddresses([...addresses, trimmed]);
-            }
-            setCurrentAddress("");
-          }
-        }}
-        placeholder="Type address and press Enter or comma"
-        className="flex-grow outline-none bg-transparent text-sm min-w-[120px]"
-      />
-    </div>
+                      <input
+                        type="text"
+                        value={currentAddress}
+                        onChange={(e) => setCurrentAddress(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === ",") {
+                            e.preventDefault();
+                            const trimmed = currentAddress.trim();
+                            if (trimmed && !addresses.includes(trimmed)) {
+                              setAddresses([...addresses, trimmed]);
+                            }
+                            setCurrentAddress("");
+                          }
+                        }}
+                        placeholder="Type address and press Enter or comma"
+                        className="flex-grow outline-none bg-transparent text-sm min-w-[120px]"
+                      />
+                    </div>
 
-    <p className="text-xs text-gray-500">
-      Add multiple addresses by pressing Enter or comma
-    </p>
-  </div>
-)}
-
+                    <p className="text-xs text-gray-500">
+                      Add multiple addresses by pressing Enter or comma
+                    </p>
+                  </div>
+                )}
 
                 {/* Provider fields */}
                 {formData.role === "provider" && (
                   <div className="pt-4 border-t">
-                    <h3 className="font-medium text-lg mb-2">
-                      Business Information
-                    </h3>
+                    <h3 className="font-medium mb-2">Business Information</h3>
                     <Label>Business Name</Label>
                     <Input
                       name="businessName"
@@ -412,9 +416,7 @@ const [currentAddress, setCurrentAddress] = useState("");
                 {/* Delivery partner fields */}
                 {formData.role === "delivery_partner" && (
                   <div className="pt-4 border-t">
-                    <h3 className="font-medium text-lg mb-2">
-                      Delivery Partner Info
-                    </h3>
+                    <h3 className="font-medium mb-2">Delivery Partner Info</h3>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <Label>Vehicle Type</Label>
@@ -459,7 +461,9 @@ const [currentAddress, setCurrentAddress] = useState("");
                           <input
                             type="checkbox"
                             checked={
-                              businessData.availableSlots[slot as keyof typeof businessData.availableSlots]
+                              businessData.availableSlots[
+                                slot as keyof typeof businessData.availableSlots
+                              ]
                             }
                             onChange={(e) =>
                               setBusinessData((prev) => ({
@@ -490,7 +494,10 @@ const [currentAddress, setCurrentAddress] = useState("");
 
                 <div className="text-center text-sm text-gray-600">
                   Already have an account?{" "}
-                  <Link href="/auth/login" className="text-[#6E56CF] hover:underline">
+                  <Link
+                    href="/auth/login"
+                    className="text-[#6E56CF] hover:underline"
+                  >
                     Sign in
                   </Link>
                 </div>

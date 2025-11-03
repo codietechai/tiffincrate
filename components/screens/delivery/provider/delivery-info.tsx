@@ -329,7 +329,7 @@ export function DeliveryInfo() {
                     <p className="text-gray-500 text-xs md:text-sm">
                       {stat.label}
                     </p>
-                    <p className="mt-1 md:mt-2 text-lg md:text-2xl">
+                    <p className="mt-1 md:mt-2 md:text-xl">
                       {stat.value}
                       {stat.total && (
                         <span className="text-gray-400">/{stat.total}</span>

@@ -37,7 +37,7 @@ const ConsumerHome = () => {
       <HomeHeader />
       <div className="mt-5 px-3">
         <div className="mb-3 flex justify-between items-center">
-          <h3 className="font-bold text-lg">Filters</h3>
+          <h3 className="font-semibold">Filters</h3>
           <Settings2 className="text-muted-foreground" />
         </div>
         {/* <FilterDrawer /> */}

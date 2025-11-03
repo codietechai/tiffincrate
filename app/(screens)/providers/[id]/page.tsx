@@ -352,7 +352,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Provider Info */}
-        <Card className="mb-8 bg-gradient-to-r from-orange-100 to-yellow-100">
+        <Card className="mb-4 bg-gradient-to-r from-orange-100 to-yellow-100">
           <CardHeader>
             <CardTitle className="text-3xl flex items-center gap-3">
               {provider.businessName}
@@ -446,7 +446,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
 
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="font-bold">₹{menu.basePrice}</p>
+                          <p className="font-semibold">₹{menu.basePrice}</p>
                           {menu.monthlyPlanPrice && (
                             <p className="text-sm text-gray-600">
                               Monthly Plan: ₹{menu.monthlyPlanPrice}
@@ -787,7 +787,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                         </div>
                       </div>
                       <div className="my-4 border-b w-full"></div>
-                      <div className="flex justify-between font-bold mb-4">
+                      <div className="flex justify-between font-semibold mb-4">
                         <span>Total</span>
                         <span>₹{getCartTotal()}</span>
                       </div>

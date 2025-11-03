@@ -276,8 +276,10 @@ export default function AdminOrdersPage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold text-gray-900">
+            Order Management
+          </h1>
           <p className="text-gray-600">Review and manage all platform orders</p>
         </div>
 
@@ -296,13 +298,13 @@ export default function AdminOrdersPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-xl font-semibold">{stats.total}</p>
                 </div>
                 <Package className="h-8 w-8 text-blue-500" />
               </div>
@@ -314,7 +316,7 @@ export default function AdminOrdersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">
+                  <p className="text-xl font-semibold text-yellow-600">
                     {stats.pending}
                   </p>
                 </div>
@@ -328,7 +330,7 @@ export default function AdminOrdersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Delivered</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-xl font-semibold text-green-600">
                     {stats.delivered}
                   </p>
                 </div>
@@ -342,7 +344,7 @@ export default function AdminOrdersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Cancelled</p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-xl font-semibold text-red-600">
                     {stats.cancelled}
                   </p>
                 </div>
@@ -356,7 +358,7 @@ export default function AdminOrdersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Revenue</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-xl font-semibold">
                     ₹{stats.totalRevenue.toLocaleString()}
                   </p>
                 </div>
@@ -367,7 +369,7 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-8">
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle>Filter Orders</CardTitle>
           </CardHeader>
@@ -447,7 +449,7 @@ export default function AdminOrdersPage() {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold">
+                        <h3 className="font-semibold">
                           Order #{order._id.slice(-8)}
                         </h3>
                         <Badge className={getStatusColor(order.status)}>
@@ -470,7 +472,9 @@ export default function AdminOrdersPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold">₹{order.totalAmount}</p>
+                      <p className="text-xl font-semibold">
+                        ₹{order.totalAmount}
+                      </p>
                     </div>
                   </div>
 
@@ -560,7 +564,7 @@ export default function AdminOrdersPage() {
           ) : (
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="font-medium text-gray-900 mb-2">
                 No orders found
               </h3>
               <p className="text-gray-600">

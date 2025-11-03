@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Boxes, CheckCircle, XCircle, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import MenuDrawerForm from "./menu-drawer";
 import { TMenu } from "@/types";
 import { toTitleCase } from "@/lib/utils";
 import { PaginationComponent } from "@/components/common/pagination-component";
+import StatsGrid from "@/components/common/stats-grid";
 
 export function MenuManagement() {
   const [selectedMenu, setSelectedMenu] = useState<null | TMenu>(null);
@@ -92,6 +94,39 @@ export function MenuManagement() {
   }, [queryData]);
   const [open, setOpen] = useState(false);
 
+  const menuStats = [
+    {
+      label: "Total Items",
+      value: menus?.stats?.total,
+      icon: Boxes,
+      bgColor: "bg-blue-100",
+      color: "text-blue-600",
+    },
+    {
+      label: "Available",
+      value: menus?.stats?.available,
+      icon: CheckCircle,
+      bgColor: "bg-green-100",
+      color: "text-green-600",
+    },
+    {
+      label: "Unavailable",
+      value:
+        (menus?.stats?.total as number) - (menus?.stats?.available as number),
+      icon: XCircle,
+      bgColor: "bg-red-100",
+      color: "text-red-600",
+    },
+    {
+      label: "Active",
+      value: menus?.stats?.active,
+      icon: Zap,
+      bgColor: "bg-yellow-100",
+      color: "text-yellow-600",
+    },
+  ];
+  const [loading, setLoading] = useState(false);
+
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
       {/* Header */}
@@ -110,41 +145,7 @@ export function MenuManagement() {
         />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-4 px-3 md:pt-6 md:pb-6 md:px-6">
-            <p className="text-gray-500 text-xs md:text-sm">Total Items</p>
-            <p className="mt-1 md:mt-2 text-lg md:text-2xl">
-              {menus?.stats?.total}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4 px-3 md:pt-6 md:pb-6 md:px-6">
-            <p className="text-gray-500 text-xs md:text-sm">Available</p>
-            <p className="text-green-600 mt-1 md:mt-2 text-lg md:text-2xl">
-              {menus?.stats?.available}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4 px-3 md:pt-6 md:pb-6 md:px-6">
-            <p className="text-gray-500 text-xs md:text-sm">Unavailable</p>
-            <p className="text-red-600 mt-1 md:mt-2 text-lg md:text-2xl">
-              {(menus?.stats?.total as number) -
-                (menus?.stats?.available as number)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4 px-3 md:pt-6 md:pb-6 md:px-6">
-            <p className="text-gray-500 text-xs md:text-sm">Active</p>
-            <p className="mt-1 md:mt-2 text-lg md:text-2xl">
-              {menus?.stats?.active}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsGrid stats={menuStats} isLoading={loading} />
 
       <div className="space-y-3">
         <div className="relative">
@@ -230,7 +231,7 @@ export function MenuManagement() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-1 md:gap-2">
-                            <h3 className="text-base md:text-lg truncate">
+                            <h3 className="text-base md:truncate">
                               {item.name}
                             </h3>
                             <Badge
@@ -341,7 +342,7 @@ export function MenuManagement() {
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📋</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="font-medium text-gray-900 mb-2">
                 {queryData.search
                   ? // || categoryFilter || statusFilter
                     "No menus found"

@@ -246,13 +246,13 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex items-center gap-4">
+        <div className="mb-4 flex items-center gap-4">
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Edit Menu</h1>
+            <h1 className="text-3xl font-semibold text-gray-900">Edit Menu</h1>
             <p className="text-gray-600">Update your menu</p>
           </div>
         </div>

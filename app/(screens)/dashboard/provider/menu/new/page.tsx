@@ -140,7 +140,7 @@ export default function NewMenuPage() {
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
-          <h1 className="text-3xl font-bold">Create New Menu</h1>
+          <h1 className="text-3xl font-semibold">Create New Menu</h1>
         </div>
 
         {serverError && (
@@ -160,7 +160,7 @@ export default function NewMenuPage() {
           onSubmit={handleSubmit(onSubmit)}
           className="max-w-3xl mx-auto space-y-6 p-6 bg-white rounded-xl shadow-md"
         >
-          <h2 className="text-xl font-bold">Create Menu</h2>
+          <h2 className="text-xl font-semibold">Create Menu</h2>
 
           {/* Basic Info */}
           <div className="space-y-4">
@@ -255,9 +255,7 @@ export default function NewMenuPage() {
 
           {/* Week Type */}
           <div>
-            <Label className="font-semibold text-lg mb-2 block">
-              Week Type
-            </Label>
+            <Label className="font-semibold mb-2 block">Week Type</Label>
             <RadioGroup
               value={weekType}
               onValueChange={(val) =>
@@ -282,7 +280,7 @@ export default function NewMenuPage() {
 
           {/* Weekly Items */}
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold">Weekly Items</h3>
+            <h3 className="font-semibold">Weekly Items</h3>
             {days.map((day) => (
               <div
                 key={day}

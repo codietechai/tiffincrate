@@ -246,8 +246,10 @@ export default function AdminUsersPage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold text-gray-900">
+            User Management
+          </h1>
           <p className="text-gray-600">
             Manage platform users and their permissions
           </p>
@@ -268,13 +270,13 @@ export default function AdminUsersPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Users</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-xl font-semibold">{stats.total}</p>
                 </div>
                 <Users className="h-8 w-8 text-blue-500" />
               </div>
@@ -286,7 +288,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Active</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-xl font-semibold text-green-600">
                     {stats.active}
                   </p>
                 </div>
@@ -300,7 +302,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Inactive</p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-xl font-semibold text-red-600">
                     {stats.inactive}
                   </p>
                 </div>
@@ -314,7 +316,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Admins</p>
-                  <p className="text-2xl font-bold">{stats.admins}</p>
+                  <p className="text-xl font-semibold">{stats.admins}</p>
                 </div>
                 <Shield className="h-8 w-8 text-red-500" />
               </div>
@@ -326,7 +328,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Providers</p>
-                  <p className="text-2xl font-bold">{stats.providers}</p>
+                  <p className="text-xl font-semibold">{stats.providers}</p>
                 </div>
                 <div className="text-blue-500">🏪</div>
               </div>
@@ -338,7 +340,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Consumers</p>
-                  <p className="text-2xl font-bold">{stats.consumers}</p>
+                  <p className="text-xl font-semibold">{stats.consumers}</p>
                 </div>
                 <div className="text-green-500">👥</div>
               </div>
@@ -347,7 +349,7 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-8">
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle>Filter Users</CardTitle>
           </CardHeader>
@@ -409,7 +411,7 @@ export default function AdminUsersPage() {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold">{user.name}</h3>
+                        <h3 className="font-semibold">{user.name}</h3>
                         <Badge className={getRoleColor(user.role)}>
                           {user.role.charAt(0).toUpperCase() +
                             user.role.slice(1)}
@@ -492,9 +494,7 @@ export default function AdminUsersPage() {
           ) : (
             <div className="text-center py-12">
               <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No users found
-              </h3>
+              <h3 className="font-medium text-gray-900 mb-2">No users found</h3>
               <p className="text-gray-600">
                 {searchTerm || roleFilter || statusFilter
                   ? "Try adjusting your filters"

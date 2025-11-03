@@ -144,7 +144,7 @@ export default function AdminReportsPage() {
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <h1 className="text-xl font-semibold text-gray-900 mb-4">
               No Report Data Available
             </h1>
             <p className="text-gray-600">
@@ -161,9 +161,9 @@ export default function AdminReportsPage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-4 flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-semibold text-gray-900">
               Analytics & Reports
             </h1>
             <p className="text-gray-600">
@@ -197,7 +197,7 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -206,7 +206,7 @@ export default function AdminReportsPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 ₹{reportData.revenueMetrics.totalRevenue.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground flex items-center">
@@ -229,7 +229,7 @@ export default function AdminReportsPage() {
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 {reportData.revenueMetrics.totalOrders.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">Orders processed</p>
@@ -244,7 +244,7 @@ export default function AdminReportsPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 ₹{reportData.revenueMetrics.averageOrderValue.toFixed(0)}
               </div>
               <p className="text-xs text-muted-foreground">Per order average</p>
@@ -259,7 +259,7 @@ export default function AdminReportsPage() {
               <Store className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl font-semibold">
                 {reportData.topProviders.length}
               </div>
               <p className="text-xs text-muted-foreground">Service providers</p>
@@ -267,7 +267,7 @@ export default function AdminReportsPage() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-4">
           {/* Orders & Revenue Trend */}
           <Card>
             <CardHeader>
@@ -359,7 +359,7 @@ export default function AdminReportsPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">
+                      <p className="font-semibold">
                         ₹{provider.revenue.toLocaleString()}
                       </p>
                       <p className="text-sm text-gray-500">Revenue</p>
