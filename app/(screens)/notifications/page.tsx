@@ -30,6 +30,8 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NotificationService } from "@/services/notification-service";
 import TitleHeader from "@/components/common/title-header";
+import { ElseComponent } from "@/components/common/else-component";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TNotification {
   _id: string;
@@ -167,8 +169,6 @@ export default function NotificationsPage() {
     });
   };
 
-  if (loading) return <LoadingPage />;
-
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -234,7 +234,15 @@ export default function NotificationsPage() {
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-4 mt-4">
-            {getFilteredNotifications().length > 0 ? (
+            {loading ? (
+              <>
+                {Array(5)
+                  .fill(0)
+                  .map((_, i) => (
+                    <Skeleton className="h-[108px] w-full" />
+                  ))}
+              </>
+            ) : getFilteredNotifications().length > 0 ? (
               getFilteredNotifications().map((notification) => (
                 <Card
                   key={notification._id}
@@ -312,17 +320,15 @@ export default function NotificationsPage() {
                 </Card>
               ))
             ) : (
-              <div className="text-center py-12">
-                <Bell className="h-10 w-10 mx-auto mb-2 text-gray-300" />
-                <h3 className="font-medium text-gray-900 mb-1">
-                  {activeTab === "unread"
+              <ElseComponent
+                icon={<Bell />}
+                description="You're all caught up! Check back later for updates."
+                heading={
+                  activeTab === "unread"
                     ? "No unread notifications"
-                    : "No read notifications"}
-                </h3>
-                <p className="text-gray-600 text-sm lg:text-base">
-                  You're all caught up! Check back later for updates.
-                </p>
-              </div>
+                    : "No read notifications"
+                }
+              />
             )}
           </TabsContent>
         </Tabs>

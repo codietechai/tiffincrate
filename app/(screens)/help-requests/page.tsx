@@ -40,6 +40,8 @@ import { IServiceProvider } from "@/models/ServiceProvider";
 import { HelpRequestService } from "@/services/help-request-service";
 import { SUCCESSMESSAGE } from "@/constants/response-messages";
 import TitleHeader from "@/components/common/title-header";
+import { ElseComponent } from "@/components/common/else-component";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HelpRequestsPage() {
   const [helpRequests, setHelpRequests] = useState<THelpRequest[]>([]);
@@ -87,6 +89,7 @@ export default function HelpRequestsPage() {
 
   const fetchHelpRequests = async () => {
     try {
+      setLoading(true);
       const data = await HelpRequestService.fetchHelpRequests({
         statusFilter,
         typeFilter,
@@ -144,24 +147,19 @@ export default function HelpRequestsPage() {
     if (!response.trim()) return;
 
     try {
-      const res = await fetch(`/api/help-requests/${requestId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ response }),
+      const res = await HelpRequestService.updateHelpRequest(requestId, {
+        response,
       });
 
-      if (res.ok) {
+      if (!!res) {
         setResponse("");
         fetchHelpRequests();
         if (selectedRequest) {
-          const updatedResponse = await fetch(
-            `/api/help-requests/${requestId}`
+          const updatedResponse = await HelpRequestService.fetchHelpRequest(
+            requestId
           );
-          if (updatedResponse.ok) {
-            const data = await updatedResponse.json();
-            setSelectedRequest(data.helpRequest);
+          if (updatedResponse) {
+            setSelectedRequest(updatedResponse.data);
           }
         }
       }
@@ -172,15 +170,11 @@ export default function HelpRequestsPage() {
 
   const updateStatus = async (requestId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/help-requests/${requestId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
+      const response = await HelpRequestService.updateHelpRequest(requestId, {
+        status: newStatus,
       });
 
-      if (response.ok) {
+      if (!!response) {
         fetchHelpRequests();
         if (selectedRequest && selectedRequest._id === requestId) {
           setSelectedRequest({ ...selectedRequest, status: newStatus });
@@ -235,8 +229,6 @@ export default function HelpRequestsPage() {
         return <Clock className="h-4 w-4" />;
     }
   };
-
-  if (loading) return <LoadingPage />;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -480,7 +472,15 @@ export default function HelpRequestsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              {helpRequests.length > 0 ? (
+              {loading ? (
+                <>
+                  {Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <Skeleton className="h-[136px] w-full" />
+                    ))}
+                </>
+              ) : helpRequests.length > 0 ? (
                 helpRequests.map((request) => (
                   <RequestCard
                     response={response}
@@ -496,13 +496,18 @@ export default function HelpRequestsPage() {
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    No help requests found
-                  </h3>
-                  <p className="text-gray-600">
-                    Create a new help request to get started
-                  </p>
+                  <h3 className="font-medium text-gray-900 mb-2"></h3>
+                  <p className="text-gray-600"></p>
+                  <ElseComponent
+                    icon={<MessageCircle />}
+                    description="Create a new help request to get started"
+                    heading={"No help requests found"}
+                    button={
+                      <Button size={"sm"}>
+                        <Plus /> Send Help Request
+                      </Button>
+                    }
+                  />
                 </div>
               )}
             </div>

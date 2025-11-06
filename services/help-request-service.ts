@@ -2,7 +2,23 @@ import { THelpRequest } from "@/types";
 
 export class HelpRequestService {
   private static baseUrl = "/api/help-requests";
+  static async fetchHelpRequest(requestId: string): Promise<{
+    data: THelpRequest;
+    message: string;
+  }> {
+    try {
+      const response = await fetch(`/api/help-requests/${requestId}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error);
+      }
 
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  }
   static async fetchHelpRequests(payload: {
     statusFilter: string;
     typeFilter: string;
@@ -36,6 +52,7 @@ export class HelpRequestService {
       throw error;
     }
   }
+
   static async createHelpRequest(payload: any): Promise<{
     data: THelpRequest;
     message: string;
@@ -60,6 +77,33 @@ export class HelpRequestService {
       }
 
       const data = await response.json();
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async updateHelpRequest(
+    requestId: string,
+    response: any
+  ): Promise<{
+    data: THelpRequest;
+    message: string;
+  }> {
+    try {
+      const res = await fetch(`/api/help-requests/${requestId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(response),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error);
+      }
+
+      const data = await res.json();
       return data;
     } catch (error) {
       throw error;

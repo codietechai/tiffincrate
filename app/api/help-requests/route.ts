@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: SUCCESSMESSAGE.HELPREQUEST_CREATE, helpRequest },
+      { message: SUCCESSMESSAGE.HELPREQUEST_CREATE, data: helpRequest },
       { status: 201 }
     );
   } catch (error) {

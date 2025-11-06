@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import HelpRequest from "@/models/HelpRequest";
 import Notification from "@/models/Notification";
+import { SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +36,10 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    return NextResponse.json({ helpRequest });
+    return NextResponse.json({
+      data: helpRequest,
+      message: SUCCESSMESSAGE.HELPREQUEST_FETCH,
+    });
   } catch (error) {
     console.error("Get help request error:", error);
     return NextResponse.json(
@@ -113,8 +117,8 @@ export async function PATCH(
     await helpRequest.save();
 
     return NextResponse.json({
-      message: "Help request updated successfully",
-      helpRequest,
+      message: SUCCESSMESSAGE.HELPREQUEST_UPDATE,
+      data: helpRequest,
     });
   } catch (error) {
     console.error("Update help request error:", error);
