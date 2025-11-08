@@ -82,7 +82,12 @@ export default function OrderHistoryPage() {
       const response = await fetch("/api/orders");
       if (response.ok) {
         const data = await response.json();
-        setOrders(data.orders);
+        const extracted = data.orders.map((o: any) => ({
+          ...o.order,
+          deliveryStatus: o.deliveryStatus,
+          deliveryDate: o.deliveryDate,
+        }));
+        setOrders(extracted);
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -90,7 +95,7 @@ export default function OrderHistoryPage() {
       setLoading(false);
     }
   };
-
+  console.log(orders)
   const filterOrders = () => {
     let filtered = [...orders];
 
@@ -241,6 +246,7 @@ export default function OrderHistoryPage() {
     },
   ];
 
+  console.log(filteredOrders)
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -328,7 +334,7 @@ export default function OrderHistoryPage() {
                         </Badge>
                       </CardTitle>
                       <CardDescription>
-                        {order.providerId.businessName} •{" "}
+                        {order?.providerId?.businessName} •{" "}
                         {new Date(order.createdAt).toLocaleDateString()}
                       </CardDescription>
                     </div>
@@ -377,7 +383,7 @@ export default function OrderHistoryPage() {
                         {new Date(order.deliveryDate).toLocaleDateString()}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {JSON.stringify(order.deliveryAddress)}
+                        {JSON.stringify(order.deliveryAddress.address)}
                       </p>
                     </div>
                   </div>

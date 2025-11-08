@@ -1,9 +1,20 @@
 "use client";
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import {
   Clock,
   CheckCircle2,
@@ -21,10 +32,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import StatsGrid from "@/components/common/stats-grid";
+import { LoadingPage } from "@/components/ui/loading";
 
 interface OrderItem {
   name: string;
   quantity: number;
+}
+
+interface APIOrder {
+  _id: string;
+  deliveryStatus: string;
+  deliveryDate: string;
+  createdAt: string;
+  updatedAt: string;
+  order: {
+    _id: string;
+    consumerId: string;
+    providerId: string;
+    items: Array<{
+      name: string;
+      price: number;
+      quantity: number;
+    }>;
+    totalAmount: number;
+    status: string;
+    paymentMethod: string;
+    deliveryAddress: {
+      address: string;
+    };
+  };
 }
 
 interface Order {
@@ -33,7 +69,12 @@ interface Order {
   customer: string;
   items: OrderItem[];
   deliverySlot: string;
-  status: "confirmed" | "ready" | "assigned" | "out_for_delivery" | "delivered";
+  status:
+    | "confirmed"
+    | "ready"
+    | "assigned"
+    | "out_for_delivery"
+    | "delivered";
   time: string;
   paymentMethod: string;
   address: string;
@@ -43,78 +84,9 @@ interface Order {
 }
 
 export function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: "1",
-      orderNumber: "#TIF-2451",
-      customer: "Rahul Sharma",
-      items: [
-        { name: "Lunch Tiffin (Veg)", quantity: 2 },
-        { name: "Breakfast Special", quantity: 1 },
-      ],
-      deliverySlot: "12:00 PM - 1:00 PM",
-      status: "confirmed",
-      time: "5 min ago",
-      paymentMethod: "Online",
-      address: "123, MG Road, Bangalore",
-      phone: "+91 98765 43210",
-      deliveryType: "partner",
-    },
-    {
-      id: "2",
-      orderNumber: "#TIF-2450",
-      customer: "Priya Patel",
-      items: [{ name: "Lunch Tiffin (Non-Veg)", quantity: 1 }],
-      deliverySlot: "1:00 PM - 2:00 PM",
-      status: "ready",
-      time: "10 min ago",
-      paymentMethod: "COD",
-      address: "456, Indiranagar, Bangalore",
-      phone: "+91 98765 43211",
-      deliveryType: "partner",
-    },
-    {
-      id: "3",
-      orderNumber: "#TIF-2449",
-      customer: "Amit Kumar",
-      items: [{ name: "Dinner Tiffin (Veg)", quantity: 3 }],
-      deliverySlot: "7:00 PM - 8:00 PM",
-      status: "assigned",
-      time: "15 min ago",
-      paymentMethod: "Online",
-      address: "789, Koramangala, Bangalore",
-      phone: "+91 98765 43212",
-      deliveryPartner: "Suresh (Partner)",
-      deliveryType: "partner",
-    },
-    {
-      id: "4",
-      orderNumber: "#TIF-2448",
-      customer: "Sneha Reddy",
-      items: [{ name: "Lunch Tiffin (Veg)", quantity: 2 }],
-      deliverySlot: "12:30 PM - 1:30 PM",
-      status: "out_for_delivery",
-      time: "25 min ago",
-      paymentMethod: "Online",
-      address: "321, Whitefield, Bangalore",
-      phone: "+91 98765 43213",
-      deliveryPartner: "Rajesh (Partner)",
-      deliveryType: "partner",
-    },
-    {
-      id: "5",
-      orderNumber: "#TIF-2447",
-      customer: "Kiran Joshi",
-      items: [{ name: "Breakfast Special", quantity: 2 }],
-      deliverySlot: "8:00 AM - 9:00 AM",
-      status: "ready",
-      time: "8 min ago",
-      paymentMethod: "Online",
-      address: "567, HSR Layout, Bangalore",
-      phone: "+91 98765 43214",
-      deliveryType: "self",
-    },
-  ]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   const deliveryPartners = [
     "Suresh (Partner)",
@@ -123,6 +95,67 @@ export function OrdersPage() {
     "Self Delivery",
   ];
 
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // 🔥 Fetch Orders from API
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/orders");
+      if (!res.ok) throw new Error("Failed to fetch orders");
+      const data = await res.json();
+
+      // 🧩 Flatten and transform data for UI
+      const transformedOrders: Order[] = data.orders.map((o: APIOrder) => ({
+        id: o._id,
+        orderNumber: `#ORD-${o._id.slice(-5)}`,
+        customer: o.order.consumerId || "Unknown Customer",
+        items: o.order.items.map((i) => ({
+          name: i.name,
+          quantity: i.quantity,
+        })),
+        deliveryDate:o.deliveryDate,
+        deliverySlot: new Date(o.deliveryDate).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        status: mapDeliveryStatus(o.deliveryStatus),
+        time: new Date(o.createdAt).toLocaleDateString(),
+        paymentMethod: o.order.paymentMethod,
+        address: o.order.deliveryAddress.address,
+        phone: "N/A",
+        deliveryType: "partner",
+      }));
+
+      setOrders(transformedOrders);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🧠 Map API deliveryStatus to UI status
+  const mapDeliveryStatus = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "confirmed";
+      case "confirmed":
+        return "ready";
+      case "assigned":
+        return "assigned";
+      case "out_for_delivery":
+        return "out_for_delivery";
+      case "delivered":
+        return "delivered";
+      default:
+        return "confirmed";
+    }
+  };
+
+  // 🟩 Colors + Icons
   const getStatusColor = (status: Order["status"]) => {
     const colors = {
       confirmed: "bg-blue-100 text-blue-700",
@@ -156,7 +189,6 @@ export function OrdersPage() {
     };
     return labels[status];
   };
-  const [loading, setLoading] = useState(false);
 
   const stats = [
     {
@@ -191,18 +223,47 @@ export function OrdersPage() {
     },
   ];
 
+
+  const updateDeliveryOrderStatus = async (
+  orderDeliveryId: string,
+  status: string
+) => {
+  try {
+    const res = await fetch(
+      `/api/delivery-orders?orderDeliveryId=${orderDeliveryId}&status=${status}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": "provider",
+        },
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to update status");
+
+    await fetchOrders();
+  } catch (error) {
+    console.error("❌ Error updating delivery order:", error);
+  }
+};
+
   const filterOrdersByStatus = (status?: Order["status"]) => {
     if (!status) return orders;
     return orders.filter((order) => order.status === status);
   };
 
-  const handleStatusUpdate = (orderId: string, newStatus: Order["status"]) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-  };
+const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
+  setOrders(
+    orders.map((order) =>
+      order.id === orderId ? { ...order, status: newStatus } : order
+    )
+  );
+
+  // 🔥 Call the backend API to update actual delivery order
+  await updateDeliveryOrderStatus(orderId, newStatus);
+};
 
   const handleAssignPartner = (orderId: string, partner: string) => {
     setOrders(
@@ -240,7 +301,7 @@ export function OrdersPage() {
             </p>
           </div>
           <div className="text-right flex-shrink-0">
-            <p className="text-gray-500 text-xs md:text-sm">{order.time}</p>
+            <p className="text-gray-500 text-xs md:text-sm">{(order as any).deliveryDate.split('T')[0]}</p>
           </div>
         </div>
       </CardHeader>
@@ -283,7 +344,6 @@ export function OrdersPage() {
           )}
         </div>
 
-        {/* Action Buttons */}
         <div className="space-y-2 pt-2">
           {order.status === "confirmed" && (
             <Button
@@ -316,7 +376,9 @@ export function OrdersPage() {
               <Button
                 variant="outline"
                 className="w-full h-11 md:h-10"
-                onClick={() => handleStatusUpdate(order.id, "out_for_delivery")}
+                onClick={() =>
+                  handleStatusUpdate(order.id, "out_for_delivery")
+                }
               >
                 <Bike className="w-4 h-4 mr-2" />
                 Start Self Delivery
@@ -333,7 +395,9 @@ export function OrdersPage() {
               </div>
               <Button
                 className="w-full bg-orange-600 hover:bg-orange-700 h-11 md:h-10"
-                onClick={() => handleStatusUpdate(order.id, "out_for_delivery")}
+                onClick={() =>
+                  handleStatusUpdate(order.id, "out_for_delivery")
+                }
               >
                 Mark Out for Delivery
               </Button>
@@ -360,28 +424,27 @@ export function OrdersPage() {
     </Card>
   );
 
+  if (loading) return <LoadingPage />;
+
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
-      {/* Stats */}
       <StatsGrid stats={stats} isLoading={loading} />
 
       <div>
         <h2 className="mb-4 px-1">Tiffin Orders</h2>
         <Tabs defaultValue="all">
           <TabsList className="mb-4 w-full flex justify-start">
-            <TabsTrigger value="all" className="flex-shrink-0">
-              All ({orders.length})
-            </TabsTrigger>
-            <TabsTrigger value="confirmed" className="flex-shrink-0">
+            <TabsTrigger value="all">All ({orders.length})</TabsTrigger>
+            <TabsTrigger value="confirmed">
               New ({filterOrdersByStatus("confirmed").length})
             </TabsTrigger>
-            <TabsTrigger value="ready" className="flex-shrink-0">
+            <TabsTrigger value="ready">
               Ready ({filterOrdersByStatus("ready").length})
             </TabsTrigger>
-            <TabsTrigger value="assigned" className="flex-shrink-0">
+            <TabsTrigger value="assigned">
               Assigned ({filterOrdersByStatus("assigned").length})
             </TabsTrigger>
-            <TabsTrigger value="out_for_delivery" className="flex-shrink-0">
+            <TabsTrigger value="out_for_delivery">
               Delivering ({filterOrdersByStatus("out_for_delivery").length})
             </TabsTrigger>
           </TabsList>
@@ -392,32 +455,15 @@ export function OrdersPage() {
             ))}
           </TabsContent>
 
-          <TabsContent value="confirmed" className="space-y-3 md:space-y-4">
-            {filterOrdersByStatus("confirmed").map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </TabsContent>
-
-          <TabsContent value="ready" className="space-y-3 md:space-y-4">
-            {filterOrdersByStatus("ready").map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </TabsContent>
-
-          <TabsContent value="assigned" className="space-y-3 md:space-y-4">
-            {filterOrdersByStatus("assigned").map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </TabsContent>
-
-          <TabsContent
-            value="out_for_delivery"
-            className="space-y-3 md:space-y-4"
-          >
-            {filterOrdersByStatus("out_for_delivery").map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </TabsContent>
+          {["confirmed", "ready", "assigned", "out_for_delivery"].map(
+            (status) => (
+              <TabsContent key={status} value={status} className="space-y-3">
+                {filterOrdersByStatus(status as Order["status"]).map((order) => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
+              </TabsContent>
+            )
+          )}
         </Tabs>
       </div>
     </div>

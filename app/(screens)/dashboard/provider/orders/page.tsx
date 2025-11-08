@@ -487,7 +487,7 @@ export default function ProviderOrdersPage() {
                           {new Date(order.deliveryDate).toLocaleTimeString()}
                         </p>
                         <p>
-                          <strong>Address:</strong> {order.deliveryAddress}
+                          {/* <strong>Address:</strong> {order.deliveryAddress} */}
                         </p>
                         <p>
                           <strong>Payment:</strong> {order.paymentMethod}
