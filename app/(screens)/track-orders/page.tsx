@@ -230,7 +230,7 @@ export default function TrackOrdersPage() {
                         </Badge>
                       </CardTitle>
                       <CardDescription>
-                        From {order.providerId.businessName} •{" "}
+                        From {order?.providerId?.businessName} •{" "}
                         {new Date(order.createdAt).toLocaleDateString()}
                       </CardDescription>
                     </div>
@@ -380,8 +380,9 @@ export default function TrackOrdersPage() {
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-4 border-t">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={()=>{router.push(`order-detail/${order._id}`)}}>
                       <Eye className="mr-2 h-4 w-4" />
+                      
                       View Details
                     </Button>
                     {order.status === "pending" && (

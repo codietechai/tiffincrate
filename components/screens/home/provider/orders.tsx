@@ -70,11 +70,11 @@ interface Order {
   items: OrderItem[];
   deliverySlot: string;
   status:
-    | "confirmed"
-    | "ready"
-    | "assigned"
-    | "out_for_delivery"
-    | "delivered";
+  | "confirmed"
+  | "ready"
+  | "assigned"
+  | "out_for_delivery"
+  | "delivered";
   time: string;
   paymentMethod: string;
   address: string;
@@ -116,7 +116,7 @@ export function OrdersPage() {
           name: i.name,
           quantity: i.quantity,
         })),
-        deliveryDate:o.deliveryDate,
+        deliveryDate: o.deliveryDate,
         deliverySlot: new Date(o.deliveryDate).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -137,23 +137,25 @@ export function OrdersPage() {
     }
   };
 
-  // 🧠 Map API deliveryStatus to UI status
-  const mapDeliveryStatus = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "confirmed";
-      case "confirmed":
-        return "ready";
-      case "assigned":
-        return "assigned";
-      case "out_for_delivery":
-        return "out_for_delivery";
-      case "delivered":
-        return "delivered";
-      default:
-        return "confirmed";
-    }
-  };
+const mapDeliveryStatus = (status: string) => {
+  switch (status) {
+    case "pending":
+      return "confirmed";
+    case "confirmed":
+      return "ready";
+    case "ready":
+      return "ready";
+    case "assigned":
+      return "assigned";
+    case "out_for_delivery":
+      return "out_for_delivery";
+    case "delivered":
+      return "delivered";
+    default:
+      return "confirmed";
+  }
+};
+
 
   // 🟩 Colors + Icons
   const getStatusColor = (status: Order["status"]) => {
@@ -225,62 +227,65 @@ export function OrdersPage() {
 
 
   const updateDeliveryOrderStatus = async (
-  orderDeliveryId: string,
-  status: string
-) => {
-  try {
-    const res = await fetch(
-      `/api/delivery-orders?orderDeliveryId=${orderDeliveryId}&status=${status}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-role": "provider",
-        },
-      }
-    );
+    orderDeliveryId: string,
+    status: string
+  ) => {
+    try {
+      const res = await fetch(
+        `/api/delivery-orders?orderDeliveryId=${orderDeliveryId}&status=${status}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-role": "provider",
+          },
+        }
+      );
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Failed to update status");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update status");
 
-    await fetchOrders();
-  } catch (error) {
-    console.error("❌ Error updating delivery order:", error);
-  }
-};
+      await fetchOrders();
+    } catch (error) {
+      console.error("❌ Error updating delivery order:", error);
+    }
+  };
 
   const filterOrdersByStatus = (status?: Order["status"]) => {
     if (!status) return orders;
     return orders.filter((order) => order.status === status);
   };
 
-const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
-  setOrders(
-    orders.map((order) =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    )
-  );
+  const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
+    setOrders(
+      orders.map((order) =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
 
-  // 🔥 Call the backend API to update actual delivery order
-  await updateDeliveryOrderStatus(orderId, newStatus);
-};
+    // 🔥 Call the backend API to update actual delivery order
+    await updateDeliveryOrderStatus(orderId, newStatus);
+  };
 
-  const handleAssignPartner = (orderId: string, partner: string) => {
+  const handleAssignPartner = (orderId: any, partner: string) => {
+    console.log(orderId)
     setOrders(
       orders.map((order) =>
         order.id === orderId
           ? {
-              ...order,
-              deliveryPartner: partner,
-              deliveryType: partner === "Self Delivery" ? "self" : "partner",
-              status: "assigned",
-            }
+            ...order,
+            deliveryPartner: partner,
+            deliveryType: partner === "Self Delivery" ? "self" : "partner",
+            status: "assigned",
+          }
           : order
       )
     );
   };
 
+
   const OrderCard = ({ order }: { order: Order }) => (
+
     <Card className="hover:shadow-md transition-shadow active:scale-[0.98]">
       <CardHeader className="pb-3 px-4 pt-4">
         <div className="flex items-start justify-between gap-2">
@@ -359,7 +364,7 @@ const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) =
             <div className="space-y-2">
               <Select
                 onValueChange={(partner) =>
-                  handleAssignPartner(order.id, partner)
+                  handleAssignPartner(order, partner)
                 }
               >
                 <SelectTrigger className="h-11 md:h-10">

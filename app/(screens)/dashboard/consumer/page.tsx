@@ -175,7 +175,7 @@ export default function ConsumerDashboard() {
                     >
                       <div>
                         <p className="font-medium">
-                          {order.providerId.businessName}
+                          {order?.providerId?.businessName}
                         </p>
                         <p className="text-sm text-gray-500">
                           {order.items.length} items •{" "}
@@ -188,8 +188,10 @@ export default function ConsumerDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="font-medium">₹{order.totalAmount}</p>
-                        <Button variant="outline" size="sm" className="mt-2">
-                          Track Order
+                        <Button variant="outline" size="sm" className="mt-2" >
+                          <Link href="/track-orders">
+                            <div>Track Orders</div>
+                          </Link>
                         </Button>
                       </div>
                     </div>

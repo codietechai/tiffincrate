@@ -275,7 +275,7 @@ export function MenuItemDetail() {
               razorpaySignature: response.razorpay_signature,
             }),
           });
-          router.push("/order-history");
+          router.push("/track-orders");
         },
         prefill: {
           name: user.name,
@@ -428,10 +428,7 @@ export function MenuItemDetail() {
                     <Label>Select Custom Dates</Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start"
-                        >
+                        <Button variant="outline" className="w-full justify-start">
                           {multiDates.length > 0
                             ? `${multiDates.length} date(s) selected`
                             : "Select Dates"}
@@ -452,16 +449,23 @@ export function MenuItemDetail() {
                           }}
                           disabled={(date) => {
                             const day = date.getDay();
-                            const validDays = getValidDays(
-                              menu.weeklyItems
-                            ).map((d) => dayMap[d]);
-                            return !validDays.includes(day);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+
+                            // Valid days from your weeklyItems logic
+                            const validDays = getValidDays(menu.weeklyItems).map(
+                              (d) => dayMap[d]
+                            );
+
+                            // Disable if it's a past date OR not a valid day
+                            return date < today || !validDays.includes(day);
                           }}
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
                 )}
+
 
                 <div>
                   <Label>Special Instructions (Optional)</Label>

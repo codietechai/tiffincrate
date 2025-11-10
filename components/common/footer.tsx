@@ -141,8 +141,7 @@ const Footer = () => {
       }
     }
   }, [user]);
-  console.log("user", user);
-  console.log("actualOptions", actualOptions);
+
   return (
     <nav
       className={`fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-md border-t border-gray-200 shadow-md transition-transform duration-300 ${

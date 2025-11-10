@@ -327,10 +327,10 @@ export default function OrderHistoryPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        Order #{order._id.slice(-8)}
+                        Order #{order._id}
                         <Badge className={getStatusColor(order.status)}>
-                          {order.status.charAt(0).toUpperCase() +
-                            order.status.slice(1)}
+                          {order?.status?.charAt(0).toUpperCase() +
+                            order?.status?.slice(1)}
                         </Badge>
                       </CardTitle>
                       <CardDescription>
@@ -345,8 +345,8 @@ export default function OrderHistoryPage() {
                       <Badge
                         className={getPaymentStatusColor(order.paymentStatus)}
                       >
-                        {order.paymentStatus.charAt(0).toUpperCase() +
-                          order.paymentStatus.slice(1)}
+                        {order?.paymentStatus?.charAt(0).toUpperCase() +
+                          order?.paymentStatus?.slice(1)}
                       </Badge>
                     </div>
                   </div>
@@ -357,7 +357,7 @@ export default function OrderHistoryPage() {
                     <div>
                       <h4 className="font-medium mb-2">Items Ordered:</h4>
                       <div className="space-y-1">
-                        {order.items.slice(0, 3).map((item, index) => (
+                        {order?.items?.slice(0, 3).map((item, index) => (
                           <div
                             key={index}
                             className="flex justify-between text-sm"
@@ -368,9 +368,9 @@ export default function OrderHistoryPage() {
                             <span>₹{item.price * item.quantity}</span>
                           </div>
                         ))}
-                        {order.items.length > 3 && (
+                        {order?.items?.length > 3 && (
                           <p className="text-sm text-gray-500">
-                            +{order.items.length - 3} more items
+                            +{order?.items.length - 3} more items
                           </p>
                         )}
                       </div>
@@ -380,10 +380,10 @@ export default function OrderHistoryPage() {
                       <h4 className="font-medium mb-2">Delivery Details:</h4>
                       <p className="text-sm text-gray-600 mb-1">
                         <Calendar className="inline h-3 w-3 mr-1" />
-                        {new Date(order.deliveryDate).toLocaleDateString()}
+                        {new Date(order?.deliveryDate).toLocaleDateString()}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {JSON.stringify(order.deliveryAddress.address)}
+                        {JSON.stringify(order?.deliveryAddress?.address)}
                       </p>
                     </div>
                   </div>

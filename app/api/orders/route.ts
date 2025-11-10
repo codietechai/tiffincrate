@@ -47,36 +47,40 @@ export const createDeliveryOrders = async (orderId: string, deliveryInfo: any) =
     }
   }
 
-  else if (deliveryInfo?.type === "specific_days") {
-    const { days } = deliveryInfo;
-    const start = dayjs().tz(tz).startOf("month");
-    const end = start.endOf("month");
+else if (deliveryInfo?.type === "specific_days") {
+  const { days } = deliveryInfo;
+  const tz = "Asia/Kolkata";
 
-    const dayMap: Record<string, number> = {
-      sunday: 0,
-      monday: 1,
-      tuesday: 2,
-      wednesday: 3,
-      thursday: 4,
-      friday: 5,
-      saturday: 6,
-    };
+  const now = dayjs().tz(tz).startOf("day");
+  const start = now; // start from today, not from start of month
+  const end = now.endOf("month");
 
-    const targetDays = (days || []).map((d: string) => dayMap[d.toLowerCase()]);
-    let current = start;
+  const dayMap: Record<string, number> = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+  };
 
-    while (current.isBefore(end) || current.isSame(end)) {
-      if (targetDays.includes(current.day())) {
-        const localDate = new Date(current.format("YYYY-MM-DD") + "T00:00:00+05:30");
-        deliveryOrders.push({
-          orderId,
-          deliveryStatus: "pending",
-          deliveryDate: localDate,
-        });
-      }
-      current = current.add(1, "day");
+  const targetDays = (days || []).map((d: string) => dayMap[d.toLowerCase()]);
+  let current = start;
+
+  while (current.isBefore(end) || current.isSame(end)) {
+    if (targetDays.includes(current.day())) {
+      const localDate = new Date(current.format("YYYY-MM-DD") + "T00:00:00+05:30");
+      deliveryOrders.push({
+        orderId,
+        deliveryStatus: "pending",
+        deliveryDate: localDate,
+      });
     }
+    current = current.add(1, "day");
   }
+}
+
 
   else if (deliveryInfo?.type === "custom_dates" && Array.isArray(deliveryInfo.dates)) {
     for (const dateStr of deliveryInfo.dates) {
@@ -138,6 +142,8 @@ export async function GET(request: NextRequest) {
         .populate("consumerId", "name email")
         .populate("providerId", "businessName")
         .sort({ createdAt: -1 });
+
+        console.log('first')
 
       return NextResponse.json({ orders });
     } else if (role === "provider") {
