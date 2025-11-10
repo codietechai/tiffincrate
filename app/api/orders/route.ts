@@ -131,21 +131,53 @@ export async function GET(request: NextRequest) {
     let query: any = {};
     if (role === "consumer") {
       query.consumerId = userId;
+
+      if (status) query.status = status;
+
+      const orders = await Order.find(query)
+        .populate("consumerId", "name email")
+        .populate("providerId", "businessName")
+        .sort({ createdAt: -1 });
+
+      return NextResponse.json({ orders });
     } else if (role === "provider") {
       query.providerId = userId;
+
+      if (status) query.status = status;
+
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+      const orders = await DeliveryOrder.aggregate([
+        {
+          $match: {
+            'orderId.providerId': query.providerId.providerId,
+            deliveryDate: { $gte: startOfDay, $lte: endOfDay }
+          }
+        },
+        {
+          $lookup: {
+            from: 'orders',
+            localField: 'orderId',
+            foreignField: '_id',
+            as: 'order'
+          }
+        },
+        { $unwind: '$order' },
+        { $sort: { createdAt: -1 } },
+        {
+          $project: {
+            _id: 1,
+            deliveryDate: 1,
+            deliveryStatus: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            order:1
+          },}
+      ]);
+      return NextResponse.json({ orders });
     }
-    // Admin can see all orders
-
-    
-
-    if (status) query.status = status;
-
-    const orders = await Order.find(query)
-      .populate("consumerId", "name email")
-      .populate("providerId", "businessName")
-      .sort({ createdAt: -1 });
-
-    return NextResponse.json({ orders });
   } catch (error) {
     console.error("Get orders error:", error);
     return NextResponse.json(

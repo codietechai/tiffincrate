@@ -53,7 +53,7 @@ const Footer = () => {
       id: "orders",
       label: "Orders",
       icon: <ShoppingBag className="h-5 w-5" />,
-      href: "/orders",
+      href: "/order-history",
     },
     {
       id: "delivery",
