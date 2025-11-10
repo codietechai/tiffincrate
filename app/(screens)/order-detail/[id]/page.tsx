@@ -19,7 +19,16 @@ import Navbar from "@/components/layout/Navbar";
 interface Delivery {
   _id: string;
   deliveryDate: string;
-  deliveryStatus: "pending"| "delivered"| "cancelled"| "not_delivered";
+deliveryStatus:
+  | "pending"
+  | "confirmed"
+  | "ready"
+  | "assigned"
+  | "out_for_delivery"
+  | "delivered"
+  | "not_delivered"
+  | "cancelled";
+
 }
 
 interface Order {
@@ -149,8 +158,8 @@ export default function OrderDetailPage() {
                 </p>
                 <Badge
                   className={`mt-1 ${order.paymentStatus === "paid"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
                     }`}
                 >
                   {order.paymentStatus}
@@ -200,8 +209,8 @@ export default function OrderDetailPage() {
                     <div key={step.key} className="flex items-start gap-4 ml-2">
                       <div
                         className={`p-2 rounded-full ${active
-                            ? "bg-green-500 text-white"
-                            : "bg-gray-200 text-gray-500"
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-200 text-gray-500"
                           }`}
                       >
                         <Icon className="h-4 w-4" />
@@ -234,31 +243,61 @@ export default function OrderDetailPage() {
                     let statusLabel = "";
 
                     switch (d.deliveryStatus) {
-                      case "delivered":
-                        colorClasses =
-                          "bg-green-100 text-green-700 border-green-300 hover:bg-green-200";
-                        statusLabel = "Delivered";
-                        break;
                       case "pending":
                         colorClasses =
                           "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200";
                         statusLabel = "Pending";
                         break;
-                      case "cancelled":
+
+                      case "confirmed":
                         colorClasses =
-                          "bg-red-100 text-red-700 border-red-300 hover:bg-red-200";
-                        statusLabel = "Cancelled";
+                          "bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200";
+                        statusLabel = "Confirmed";
                         break;
+
+                      case "ready":
+                        colorClasses =
+                          "bg-green-100 text-green-700 border-green-300 hover:bg-green-200";
+                        statusLabel = "Ready for Pickup";
+                        break;
+
+                      case "assigned":
+                        colorClasses =
+                          "bg-purple-100 text-purple-700 border-purple-300 hover:bg-purple-200";
+                        statusLabel = "Assigned";
+                        break;
+
+                      case "out_for_delivery":
+                        colorClasses =
+                          "bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200";
+                        statusLabel = "Out for Delivery";
+                        break;
+
+                      case "delivered":
+                        colorClasses =
+                          "bg-green-100 text-green-700 border-green-300 hover:bg-green-200";
+                        statusLabel = "Delivered";
+                        break;
+
                       case "not_delivered":
                         colorClasses =
                           "bg-blue-100 text-blue-600 border-blue-300 hover:bg-blue-200";
                         statusLabel = "Not Delivered";
                         break;
+
+                      case "cancelled":
+                        colorClasses =
+                          "bg-red-100 text-red-700 border-red-300 hover:bg-red-200";
+                        statusLabel = "Cancelled";
+                        break;
+
                       default:
                         colorClasses =
                           "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200";
                         statusLabel = d.deliveryStatus;
+                        break;
                     }
+
 
                     return (
                       <div
