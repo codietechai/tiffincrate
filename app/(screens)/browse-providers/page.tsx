@@ -22,6 +22,8 @@ import {
   TProviderQueryData,
 } from "@/types";
 import { ProviderService } from "@/services/provider-service";
+import { Skeleton } from "@/components/ui/skeleton";
+import TitleHeader from "@/components/common/title-header";
 
 export default function BrowseProvidersPage() {
   const [providers, setProviders] = useState<TFetchProvidersResponse | null>(
@@ -59,6 +61,7 @@ export default function BrowseProvidersPage() {
 
   const fetchProviders = async () => {
     try {
+      setLoading(true);
       const data = await ProviderService.fetchProviders(queryData);
       setProviders(data);
     } catch (error) {
@@ -120,20 +123,11 @@ export default function BrowseProvidersPage() {
       <Navbar />
 
       <div className="max-w-xl lg:max-w-4xl mx-auto px-4 py-4">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <CheifHatIcon className="h-5 w-5 lg:h-8 lg:w-8" />
-              <h1 className="text-xl font-semibold text-gray-900">
-                Browse Tiffin Providers
-              </h1>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Discover delicious home-cooked meals from local providers
-            </p>
-          </div>
-        </div>
-
+        <TitleHeader
+          icon={<CheifHatIcon />}
+          title="Browse Tiffin Providers"
+          description="Discover delicious home-cooked meals from local providers"
+        />
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
@@ -156,104 +150,107 @@ export default function BrowseProvidersPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {providers &&
-            providers?.data.map((provider) => (
-              <Card
-                key={provider._id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        {provider.businessName}
-                        {provider.isVerified && (
-                          <Badge variant="default" className="text-xs">
-                            Verified
-                          </Badge>
+          {loading
+            ? Array(5)
+                .fill(0)
+                .map((_, i) => <Skeleton className="h-[420px]" />)
+            : providers?.data.map((provider) => (
+                <Card
+                  key={provider._id}
+                  className="hover:shadow-lg transition-shadow"
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="flex items-center gap-2">
+                          {provider.businessName}
+                          {provider.isVerified && (
+                            <Badge variant="default" className="text-xs">
+                              Verified
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <CardDescription>
+                          by {provider?.userId?.name}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-sm font-medium">
+                            {provider.rating.toFixed(1)}
+                          </span>
+                        </div>
+                        {user?.role === "consumer" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleFavorite(provider._id)}
+                            className="p-1"
+                          >
+                            <Heart
+                              className={`h-4 w-4 ${
+                                favorites.includes(provider._id)
+                                  ? "fill-red-500 text-red-500"
+                                  : "text-gray-400"
+                              }`}
+                            />
+                          </Button>
                         )}
-                      </CardTitle>
-                      <CardDescription>
-                        by {provider?.userId?.name}
-                      </CardDescription>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium">
-                          {provider.rating.toFixed(1)}
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      {provider.description}
+                    </p>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <ChefHat className="h-4 w-4 text-gray-500" />
+                        <div className="flex flex-wrap gap-1">
+                          {provider.cuisine.slice(0, 3).map((c, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {c}
+                            </Badge>
+                          ))}
+                          {provider.cuisine.length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{provider.cuisine.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {provider.deliveryAreas.slice(0, 2).join(", ")}
+                          {provider.deliveryAreas.length > 2 &&
+                            ` +${provider.deliveryAreas.length - 2} more`}
                         </span>
                       </div>
-                      {user?.role === "consumer" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleFavorite(provider._id)}
-                          className="p-1"
-                        >
-                          <Heart
-                            className={`h-4 w-4 ${
-                              favorites.includes(provider._id)
-                                ? "fill-red-500 text-red-500"
-                                : "text-gray-400"
-                            }`}
-                          />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {provider.description}
-                  </p>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <ChefHat className="h-4 w-4 text-gray-500" />
-                      <div className="flex flex-wrap gap-1">
-                        {provider.cuisine.slice(0, 3).map((c, i) => (
-                          <Badge
-                            key={i}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            {c}
-                          </Badge>
-                        ))}
-                        {provider.cuisine.length > 3 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{provider.cuisine.length - 3}
-                          </Badge>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {provider.totalOrders} orders completed
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">
-                        {provider.deliveryAreas.slice(0, 2).join(", ")}
-                        {provider.deliveryAreas.length > 2 &&
-                          ` +${provider.deliveryAreas.length - 2} more`}
-                      </span>
+                    <div className="mt-4">
+                      <Link href={`/new-provider/${provider._id}`}>
+                        <Button className="w-full">View Tiffins</Button>
+                      </Link>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">
-                        {provider.totalOrders} orders completed
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <Link href={`/new-provider/${provider._id}`}>
-                      <Button className="w-full">View Tiffins</Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
         </div>
 
         {providers?.data?.length === 0 && (
