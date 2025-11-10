@@ -18,7 +18,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
-import { User, Phone, MapPin, Mail, Lock, Store } from "lucide-react";
+import { User, Phone, MapPin, Mail, Lock, Store, Settings } from "lucide-react";
+import TitleHeader from "@/components/common/title-header";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
@@ -165,16 +166,12 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-4">
-          <h1 className="text-3xl font-semibold text-gray-900">
-            Profile Settings
-          </h1>
-          <p className="text-gray-600">
-            Manage your account information and preferences
-          </p>
-        </div>
+        <TitleHeader
+          title=" Profile Settings"
+          description="Manage your account information and preferences"
+          icon={<Settings />}
+        />
 
         <Tabs defaultValue="personal" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">

@@ -14,7 +14,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
   return (
     <Card
       key={menu._id}
-      className="bg-background border border-border rounded-xl shadow-sm mb-4"
+      className="bg-background border border-border rounded-xl shadow-sm"
     >
       <CardContent className="flex flex-col sm:flex-row gap-4 p-4">
         <div className="flex gap-3">
