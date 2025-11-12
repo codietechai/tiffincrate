@@ -322,7 +322,7 @@ export default function NotificationsPage() {
             ) : (
               <ElseComponent
                 icon={<Bell />}
-                description="You're all caught up! Check back later for updates."
+                description="You're all caught up! Check back later for updates"
                 heading={
                   activeTab === "unread"
                     ? "No unread notifications"
