@@ -104,20 +104,32 @@ export default function HelpRequestsPage() {
     }
   };
 
-  const fetchProviders = async () => {
-    try {
-      const response = await ProviderService.fetchProvidersLinkedWithConsumer();
-      setProviders(response?.data || []);
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
 
-  useEffect(() => {
-    if (newRequest.type === "consumer_to_provider") {
-      fetchProviders();
-    }
-  }, [newRequest.type]);
+
+const fetchCustomerProviders = async () => {
+  try {
+    const response = await fetch("/api/help-requests/customer-providers", {
+      headers: {
+        "x-user-id": user?.id,
+        "x-user-role": user?.role,
+      },
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch providers");
+
+    const result = await response.json();
+    setProviders(result.data || []);
+  } catch (error) {
+    console.log("error fetching providers:", error);
+  }
+};
+
+useEffect(() => {
+  if (newRequest.type === "consumer_to_provider") {
+    fetchCustomerProviders();
+  }
+}, [newRequest.type]);
+
 
   const createHelpRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,35 +309,35 @@ export default function HelpRequestsPage() {
                       </Select>
                     </div>
 
-                    {providers.length > 0 &&
-                      newRequest.type === "consumer_to_provider" && (
-                        <div>
-                          <Label className="text-xs">Provider</Label>
-                          <Select
-                            value={newRequest.toUserId}
-                            onValueChange={(value) =>
-                              setNewRequest((prev) => ({
-                                ...prev,
-                                toUserId: value,
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
-                              <SelectValue placeholder="Select provider" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {providers.map((item) => (
-                                <SelectItem
-                                  key={(item.userId as any)?._id}
-                                  value={(item.userId as any)?._id}
-                                >
-                                  {item.businessName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
+               {providers.length > 0 && newRequest.type === "consumer_to_provider" && (
+  <div>
+    <Label className="text-xs">Provider</Label>
+    <Select
+      value={newRequest.toUserId}
+      onValueChange={(value) =>
+        setNewRequest((prev) => ({
+          ...prev,
+          toUserId: value,
+        }))
+      }
+    >
+      <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
+        <SelectValue placeholder="Select provider" />
+      </SelectTrigger>
+      <SelectContent>
+        {providers.map((item) => (
+          <SelectItem
+            key={(item.userId as any)?._id}
+            value={(item.userId as any)?._id}
+          >
+            {item.businessName}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+)}
+
 
                     <div>
                       <Label className="text-xs">Priority</Label>
