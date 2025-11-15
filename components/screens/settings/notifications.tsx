@@ -13,7 +13,7 @@ const NotificationSettings = ({
   handlePreferenceChange: (key: string, value: any) => void;
 }) => {
   return (
-    <div className="px-4 pb-4 ">
+    <div className="px-4 pb-4">
       <Card className="pt-4">
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
@@ -78,20 +78,6 @@ const NotificationSettings = ({
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Daily Summary</Label>
-              <p className="text-sm text-gray-500">
-                Receive daily summary on email
-              </p>
-            </div>
-            <Switch
-              checked={preferences.dailySummary}
-              onCheckedChange={(checked) =>
-                handlePreferenceChange("dailySummary", checked)
-              }
-            />
-          </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Weekly Digest</Label>

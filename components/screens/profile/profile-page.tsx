@@ -21,7 +21,7 @@ import { LoadingPage } from "@/components/ui/loading";
 import { User, Phone, MapPin, Mail, Lock, Store, Settings } from "lucide-react";
 import TitleHeader from "@/components/common/title-header";
 import PersonalTab from "./personal-tab";
-import BussinessTab from "./bussiness-tab";
+import BussinessTab from "../settings/provider/bussiness-details";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
@@ -197,7 +197,7 @@ export default function ProfilePage() {
 
             {profile?.user.role === "provider" && (
               <TabsContent value="business" className="space-y-6">
-                <BussinessTab errors={errors} register={register} />
+                {/* <BussinessTab errors={errors} register={register} /> */}
               </TabsContent>
             )}
 

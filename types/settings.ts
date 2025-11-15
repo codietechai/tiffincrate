@@ -5,7 +5,6 @@ export type TSettings = {
     push: boolean;
     orderUpdates: boolean;
     promotions: boolean;
-    dailySummary: boolean;
     weeklyDigest: boolean;
   };
   privacy: {
@@ -13,9 +12,9 @@ export type TSettings = {
     marketing: boolean;
   };
   provider?: {
+    dailySummary: boolean;
     autoAcceptOrders: boolean;
     maxOrdersPerDay: number;
-    preparationTime: number;
     deliveryRadius: number;
   };
 };

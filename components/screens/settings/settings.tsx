@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import {
   Store,
-  Clock,
   Bell,
   CreditCard,
   User,
@@ -23,22 +22,27 @@ import {
   ChevronRight,
   Shield,
   SettingsIcon,
+  SlidersHorizontal,
+  ChevronLeft,
+  ArrowLeft,
 } from "lucide-react";
-import { ProviderSettingsContent } from "./ProviderSettingsContent"; // extracted content
+import { ProviderSettingsContent } from "./provider/ProviderSettingsContent"; // extracted content
 import { Button } from "@/components/ui/button";
 import { TSettings } from "@/types";
 import { SettingsService } from "@/services/setting-service";
 import { LoadingPage } from "@/components/ui/loading";
-import NotificationSettings from "../notifications";
-import AccountSettings from "../account";
+import NotificationSettings from "./notifications";
+import AccountSettings from "./account";
 import TitleHeader from "@/components/common/title-header";
-import PrivacySettings from "../privacy";
+import PrivacySettings from "./privacy";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import BussinessTab from "../../profile/bussiness-tab";
-import { errors } from "jose";
+import BussinessDetails from "./provider/bussiness-details";
 import { useForm } from "react-hook-form";
+import Preferences from "./provider/provider-preferences";
+import { AlertMessages } from "@/components/common/alert-messages";
+import { FormButtons } from "@/components/common/form-buttons";
 
-export function ProviderSettings() {
+export default function Settings() {
   const [openDrawer, setOpenDrawer] = useState<
     | "restaurant"
     | "hours"
@@ -46,34 +50,12 @@ export function ProviderSettings() {
     | "payments"
     | "account"
     | "privacy"
+    | "preferences"
     | null
   >(null);
   const router = useRouter();
 
-  const options = [
-    {
-      key: "account",
-      icon: <User className="w-5 h-5 text-primary" />,
-      label: "Account",
-    },
-    {
-      key: "notifications",
-      icon: <Bell className="w-5 h-5 text-primary" />,
-      label: "Notifications",
-    },
-
-    {
-      key: "payments",
-      icon: <CreditCard className="w-5 h-5 text-primary" />,
-      label: "Payments",
-    },
-
-    {
-      key: "privacy",
-      icon: <Shield className="w-5 h-5 text-primary" />,
-      label: "Privacy",
-    },
-  ];
+  const options = [];
 
   const navigations = [
     {
@@ -109,17 +91,50 @@ export function ProviderSettings() {
   const [error, setError] = useState("");
 
   if (user && user.role === "provider") {
-    options.unshift({
+    options.push({
       key: "restaurant",
       icon: <Store className="w-5 h-5 text-primary" />,
       label: "Restaurant Info",
     });
+    options.push({
+      key: "preferences",
+      icon: <SlidersHorizontal className="w-5 h-5 text-primary" />,
+      label: "Prefrences",
+    });
+  }
+
+  if (user) {
+    options.push(
+      ...[
+        {
+          key: "account",
+          icon: <User className="w-5 h-5 text-primary" />,
+          label: "Account",
+        },
+        {
+          key: "notifications",
+          icon: <Bell className="w-5 h-5 text-primary" />,
+          label: "Notifications",
+        },
+
+        {
+          key: "payments",
+          icon: <CreditCard className="w-5 h-5 text-primary" />,
+          label: "Payments",
+        },
+
+        {
+          key: "privacy",
+          icon: <Shield className="w-5 h-5 text-primary" />,
+          label: "Privacy",
+        },
+      ]
+    );
   }
 
   const [preferences, setPreferences] = useState({
     email: false,
     sms: false,
-    dailySummary: false,
     orderUpdates: false,
     promotions: false,
     weeklyDigest: false,
@@ -129,7 +144,7 @@ export function ProviderSettings() {
     autoAcceptOrders: true,
     deliveryRadius: 50,
     maxOrdersPerDay: 10,
-    preparationTime: 30,
+    dailySummary: false,
   });
 
   const [privacy, setPrivacy] = useState({
@@ -204,14 +219,8 @@ export function ProviderSettings() {
     setMessage("");
 
     try {
-      const {
-        email,
-        sms,
-        orderUpdates,
-        promotions,
-        weeklyDigest,
-        dailySummary,
-      } = preferences;
+      const { email, sms, orderUpdates, promotions, weeklyDigest } =
+        preferences;
 
       let payload: TSettings = {
         notifications: {
@@ -220,7 +229,7 @@ export function ProviderSettings() {
           orderUpdates,
           promotions,
           weeklyDigest,
-          dailySummary,
+
           push: true,
         },
 
@@ -237,7 +246,7 @@ export function ProviderSettings() {
             autoAcceptOrders: provider.autoAcceptOrders,
             deliveryRadius: provider.deliveryRadius,
             maxOrdersPerDay: provider.maxOrdersPerDay,
-            preparationTime: provider.preparationTime,
+            dailySummary: provider.dailySummary,
           },
         };
       }
@@ -268,39 +277,25 @@ export function ProviderSettings() {
     </div>
   );
 
-  const onCancel = () => {};
+  const onCancel = () => {
+    setOpenDrawer(null);
+  };
+
   const onReset = () => {
     loadSettings();
   };
-  const Buttons = () => {
-    return (
-      <div className="flex gap-3 justify-end mb-4 px-3">
-        <Button
-          type="button"
-          variant={"outline"}
-          onClick={onCancel}
-          disabled={saving}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          variant={"link"}
-          onClick={onReset}
-          disabled={saving}
-        >
-          Reset
-        </Button>
-        <Button type="button" onClick={saveSettings} disabled={saving}>
-          {saving ? "Saving..." : "Save Changes"}
-        </Button>
-      </div>
-    );
-  };
+
+  useEffect(() => {
+    setError("");
+    setMessage("");
+  }, [openDrawer]);
+
   if (loading) return <LoadingPage />;
 
   return (
-    <div className="p-4 space-y-3">
+    <div className="p-4 pt-2 space-y-3">
+      <BackHeader />
+
       <TitleHeader
         title="Settings"
         description="Manage your account preferences and privacy settings"
@@ -359,8 +354,34 @@ export function ProviderSettings() {
             </DrawerTitle>
             <DrawerDescription>Manage your account here</DrawerDescription>
           </DrawerHeader>
-          <AlertMessage />
+          <AlertMessages message={message} error={error} />
           <AccountSettings setError={setError} />
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer
+        open={openDrawer === "preferences"}
+        onOpenChange={() => setOpenDrawer(null)}
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Preferences
+            </DrawerTitle>
+            <DrawerDescription>Manage your perferences here</DrawerDescription>
+          </DrawerHeader>
+          <AlertMessages message={message} error={error} />
+          <Preferences
+            provider={provider}
+            handleProviderChange={handleProviderChange}
+          />
+          <FormButtons
+            onCancel={onCancel}
+            onReset={onReset}
+            onSubmit={saveSettings}
+            saving={saving}
+          />
         </DrawerContent>
       </Drawer>
 
@@ -378,12 +399,17 @@ export function ProviderSettings() {
               Control your privacy and data sharing preferences
             </DrawerDescription>
           </DrawerHeader>
-          <AlertMessage />
+          <AlertMessages message={message} error={error} />
           <PrivacySettings
             privacy={privacy}
             handlePrivacyChange={handlePrivacyChange}
           />
-          <Buttons />
+          <FormButtons
+            onCancel={onCancel}
+            onReset={onReset}
+            onSubmit={saveSettings}
+            saving={saving}
+          />
         </DrawerContent>
       </Drawer>
 
@@ -393,13 +419,16 @@ export function ProviderSettings() {
       >
         <DrawerContent className="">
           <DrawerHeader>
-            <DrawerTitle>Restaurant Info</DrawerTitle>
+            <DrawerTitle className="flex items-center gap-2">
+              <Store className="h-5 w-5" />
+              Business Information
+            </DrawerTitle>
+            <DrawerDescription>
+              Update your tiffin service details
+            </DrawerDescription>
           </DrawerHeader>
-          <AlertMessage />
-          <div className="px-4 pb-4 ">
-            <BussinessTab errors={errors} register={register} />
-          </div>
-          <Buttons />
+          <AlertMessages message={message} error={error} />
+          <BussinessDetails onCancel={onCancel} />
         </DrawerContent>
       </Drawer>
 
@@ -417,13 +446,17 @@ export function ProviderSettings() {
               Choose how you want to be notified about orders and updates
             </DrawerDescription>
           </DrawerHeader>
-          <AlertMessage />
-
+          <AlertMessages message={message} error={error} />
           <NotificationSettings
             preferences={preferences}
             handlePreferenceChange={handlePreferenceChange}
           />
-          <Buttons />
+          <FormButtons
+            onCancel={onCancel}
+            onReset={onReset}
+            onSubmit={saveSettings}
+            saving={saving}
+          />
         </DrawerContent>
       </Drawer>
 
@@ -435,9 +468,14 @@ export function ProviderSettings() {
           <DrawerHeader>
             <DrawerTitle>Payments</DrawerTitle>
           </DrawerHeader>
-          <AlertMessage />
+          <AlertMessages message={message} error={error} />
           <ProviderSettingsContent tab="payments" />
-          <Buttons />
+          <FormButtons
+            onCancel={onCancel}
+            onReset={onReset}
+            onSubmit={saveSettings}
+            saving={saving}
+          />
         </DrawerContent>
       </Drawer>
     </div>

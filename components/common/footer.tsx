@@ -99,9 +99,9 @@ const Footer = () => {
 
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  // useEffect(() => {
-  //   checkAuth();
-  // }, []);
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   const checkAuth = async () => {
     try {
@@ -111,11 +111,12 @@ const Footer = () => {
         setUser(data.user);
 
         // Redirect to appropriate dashboard if already logged in
-        if (data.user.role === "admin") {
-          router.push("/dashboard/admin");
-        } else if (data.user.role === "provider") {
-          router.push("/dashboard/provider");
-        }
+        // if (data.user.role === "admin") {
+        //   router.push("/dashboard/admin");
+        // }
+        //  else if (data.user.role === "provider") {
+        //   router.push("/dashboard/provider");
+        // }
       }
     } catch (error) {
       console.error("Auth check error:", error);

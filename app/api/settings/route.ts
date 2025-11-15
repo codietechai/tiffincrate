@@ -24,15 +24,10 @@ export async function GET(request: NextRequest) {
         dataCollection: true,
         marketing: false,
       },
-      preferences: {
-        language: "en",
-        timezone: "Asia/Kolkata",
-        currency: "INR",
-      },
       provider: {
         autoAcceptOrders: false,
         maxOrdersPerDay: 0,
-        preparationTime: 0,
+        dailySummary: false,
         deliveryRadius: 0,
       },
     };

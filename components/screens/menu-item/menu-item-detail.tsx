@@ -40,6 +40,7 @@ import { useParams, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Calendar } from "@/components/ui/calendar";
 import { CartItem } from "@/app/(screens)/providers/[id]/page";
+import BackHeader from "@/components/common/back-header";
 
 interface IWeeklyMenu {
   monday?: { name: string; description: string };
@@ -296,19 +297,7 @@ export function MenuItemDetail() {
 
   return (
     <div className="min-h-screen bg-white pb-32">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            className="flex items-center gap-2 text-gray-700"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back</span>
-          </Button>
-        </div>
-      </div>
+      <BackHeader />
 
       <div className="max-w-2xl mx-auto space-y-6">
         <Card className="rounded-none overflow-hidden">
@@ -428,7 +417,10 @@ export function MenuItemDetail() {
                     <Label>Select Custom Dates</Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start">
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
+                        >
                           {multiDates.length > 0
                             ? `${multiDates.length} date(s) selected`
                             : "Select Dates"}
@@ -453,9 +445,9 @@ export function MenuItemDetail() {
                             today.setHours(0, 0, 0, 0);
 
                             // Valid days from your weeklyItems logic
-                            const validDays = getValidDays(menu.weeklyItems).map(
-                              (d) => dayMap[d]
-                            );
+                            const validDays = getValidDays(
+                              menu.weeklyItems
+                            ).map((d) => dayMap[d]);
 
                             // Disable if it's a past date OR not a valid day
                             return date < today || !validDays.includes(day);
@@ -465,7 +457,6 @@ export function MenuItemDetail() {
                     </Popover>
                   </div>
                 )}
-
 
                 <div>
                   <Label>Special Instructions (Optional)</Label>
