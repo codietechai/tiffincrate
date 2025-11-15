@@ -41,6 +41,8 @@ import clsx from "clsx";
 import { Calendar } from "@/components/ui/calendar";
 import { CartItem } from "@/app/(screens)/providers/[id]/page";
 import BackHeader from "@/components/common/back-header";
+import GoogleMapAutoComplete from "@/components/common/googlePlace";
+import { MenuItemDetailSkeleton } from "./menu-detail-skeleton";
 
 interface IWeeklyMenu {
   monday?: { name: string; description: string };
@@ -95,6 +97,7 @@ export function MenuItemDetail() {
   const [menu, setMenu] = useState<IMenu | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [location, setLocation] = useState<string>("");
   const [isOrdering, setIsOrdering] = useState(false);
 
   const [orderData, setOrderData] = useState({
@@ -195,7 +198,7 @@ export function MenuItemDetail() {
     return dates;
   };
 
-  if (loading) return <p className="p-6">Loading menu...</p>;
+if (loading) return <MenuItemDetailSkeleton />;
   if (error) return <p className="p-6 text-red-600">{error}</p>;
   if (!menu) return <p className="p-6">No menu found.</p>;
 
@@ -265,7 +268,7 @@ export function MenuItemDetail() {
                 },
               ],
               totalAmount,
-              deliveryAddress: orderData.deliveryAddress,
+              deliveryAddress: location,
               orderType: orderData.deliveryPeriod,
               deliveryInfo,
               timeSlot: autoTimeSlot,
@@ -352,7 +355,7 @@ export function MenuItemDetail() {
               <div className="space-y-4 mt-4">
                 <div>
                   <Label>Delivery Address</Label>
-                  <Input
+                  {/* <Input
                     placeholder="Enter your delivery address"
                     value={orderData.deliveryAddress}
                     onChange={(e) =>
@@ -361,6 +364,12 @@ export function MenuItemDetail() {
                         deliveryAddress: e.target.value,
                       }))
                     }
+                  /> */}
+
+                  <GoogleMapAutoComplete
+                    setSelectedLocation={setLocation}
+                    isError={isOrdering}
+                    placeholder="Enter your delivery address"
                   />
                 </div>
 

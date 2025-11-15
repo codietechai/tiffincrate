@@ -46,6 +46,7 @@
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
     "@types/twilio": "^3.19.2",
+    "@vis.gl/react-google-maps": "^1.7.1",
     "autoprefixer": "10.4.15",
     "bcryptjs": "^3.0.2",
     "brevo": "^1.0.0",

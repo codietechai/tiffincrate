@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import deliveryOrders from "@/models/deliveryOrders";
 import { ERRORMESSAGE } from "@/constants/response-messages";
-
+import Notification from "@/models/Notification";
+import Order from "@/models/Order";
 export async function PATCH(request: NextRequest) {
   try {
     const role = request.headers.get("x-user-role");
@@ -25,14 +26,34 @@ export async function PATCH(request: NextRequest) {
 
     console.log("Updating delivery:", orderDeliveryId, "→", status);
 
+    const order = await deliveryOrders
+      .findOne({ _id: orderDeliveryId })
+      .populate({
+        path: "orderId",
+        populate: {
+          path: "providerId",
+        },
+      });
     const data = await deliveryOrders
       .findByIdAndUpdate(
         orderDeliveryId,
         { deliveryStatus: status },
-        { new: true } // return updated document
+        { new: true }
       )
-      .lean(); // return plain JS object, no circular refs
+      .lean();
 
+    const readableStatus = status
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    new Notification({
+      userId: order.orderId.consumerId,
+      title: `your order is ${readableStatus}`,
+      message: `Your order from ${order.orderId.providerId.businessName} has been ${readableStatus}.`,
+      type: "order",
+      data: { orderId: order._id, providerId: order.orderId.providerId },
+    }).save();
+    
     if (!data) {
       return NextResponse.json(
         { error: "Delivery order not found" },
