@@ -2,37 +2,19 @@
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Bell } from "lucide-react";
 
-const Notifications = ({
+const NotificationSettings = ({
   preferences,
   handlePreferenceChange,
 }: {
   preferences: any;
   handlePreferenceChange: (key: string, value: any) => void;
 }) => {
-  
   return (
-    <TabsContent value="notifications" className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Notification Preferences
-          </CardTitle>
-          <CardDescription>
-            Choose how you want to be notified about orders and updates
-          </CardDescription>
-        </CardHeader>
+    <div className="px-4 pb-4 ">
+      <Card className="pt-4">
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
@@ -98,6 +80,20 @@ const Notifications = ({
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
+              <Label>Daily Summary</Label>
+              <p className="text-sm text-gray-500">
+                Receive daily summary on email
+              </p>
+            </div>
+            <Switch
+              checked={preferences.dailySummary}
+              onCheckedChange={(checked) =>
+                handlePreferenceChange("dailySummary", checked)
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
               <Label>Weekly Digest</Label>
               <p className="text-sm text-gray-500">
                 Weekly summary of your orders and new providers
@@ -112,8 +108,8 @@ const Notifications = ({
           </div>
         </CardContent>
       </Card>
-    </TabsContent>
+    </div>
   );
 };
 
-export default Notifications;
+export default NotificationSettings;

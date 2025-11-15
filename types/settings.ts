@@ -5,18 +5,12 @@ export type TSettings = {
     push: boolean;
     orderUpdates: boolean;
     promotions: boolean;
+    dailySummary: boolean;
     weeklyDigest: boolean;
   };
   privacy: {
-    profileVisibility: string; // "public" | "private" | "friends"
-    showOrderHistory: boolean;
     dataCollection: boolean;
     marketing: boolean;
-  };
-  preferences: {
-    language: string;
-    timezone: string;
-    currency: string;
   };
   provider?: {
     autoAcceptOrders: boolean;

@@ -99,9 +99,9 @@ const Footer = () => {
 
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  // useEffect(() => {
+  //   checkAuth();
+  // }, []);
 
   const checkAuth = async () => {
     try {

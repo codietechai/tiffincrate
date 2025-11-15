@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import { Settings } from "lucide-react";
@@ -21,6 +21,7 @@ export interface TPreferences {
   orderUpdates: boolean;
   promotions: boolean;
   weeklyDigest: boolean;
+  dailySummary: boolean;
   language: string;
   timezone: string;
   currency: string;
@@ -45,11 +46,9 @@ export default function SettingsPage() {
     email: false,
     sms: false,
     orderUpdates: false,
+    dailySummary: false,
     promotions: false,
     weeklyDigest: false,
-    language: "en",
-    timezone: "Asia/Kolkata",
-    currency: "INR",
   });
 
   const [provider, setProvider] = useState({
@@ -60,8 +59,6 @@ export default function SettingsPage() {
   });
 
   const [privacy, setPrivacy] = useState({
-    profileVisibility: "public",
-    showOrderHistory: false,
     dataCollection: true,
     marketing: false,
   });
@@ -95,7 +92,7 @@ export default function SettingsPage() {
       const response = await SettingsService.fetchSettings();
       setPreferences({
         ...response.data.notifications,
-        ...(response.data.preferences as any),
+        // ...(response.data.preferences as any),
       });
       if (user?.role === "provider") {
         setProvider(response?.data?.provider as any);
@@ -133,9 +130,8 @@ export default function SettingsPage() {
         orderUpdates,
         promotions,
         weeklyDigest,
-        language,
-        timezone,
-        currency,
+
+        dailySummary,
       } = preferences;
 
       let payload: TSettings = {
@@ -145,18 +141,13 @@ export default function SettingsPage() {
           orderUpdates,
           promotions,
           weeklyDigest,
+          dailySummary,
           push: true,
         },
-        preferences: {
-          language,
-          timezone,
-          currency,
-        },
+
         privacy: {
           dataCollection: privacy.dataCollection,
           marketing: privacy.marketing,
-          profileVisibility: privacy.profileVisibility,
-          showOrderHistory: privacy.showOrderHistory,
         },
       };
 
@@ -220,10 +211,12 @@ export default function SettingsPage() {
             </Alert>
           )}
 
-          <Notifications
-            preferences={preferences}
-            handlePreferenceChange={handlePreferenceChange}
-          />
+          <TabsContent value="notifications" className="space-y-6">
+            <Notifications
+              preferences={preferences}
+              handlePreferenceChange={handlePreferenceChange}
+            />
+          </TabsContent>
           <Preferences
             preferences={preferences}
             handlePreferenceChange={handlePreferenceChange}
@@ -231,12 +224,15 @@ export default function SettingsPage() {
             handleProviderChange={handleProviderChange}
             user={user}
           />
-          <Privacy
-            privacy={privacy}
-            handlePrivacyChange={handlePrivacyChange}
-          />
-          <Account setError={setError} />
-
+          <TabsContent value="privacy" className="space-y-6">
+            <Privacy
+              privacy={privacy}
+              handlePrivacyChange={handlePrivacyChange}
+            />
+          </TabsContent>
+          <TabsContent value="account" className="space-y-6">
+            <Account setError={setError} />
+          </TabsContent>
           <div className="flex justify-end">
             <Button onClick={saveSettings} disabled={saving}>
               {saving ? "Saving..." : "Save Settings"}
