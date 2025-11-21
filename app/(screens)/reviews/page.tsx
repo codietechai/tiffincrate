@@ -11,363 +11,345 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
-import { Search, Star, Trash2, Filter } from "lucide-react";
-import { ReviewService } from "@/services/review-service";
+import { Search, Star, Trash2 } from "lucide-react";
 import { TProvider, TReview } from "@/types";
-import { Progress } from "@/components/ui/progress";
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<TReview[]>([]);
-  const [providers, setProviders] = useState<TProvider[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [providerFilter, setProviderFilter] = useState("");
-  const [ratingFilter, setRatingFilter] = useState("");
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [stats, setStats] = useState<any>(null);
   const router = useRouter();
 
+  // ✔ State
+  const [reviews, setReviews] = useState<TReview[]>([]);
+  const [providers, setProviders] = useState<TProvider[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // ✔ Debounce search
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // ✔ Filters
+  const [filters, setFilters] = useState({
+    provider: "all",
+    rating: "all",
+    sort: "newest",
+  });
+
+  // ✔ Expand comment
+  const [expanded, setExpanded] = useState<any>({});
+
+  // ------------------------------
+  // AUTH CHECK
+  // ------------------------------
   useEffect(() => {
     checkAuth();
-    fetchReviews();
-  }, [providerFilter, ratingFilter, sortBy, sortOrder]);
+  }, []);
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth/me");
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      } else {
-        router.push("/auth/login");
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
+      const res = await fetch("/api/auth/me");
+      if (!res.ok) return router.push("/auth/login");
+      const data = await res.json();
+      setUser(data.user);
+    } catch {
       router.push("/auth/login");
     }
   };
 
-  const fetchReviews = async () => {
-    try {
-      const data = await ReviewService.fetchReviews({
-        id: providerFilter,
-        ratingFilter: ratingFilter,
-        role: user?.role,
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-        limit: "20",
-      });
+  // ------------------------------
+  // DEBOUNCE SEARCH EFFECT
+  // ------------------------------
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 400);
 
-      setReviews(data.data);
-      setStats(data.stats);
-      if (data.providers) {
-        setProviders(data.providers);
-      }
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-    } finally {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // ------------------------------
+  // FETCH REVIEWS WITH FILTERS
+  // ------------------------------
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchReviews = async () => {
+      setLoading(true);
+
+      const params = new URLSearchParams();
+      if (debouncedSearch) params.append("search", debouncedSearch);
+      if (filters.provider !== "all")
+        params.append("providerId", filters.provider);
+      if (filters.rating !== "all")
+        params.append("rating", filters.rating);
+
+      // SORT
+      if (filters.sort === "newest") params.append("sort", "createdAt-desc");
+      if (filters.sort === "oldest") params.append("sort", "createdAt-asc");
+      if (filters.sort === "highest") params.append("sort", "rating-desc");
+      if (filters.sort === "lowest") params.append("sort", "rating-asc");
+
+      const res = await fetch(`/api/reviews?${params.toString()}`);
+      const data = await res.json();
+
+      setReviews(data.data || []);
+      setProviders(data.providers || []);
       setLoading(false);
-    }
+    };
+
+    fetchReviews();
+  }, [user]);
+
+  // ------------------------------
+  // DELETE REVIEW
+  // ------------------------------
+  const deleteReview = async (id: string) => {
+    if (!confirm("Delete review?")) return;
+    await fetch(`/api/review/${id}`, { method: "DELETE" });
+
+    setReviews((prev) => prev.filter((r) => r._id !== id));
   };
 
-  const deleteReview = async (reviewId: string) => {
-    if (!confirm("Are you sure you want to delete this review?")) return;
-
-    try {
-      await ReviewService.deleteReview(reviewId);
-      setReviews((prev) => prev.filter((review) => review._id !== reviewId));
-    } catch (error) {
-      console.error("Error deleting review:", error);
-    }
+  // ------------------------------
+  // Expand comment
+  // ------------------------------
+  const toggleExpand = (id: string) => {
+    setExpanded((prev: any) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const filteredReviews = reviews.filter((review) => {
-    if (!searchTerm) return true;
-    return (
-      review.consumerId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.providerId.businessName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      review.comment?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
 
-  if (loading) return <LoadingPage />;
+  // ------------------------------
+  // RETURN UI
+  // ------------------------------
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+const stats = {
+  totalReviews: reviews.length,
+  averageRating:
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
+      : 0,
+};
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-4">
-          <h1 className="text-3xl font-semibold text-gray-900">
-            {user?.role === "admin" ? "All Reviews" : "My Reviews"}
-          </h1>
-          <p className="text-gray-600">
-            {user?.role === "admin"
-              ? "Manage and monitor all platform reviews"
-              : "Reviews from your customers"}
-          </p>
+return (
+  <div className="min-h-screen ">
+    <Navbar />
+
+    <div className="max-w-7xl  mx-auto bg-white rounded-2xl shadow-xl p-10">
+
+      {/* Header */}
+      <div className="text-center mb-10">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          What our customers say
+        </h2>
+        <p className="mt-1 text-gray-600">
+          <span className="text-green-600 font-semibold">
+            {stats?.averageRating?.toFixed(1) || "0.0"}
+          </span>
+          <span> rating out of </span>
+          <span className="font-semibold">{stats?.totalReviews || 0}</span>
+          <span className="text-gray-500"> reviews</span>
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search reviews..."
+            value={filters.search}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, search: e.target.value }))
+            }
+            className="pl-10 w-60 bg-gray-50"
+          />
         </div>
 
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Reviews</p>
-                    <p className="text-xl font-semibold">
-                      {stats.totalReviews}
-                    </p>
-                  </div>
-                  <Star className="h-8 w-8 text-yellow-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Average Rating</p>
-                    <p className="text-xl font-semibold">
-                      {stats.averageRating.toFixed(1)}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="md:col-span-2">
-              <CardContent className="p-4">
-                <h3 className="font-medium mb-3">Rating Distribution</h3>
-                <div className="space-y-2">
-                  {stats.ratingDistribution.map((item: any) => (
-                    <div key={item.rating} className="flex items-center gap-2">
-                      <span className="text-sm w-8">{item.rating}★</span>
-                      {/* <Progress
-                        value={(item.count / stats.totalReviews) * 100 || 0}
-                        className="flex-1 h-2"
-                      /> */}
-                      <span className="text-sm text-gray-500 w-8">
-                        {item.count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Provider Filter */}
+        {user?.role === "admin" && (
+          <Select
+            value={filters.provider}
+            onValueChange={(value) =>
+              setFilters((prev) => ({ ...prev, provider: value }))
+            }
+          >
+            <SelectTrigger className="w-44 bg-gray-50">
+              <SelectValue placeholder="All Providers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Providers</SelectItem>
+              {providers.map((p) => (
+                <SelectItem key={p._id} value={p._id}>
+                  {p.businessName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filter Reviews
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search reviews..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        {/* Rating Filter */}
+        <Select
+          value={filters.rating}
+          onValueChange={(value) =>
+            setFilters((prev) => ({ ...prev, rating: value }))
+          }
+        >
+          <SelectTrigger className="w-36 bg-gray-50">
+            <SelectValue placeholder="All Ratings" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Ratings</SelectItem>
+            <SelectItem value="5">5 Stars</SelectItem>
+            <SelectItem value="4">4 Stars</SelectItem>
+            <SelectItem value="3">3 Stars</SelectItem>
+            <SelectItem value="2">2 Stars</SelectItem>
+            <SelectItem value="1">1 Star</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Sort Filter */}
+        <Select
+          value={filters.sort}
+          onValueChange={(value) =>
+            setFilters((prev) => ({ ...prev, sort: value }))
+          }
+        >
+          <SelectTrigger className="w-40 bg-gray-50">
+            <SelectValue placeholder="Sort By" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest</SelectItem>
+            <SelectItem value="oldest">Oldest</SelectItem>
+            <SelectItem value="highest">Highest Rated</SelectItem>
+            <SelectItem value="lowest">Lowest Rated</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Clear */}
+        <Button
+          variant="outline"
+          onClick={() =>
+            setFilters({
+              search: "",
+              provider: "all",
+              rating: "all",
+              sort: "newest",
+            })
+          }
+          className="bg-gray-50"
+        >
+          Clear
+        </Button>
+      </div>
+
+      {/* ----------------- */}
+      {/*     SKELETON     */}
+      {/* ----------------- */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card
+              key={i}
+              className="p-5 border rounded-xl shadow-sm animate-pulse"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+
+                  <div className="h-3 bg-gray-200 rounded w-1/3 mt-4"></div>
+                </div>
               </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        /* ----------------- */
+        /*   REAL REVIEWS     */
+        /* ----------------- */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {reviews.map((review) => (
+            <Card key={review._id} className="p-5 border rounded-xl shadow-sm">
+              <div className="flex items-start gap-3">
+                {/* Avatar */}
+                <img
+                  src={
+                    review.consumerId?.avatar ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      review.consumerId?.name || "User"
+                    )}`
+                  }
+                  className="w-12 h-12 rounded-full object-cover"
+                />
 
-              {user?.role === "admin" && (
-                <Select
-                  value={providerFilter}
-                  onValueChange={setProviderFilter}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Providers" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Providers</SelectItem>
-                    {providers.map((provider) => (
-                      <SelectItem key={provider._id} value={provider._id}>
-                        {provider.businessName}
-                      </SelectItem>
+                <div className="flex-1">
+                  <h3 className="font-semibold">{review.consumerId.name}</h3>
+
+                  {/* Stars */}
+                  <div className="flex items-center mt-1 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i < review.rating
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
                     ))}
-                  </SelectContent>
-                </Select>
-              )}
+                    <span className="ml-2 text-sm text-gray-700">
+                      {review.rating}.0
+                    </span>
+                  </div>
 
-              <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Ratings" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Ratings</SelectItem>
-                  <SelectItem value="5">5 Stars</SelectItem>
-                  <SelectItem value="4">4 Stars</SelectItem>
-                  <SelectItem value="3">3 Stars</SelectItem>
-                  <SelectItem value="2">2 Stars</SelectItem>
-                  <SelectItem value="1">1 Star</SelectItem>
-                </SelectContent>
-              </Select>
+                  {/* Comment */}
+                  <p
+                    className={`text-sm text-gray-700 ${
+                      expanded[review._id] ? "" : "line-clamp-3"
+                    }`}
+                  >
+                    {review.comment}
+                  </p>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort By" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">Date</SelectItem>
-                  <SelectItem value="rating">Rating</SelectItem>
-                </SelectContent>
-              </Select>
+                  {review.comment.length > 120 && (
+                    <button
+                      className="text-blue-600 text-sm mt-1"
+                      onClick={() => toggleExpand(review._id)}
+                    >
+                      {expanded[review._id] ? "See less" : "See more"}
+                    </button>
+                  )}
 
-              <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Order" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="desc">Newest First</SelectItem>
-                  <SelectItem value="asc">Oldest First</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm("");
-                  setProviderFilter("");
-                  setRatingFilter("");
-                  setSortBy("createdAt");
-                  setSortOrder("desc");
-                }}
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-4">
-          {filteredReviews.length > 0 ? (
-            filteredReviews.map((review) => (
-              <Card key={review._id}>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < review.rating
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="font-medium">{review.rating}/5</span>
-                        {review.isVerified && (
-                          <Badge variant="default" className="text-xs">
-                            Verified
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <p className="text-sm text-gray-500">Customer</p>
-                          <p className="font-medium">
-                            {review.consumerId.name}
-                          </p>
-                          {user?.role === "admin" && (
-                            <p className="text-sm text-gray-500">
-                              {review.consumerId.email}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <p className="text-sm text-gray-500">Provider</p>
-                          <p className="font-medium">
-                            {review.providerId.businessName}
-                          </p>
-                        </div>
-                      </div>
-
-                      {review.comment && (
-                        <div className="mb-3">
-                          <p className="text-sm text-gray-500 mb-1">Comment</p>
-                          <p className="text-gray-700">{review.comment}</p>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>Order Amount: ₹{review.orderId.totalAmount}</span>
-                        <span>•</span>
-                        <span>
-                          Reviewed:{" "}
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </span>
-                        <span>•</span>
-                        <span>
-                          Order Date:{" "}
-                          {new Date(
-                            review.orderId.createdAt
-                          ).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+                    <span>
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </span>
 
                     {user?.role === "admin" && (
-                      <div className="ml-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteReview(review._id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600"
+                        onClick={() => deleteReview(review._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-12">
-              <Star className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="font-medium text-gray-900 mb-2">
-                No reviews found
-              </h3>
-              <p className="text-gray-600">
-                {searchTerm || providerFilter || ratingFilter
-                  ? "Try adjusting your filters"
-                  : "No reviews available yet"}
-              </p>
-            </div>
-          )}
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
-      </div>
+      )}
     </div>
-  );
+  </div>
+);
+
 }

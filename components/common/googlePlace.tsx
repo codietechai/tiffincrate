@@ -9,16 +9,20 @@ import { Input } from "@/components/ui/input";
 
 const GoogleMapAutoComplete = ({
   setSelectedLocation,
+  setLongitude,
+  setlatitude,
   isError,
-  placeholder
+  placeholder,
 }: {
   setSelectedLocation: any;
+  setLongitude: any;
+  setlatitude: any;
   isError: any;
-  placeholder:string
+  placeholder: string;
 }) => {
   const [state, setState] = useState<string>("");
 
-    useState<google.maps.places.PlaceResult | null>(null);
+  useState<google.maps.places.PlaceResult | null>(null);
   const [markerRef, marker] = useAdvancedMarkerRef();
   const mapRef = useRef<google.maps.Map | null>(null);
   const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
@@ -69,6 +73,8 @@ const GoogleMapAutoComplete = ({
           state={state}
           isError={isError}
           setSelectedLocation={setSelectedLocation}
+          setLongitude={setLongitude}
+          setLatitude={setlatitude}
           placeholder={placeholder}
         />
       </div>
@@ -82,13 +88,18 @@ const PlaceAutocomplete = ({
   state,
   isError,
   setSelectedLocation,
-  placeholder
+  setLongitude,
+  setLatitude,
+  placeholder,
 }: {
   onPlaceSelect: (place: google.maps.places.PlaceResult) => void;
   setState: any;
   state: string;
   setSelectedLocation: any;
-  placeholder:string,
+  setLongitude: any;
+  setLatitude: any;
+  placeholder: string;
+
   isError: (log: boolean) => void;
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -118,7 +129,6 @@ const PlaceAutocomplete = ({
     });
   }, []);
 
-
   useEffect(() => {
     if (!places || !inputRef.current) return;
 
@@ -136,15 +146,23 @@ const PlaceAutocomplete = ({
 
         if (place.address_components) {
           place.address_components.forEach((component) => {
-
             if (component.types.includes("administrative_area_level_1")) {
               state = component.long_name;
             }
           });
         }
 
+        const lat = place.geometry?.location?.lat();
+        const lng = place.geometry?.location?.lng();
+
+        if (lat && lng) {
+          setLatitude(lat);
+          setLongitude(lng);
+        }
+
         setError(false);
-        setSelectedLocation(place?.formatted_address||"");
+
+        setSelectedLocation(place?.formatted_address || "");
         setValue("location", place.formatted_address || "");
         setValue("State", state);
         setState(state);

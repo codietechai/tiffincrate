@@ -22,9 +22,6 @@ dayjs.tz.setDefault("Asia/Kolkata");
 
 export const createDeliveryOrders = async (orderId: string, deliveryInfo: any) => {
   const deliveryOrders: any[] = [];
-
-  console.log("🩵 deliveryInfo received:", deliveryInfo);
-
   const tz = "Asia/Kolkata";
 
   if (deliveryInfo?.type === "month") {

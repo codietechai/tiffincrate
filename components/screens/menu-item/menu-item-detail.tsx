@@ -98,10 +98,16 @@ export function MenuItemDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [location, setLocation] = useState<string>("");
+  const [longitude, setLongitude] = useState<number>(0);
+  const [latitude, setLatitude] = useState<number>(0);
   const [isOrdering, setIsOrdering] = useState(false);
 
   const [orderData, setOrderData] = useState({
-    deliveryAddress: "",
+    deliveryAddress: {
+      address:"",
+      longitude:"",
+      latitude:""
+    },
     deliveryDate: "",
     deliveryPeriod: "month" as "month" | "specific_days" | "custom_dates",
     dates: "",
@@ -268,7 +274,7 @@ if (loading) return <MenuItemDetailSkeleton />;
                 },
               ],
               totalAmount,
-              deliveryAddress: location,
+              deliveryAddress: {address:location,latitude:latitude,longitude:longitude},
               orderType: orderData.deliveryPeriod,
               deliveryInfo,
               timeSlot: autoTimeSlot,
@@ -368,6 +374,8 @@ if (loading) return <MenuItemDetailSkeleton />;
 
                   <GoogleMapAutoComplete
                     setSelectedLocation={setLocation}
+                    setLongitude={setLongitude}
+                    setlatitude={setLatitude}
                     isError={isOrdering}
                     placeholder="Enter your delivery address"
                   />

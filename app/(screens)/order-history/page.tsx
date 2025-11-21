@@ -83,10 +83,11 @@ export default function OrderHistoryPage() {
       if (response.ok) {
         const data = await response.json();
         const extracted = data.orders.map((o: any) => ({
-          ...o.order,
+          ...o,
           deliveryStatus: o.deliveryStatus,
           deliveryDate: o.deliveryDate,
         }));
+        console.log('few',data)
         setOrders(extracted);
       }
     } catch (error) {
@@ -95,7 +96,6 @@ export default function OrderHistoryPage() {
       setLoading(false);
     }
   };
-  console.log(orders)
   const filterOrders = () => {
     let filtered = [...orders];
 
