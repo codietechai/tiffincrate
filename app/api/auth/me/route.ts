@@ -2,17 +2,19 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import User from "@/models/User";
+import { withCors } from "@/lib/cors";
+import { SUCCESSMESSAGE } from "@/constants/response-messages";
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
-    const tokenVersion = request.headers.get("x-user-token-version");
     await connectMongoDB();
 
     const user = await User.findById(userId).select("-password");
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
     // if (Number(tokenVersion) !== Number(user.tokenVersion)) {
     //   return NextResponse.json(
     //     { error: "Invalid or expired token" },
@@ -20,7 +22,10 @@ export async function GET(request: NextRequest) {
     //   );
     // }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({
+      data: user,
+      message: SUCCESSMESSAGE.AUTHENTICATED,
+    });
   } catch (error) {
     console.error("Get user error:", error);
     return NextResponse.json(
@@ -29,3 +34,5 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withCors(handler);

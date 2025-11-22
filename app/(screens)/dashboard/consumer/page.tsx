@@ -36,7 +36,7 @@ export default function ConsumerDashboard() {
           window.location.href = "/";
           return;
         }
-        setUser(data.user);
+        setUser(data.data);
       } else {
         window.location.href = "/auth/login";
       }
@@ -188,7 +188,7 @@ export default function ConsumerDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="font-medium">₹{order.totalAmount}</p>
-                        <Button variant="outline" size="sm" className="mt-2" >
+                        <Button variant="outline" size="sm" className="mt-2">
                           <Link href="/track-orders">
                             <div>Track Orders</div>
                           </Link>

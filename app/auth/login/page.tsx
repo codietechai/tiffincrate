@@ -7,16 +7,8 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ChefHat, Mail, Lock, Apple, Eye, EyeOff } from "lucide-react";
+import { ChefHat, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { AuthService } from "@/services/auth-service";
 
 type LoginFormValues = {
@@ -69,7 +61,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 shadow-xl rounded-lg overflow-hidden">
-        {/* Left promotional panel (visible on mobile, stacked above form) */}
         <div className="flex flex-col justify-center items-center md:items-start p-8 md:p-12 bg-gradient-to-tr from-red-500 to-red-400 text-white">
           <div className="flex items-center gap-3 mb-4">
             <ChefHat className="h-10 w-10 text-white/95" />

@@ -84,7 +84,7 @@ export default function ProviderOrdersPage() {
           router.push("/");
           return;
         }
-        setUser(data.user);
+        setUser(data.data);
       } else {
         router.push("/auth/login");
       }

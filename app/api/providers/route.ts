@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import ServiceProvider from "@/models/ServiceProvider";
 import { SUCCESSMESSAGE } from "@/constants/response-messages";
+import { withCors } from "@/lib/cors";
 
-export async function GET(request: NextRequest) {
+export async function handler(request: NextRequest) {
   try {
     await connectMongoDB();
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    const query: any = { isActive: true };
+    const query: any = { isActive: true, isVerified: true };
 
     if (cuisine && cuisine !== "all") {
       query.cuisine = { $in: [cuisine] };
@@ -37,7 +38,6 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // 🔽 Determine sorting order based on param
     let sortOption: Record<string, 1 | -1> = { rating: -1, totalOrders: -1 }; // default
 
     if (sorting === "rating") sortOption = { rating: -1 };
@@ -70,3 +70,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withCors(handler);
+export const OPTIONS = withCors(handler);

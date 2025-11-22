@@ -38,9 +38,9 @@ import PrivacySettings from "./privacy";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import BussinessDetails from "./provider/bussiness-details";
 import { useForm } from "react-hook-form";
-import Preferences from "./provider/provider-preferences";
 import { AlertMessages } from "@/components/common/alert-messages";
 import { FormButtons } from "@/components/common/form-buttons";
+import BackHeader from "@/components/common/back-header";
 
 export default function Settings() {
   const [openDrawer, setOpenDrawer] = useState<
@@ -167,7 +167,7 @@ export default function Settings() {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        setUser(data.data);
       } else {
         router.push("/auth/login");
       }
@@ -259,23 +259,6 @@ export default function Settings() {
       setSaving(false);
     }
   };
-  const AlertMessage = () => (
-    <div className="mx-4 mb-3">
-      {message && (
-        <Alert>
-          <AlertDescription className="text-green-600">
-            {message}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-    </div>
-  );
 
   const onCancel = () => {
     setOpenDrawer(null);
@@ -289,8 +272,6 @@ export default function Settings() {
     setError("");
     setMessage("");
   }, [openDrawer]);
-
-  if (loading) return <LoadingPage />;
 
   return (
     <div className="p-4 pt-2 space-y-3">
@@ -372,10 +353,6 @@ export default function Settings() {
             <DrawerDescription>Manage your perferences here</DrawerDescription>
           </DrawerHeader>
           <AlertMessages message={message} error={error} />
-          <Preferences
-            provider={provider}
-            handleProviderChange={handleProviderChange}
-          />
           <FormButtons
             onCancel={onCancel}
             onReset={onReset}

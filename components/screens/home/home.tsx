@@ -12,7 +12,7 @@ const Home = () => {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        setUser(data.data);
       } else {
         window.location.href = "/auth/login";
       }

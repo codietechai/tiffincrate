@@ -42,7 +42,7 @@ export default function ProviderDashboard() {
           window.location.href = "/";
           return;
         }
-        setUser(data.user);
+        setUser(data.data);
       } else {
         window.location.href = "/auth/login";
       }

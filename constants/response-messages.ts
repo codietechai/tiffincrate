@@ -1,4 +1,6 @@
 export const SUCCESSMESSAGE = {
+  AUTHENTICATED: "Authenticated",
+
   // Admin
   ADMIN_SIGNUP: "Admin signed up successfully",
   ADMIN_LOGIN: "Admin logged in successfully",

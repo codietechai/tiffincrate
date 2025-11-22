@@ -4,24 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
-import { User, Phone, MapPin, Mail, Lock, Store, Settings } from "lucide-react";
 import TitleHeader from "@/components/common/title-header";
 import PersonalTab from "./personal-tab";
 import BussinessTab from "../settings/provider/bussiness-details";
+import { Settings } from "lucide-react";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);

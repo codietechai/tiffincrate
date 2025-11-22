@@ -2,8 +2,10 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import ServiceProvider from "@/models/ServiceProvider";
+import { withCors } from "@/lib/cors";
+import { SUCCESSMESSAGE } from "@/constants/response-messages";
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     await connectMongoDB();
 
@@ -12,30 +14,66 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const verified = searchParams.get("verified");
     const active = searchParams.get("active");
+    const cuisine = searchParams.get("cuisine");
+    const area = searchParams.get("area");
+    const sorting = searchParams.get("sorting");
+    const search = searchParams.get("search");
 
-    const skip = (page - 1) * limit;
-
-    // Build query
     const query: any = {};
     if (verified) query.isVerified = verified === "true";
     if (active) query.isActive = active === "true";
+    if (cuisine && cuisine !== "all") {
+      query.cuisine = { $in: [cuisine] };
+    }
+
+    if (area && area !== "all") {
+      query.deliveryAreas = { $in: [area] };
+    }
+
+    if (search && search.trim() !== "") {
+      const regex = new RegExp(search, "i");
+      query.$or = [
+        { businessName: regex },
+        { description: regex },
+        { cuisine: { $in: [regex] } },
+      ];
+    }
+    const skip = (page - 1) * limit;
+
+    let sortOption: Record<string, 1 | -1> = { rating: -1, totalOrders: -1 };
+
+    if (sorting === "rating") sortOption = { rating: -1 };
+    else if (sorting === "orders") sortOption = { totalOrders: -1 };
+    else if (sorting === "name") sortOption = { businessName: 1 };
 
     const providers = await ServiceProvider.find(query)
       .populate("userId", "name email phone")
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
-
+      .sort(sortOption);
+    const verifiedProviders = await ServiceProvider.countDocuments({
+      isVerified: true,
+    });
+    const activeProviders = await ServiceProvider.countDocuments({
+      isActive: true,
+    });
     const total = await ServiceProvider.countDocuments(query);
 
     return NextResponse.json({
-      providers,
+      data: {
+        data: providers,
+        count: {
+          verified: verifiedProviders,
+          active: activeProviders,
+        },
+      },
       pagination: {
         current: page,
         total: Math.ceil(total / limit),
         count: providers.length,
         totalRecords: total,
       },
+      message: SUCCESSMESSAGE.PROVIDERS_FETCH,
     });
   } catch (error) {
     console.error("Get providers error:", error);
@@ -45,3 +83,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withCors(handler);
+export const OPTIONS = withCors(handler);

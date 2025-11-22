@@ -79,7 +79,7 @@ export default function ProviderMenuPage() {
       if (!res.ok) return router.push("/auth/login");
       const data = await res.json();
       if (data.user.role !== "provider") return router.push("/");
-      setUser(data.user);
+      setUser(data.data);
     } catch {
       router.push("/auth/login");
     }

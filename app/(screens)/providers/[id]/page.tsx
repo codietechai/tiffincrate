@@ -110,7 +110,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
       const res = await fetch("/api/auth/me");
       if (res.ok) {
         const data = await res.json();
-        setUser(data.user);
+        setUser(data.data);
         if (data.user.role === "consumer") checkFavoriteStatus();
       }
     } catch (err) {

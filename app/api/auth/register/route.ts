@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // If role is provider, create service provider profile
     if ((role === "provider" || role === "delivery_partner") && businessData) {
       if (role === "provider") {
-        console.log(role)
+        console.log(role);
         const serviceProvider = new ServiceProvider({
           userId: user._id,
           businessName: businessData.businessName,
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const token =await generateToken({
+    const token = await generateToken({
       userId: user._id,
       email: user.email,
       role: user.role,
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     (response as any).cookies.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60,
     });
 

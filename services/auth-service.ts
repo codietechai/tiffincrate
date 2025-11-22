@@ -3,6 +3,27 @@ import { IUser } from "@/models/User";
 export class AuthService {
   private static baseUrl = "/api/auth";
 
+  static async checkAuth(): Promise<{ user: IUser; message: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to register");
+      }
+
+      const user = await response.json();
+      return user;
+    } catch (error) {
+      console.log("Error creating customer:", error);
+      throw error;
+    }
+  }
+
   static async signin(data: {
     email: string;
     password: string;

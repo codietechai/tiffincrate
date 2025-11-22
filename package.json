@@ -68,6 +68,7 @@
     "motion": "^12.23.22",
     "next": "13.5.1",
     "next-auth": "^4.24.11",
+    "next-cors": "^1.0.0",
     "next-themes": "^0.3.0",
     "postcss": "8.4.30",
     "razorpay": "^2.9.6",

@@ -45,7 +45,7 @@ export default function Navbar() {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        setUser(data.data);
       }
     } catch (error) {
       console.error("Auth check error:", error);
