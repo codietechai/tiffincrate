@@ -45,6 +45,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    wallet_amount: {
+      type: Number,
+      default:0,
+    },
     address: {
       type: String,
       trim: true,
@@ -62,9 +66,6 @@ const userSchema = new mongoose.Schema(
     tokenVersion: {
       type: Number,
       default: 0,
-    },
-    settings: {
-      type: mongoose.Schema.Types.Mixed,
     },
   },
   {

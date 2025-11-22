@@ -2,9 +2,8 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, ImagePlus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -26,19 +25,6 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TMenu } from "@/types";
-// import { toast } from "react-toastify";
-
-type WeeklyItemInput = { _id?: string; name: string; description: string };
-
-const DAYS = [
-  { key: "monday" },
-  { key: "tuesday" },
-  { key: "wednesday" },
-  { key: "thursday" },
-  { key: "friday" },
-  { key: "saturday" },
-  { key: "sunday" },
-];
 
 export default function MenuDrawerForm({
   menuData,
@@ -54,26 +40,19 @@ export default function MenuDrawerForm({
   setMenuData: Dispatch<SetStateAction<TMenu | null>>;
 }) {
   const router = useRouter();
-  const [menu, setMenu] = useState<TMenu | null>(null);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const isEdit = !!menuData;
-  useEffect(() => {
-    setMenu(menuData);
-  }, []);
-  const defaultValues = {
-    name: "",
-    description: "",
-    category: "",
-    basePrice: 0,
-    monthlyPlanPrice: 0,
-    imageUrl: [""],
-    isAvailable: true,
-    isActive: true,
-    isVegetarian: false,
-    weekType: "whole",
-    weeklyItems: {},
-  };
+
+  const DAYS = [
+    { key: "monday", label: "Monday" },
+    { key: "tuesday", label: "Tuesday" },
+    { key: "wednesday", label: "Wednesday" },
+    { key: "thursday", label: "Thursday" },
+    { key: "friday", label: "Friday" },
+    { key: "saturday", label: "Saturday" },
+    { key: "sunday", label: "Sunday" },
+  ];
+
   const {
     register,
     handleSubmit,
@@ -89,76 +68,39 @@ export default function MenuDrawerForm({
       category: "",
       basePrice: 0,
       monthlyPlanPrice: 0,
-      imageUrl: [""],
+      image: "",
       isAvailable: true,
       isActive: true,
       isVegetarian: false,
       weekType: "whole",
-      weeklyItems: {},
+      menuItems: [],
     },
   });
 
-  // check auth
-  const checkAuth = async () => {
-    try {
-      const resp = await fetch("/api/auth/me");
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.user.role !== "provider") {
-          router.push("/");
-        }
-      } else {
-        router.push("/auth/login");
-      }
-    } catch (err) {
-      console.error("Auth check error:", err);
-      router.push("/auth/login");
-    }
+  // 🧩 Image state for each day
+  const [dayImages, setDayImages] = useState<Record<string, string[]>>({});
+
+  const addImageField = (day: string) => {
+    setDayImages((prev) => ({
+      ...prev,
+      [day]: [...(prev[day] || []), ""],
+    }));
   };
 
-  useEffect(() => {
-    if (menuData) {
-      const weekly: Record<string, WeeklyItemInput> = {};
-      for (const d of DAYS) {
-        const item = (menuData.weeklyItems as any)[d.key];
-        weekly[d.key] = item
-          ? { _id: item._id, name: item.name, description: item.description }
-          : { name: "", description: "" };
-      }
-      reset({ ...menuData, weeklyItems: weekly });
-    } else {
-      reset(defaultValues as any);
-    }
-  }, [menuData]);
+  const updateImageValue = (day: string, index: number, value: string) => {
+    setDayImages((prev) => {
+      const imgs = [...(prev[day] || [])];
+      imgs[index] = value;
+      return { ...prev, [day]: imgs };
+    });
+  };
 
-  const onSubmit = async (data: TMenu) => {
-    setSaving(true);
-    try {
-      const method = isEdit ? "PATCH" : "POST";
-
-      const url = isEdit ? `/api/menus/${menuData?._id}` : `/api/menus`;
-      const resp = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      const result = await resp.json();
-      if (resp.ok) {
-        refresh();
-        // toast.success(
-        //   isEdit ? "Menu updated successfully!" : "Menu added successfully!"
-        // );
-        setOpen(false);
-      } else {
-        // toast.error(result.error || "Something went wrong");
-      }
-    } catch (err) {
-      console.error("Submit error:", err);
-      //   toast.error("Network error");
-    } finally {
-      setSaving(false);
-    }
+  const removeImage = (day: string, index: number) => {
+    setDayImages((prev) => {
+      const imgs = [...(prev[day] || [])];
+      imgs.splice(index, 1);
+      return { ...prev, [day]: imgs };
+    });
   };
 
   const isDayDisabled = (day: string) => {
@@ -166,6 +108,91 @@ export default function MenuDrawerForm({
     if (weekType === "weekdays") return day === "saturday" || day === "sunday";
     if (weekType === "weekends") return !["saturday", "sunday"].includes(day);
     return false;
+  };
+
+  // 🧠 Load form data and existing images on open
+  useEffect(() => {
+    if (open) {
+      if (menuData) {
+        // Preload existing menu data
+        const imageMap: Record<string, string[]> = {};
+        menuData.menuItems?.forEach((item: any) => {
+          if (item.day && item.images?.length) {
+            imageMap[item.day.toLowerCase()] = [...item.images];
+          }
+        });
+
+        setDayImages(imageMap);
+        reset({ ...menuData, menuItems: menuData.menuItems || [] });
+      } else {
+        // New Menu
+        reset({
+          name: "",
+          description: "",
+          category: "",
+          basePrice: 0,
+          monthlyPlanPrice: 0,
+          image: "",
+          isAvailable: true,
+          isActive: true,
+          isVegetarian: false,
+          weekType: "whole",
+          menuItems: [],
+        });
+        setDayImages({});
+      }
+    }
+  }, [menuData, open, reset]);
+
+  // 🧾 Submit
+  const onSubmit = async (data: TMenu) => {
+    setSaving(true);
+    try {
+      const form = document.querySelector("form");
+      const menuItems: any[] = [];
+
+      DAYS.forEach((d) => {
+        const name = (form?.querySelector(`#name-${d.key}`) as HTMLInputElement)
+          ?.value;
+        const description = (
+          form?.querySelector(`#desc-${d.key}`) as HTMLTextAreaElement
+        )?.value;
+
+        if (name && name.trim()) {
+          menuItems.push({
+            name: name.trim(),
+            description: description?.trim() || "",
+            day: d.key,
+            images: (dayImages[d.key] || []).filter((x) => x.trim() !== ""),
+          });
+        }
+      });
+
+      const finalPayload = { ...data, menuItems };
+
+      console.log("✅ Final Payload:", finalPayload);
+
+      const method = isEdit ? "PATCH" : "POST";
+      const url = isEdit ? `/api/menus/${menuData?._id}` : `/api/menus`;
+
+      const resp = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(finalPayload),
+      });
+
+      const result = await resp.json();
+      if (resp.ok) {
+        refresh();
+        setOpen(false);
+      } else {
+        console.error("Error:", result);
+      }
+    } catch (err) {
+      console.error("Submit error:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -176,6 +203,7 @@ export default function MenuDrawerForm({
           <span className="hidden md:inline">Add Item</span>
         </Button>
       </DrawerTrigger>
+
       <DrawerContent className="max-h-[90vh]">
         <div className="overflow-y-auto">
           <DrawerHeader>
@@ -198,11 +226,6 @@ export default function MenuDrawerForm({
                   {...register("name", { required: "Name is required" })}
                   placeholder="Menu name"
                 />
-                {errors.name && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.name.message}
-                  </p>
-                )}
               </div>
 
               <div>
@@ -252,10 +275,10 @@ export default function MenuDrawerForm({
 
               <div>
                 <Label>Image URL</Label>
-                <Input {...register("imageUrl")} placeholder="https://..." />
+                <Input {...register("image")} placeholder="https://..." />
               </div>
 
-              {/* Toggles */}
+              {/* ✅ Keep your toggles */}
               <div className="flex gap-4 items-center">
                 <Switch
                   checked={watch("isAvailable")}
@@ -281,60 +304,94 @@ export default function MenuDrawerForm({
               </div>
             </div>
 
-            {/* Week Type */}
-            <div>
-              <Label className="font-semibold mb-2 block">Week Type</Label>
-              <RadioGroup
-                value={watch("weekType")}
-                onValueChange={(val) =>
-                  setValue("weekType", val as TMenu["weekType"])
-                }
-                className="flex gap-6"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="weekdays" id="weekdays" />
-                  <Label htmlFor="weekdays">Only Weekdays</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="weekends" id="weekends" />
-                  <Label htmlFor="weekends">Only Weekends</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="whole" id="whole" />
-                  <Label htmlFor="whole">Whole Week</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
             {/* Weekly Items */}
             <div className="space-y-6">
-              <h3 className="font-semibold">Weekly Items</h3>
-              {DAYS.map((d) => (
-                <div
-                  key={d.key}
-                  className={`border rounded-lg p-4 ${
-                    isDayDisabled(d.key) ? "opacity-60" : "bg-white/80"
-                  }`}
-                >
-                  <Label className="capitalize font-semibold">{d.key}</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <Input
-                      disabled={isDayDisabled(d.key)}
-                      placeholder="Item name"
-                      {...register(`weeklyItems.${d.key}.name` as const, {
-                        required: !isDayDisabled(d.key)
-                          ? `Name for ${d.key} is required`
-                          : false,
-                      })}
-                    />
-                    <Textarea
-                      disabled={isDayDisabled(d.key)}
-                      placeholder="Item description"
-                      {...register(`weeklyItems.${d.key}.description` as const)}
-                    />
+              <h3 className="font-semibold text-lg">Weekly Items</h3>
+
+              {DAYS.map((d) => {
+                const isDisabled = isDayDisabled(d.key);
+                const images = dayImages[d.key] || [];
+                const existingItem = menuData?.menuItems?.find(
+                  (m:any) => m.day?.toLowerCase() === d.key
+                );
+
+                return (
+                  <div
+                    key={d.key}
+                    className={`border rounded-lg p-4 ${
+                      isDisabled ? "opacity-60 bg-gray-100" : "bg-white"
+                    }`}
+                  >
+                    <Label className="capitalize font-semibold text-sm">
+                      {d.label}
+                    </Label>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                      <Input
+                        id={`name-${d.key}`}
+                        disabled={isDisabled}
+                        placeholder="Item name"
+                        defaultValue={existingItem?.name || ""}
+                      />
+                      <Textarea
+                        id={`desc-${d.key}`}
+                        disabled={isDisabled}
+                        placeholder="Item description"
+                        defaultValue={existingItem?.description || ""}
+                      />
+                    </div>
+
+                    {/* 🖼 Show existing and new images */}
+                    <div className="mt-3">
+                      <div className="flex flex-wrap gap-3">
+                        {images.map((url, idx) => (
+                          <div
+                            key={idx}
+                            className="relative w-24 h-24 border rounded-md overflow-hidden group"
+                          >
+                            <img
+                              src={url}
+                              alt=""
+                              className="object-cover w-full h-full"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(d.key, idx)}
+                              className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Add new image URL fields */}
+                      {images.map((img, idx) => (
+                        <div key={`input-${idx}`} className="flex gap-2 mt-2">
+                          <Input
+                            value={img}
+                            onChange={(e) =>
+                              updateImageValue(d.key, idx, e.target.value)
+                            }
+                            placeholder="Image URL"
+                            className="flex-1"
+                          />
+                        </div>
+                      ))}
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => addImageField(d.key)}
+                      >
+                        <Plus className="w-4 h-4 mr-1" /> Add Image
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-4">
@@ -351,7 +408,7 @@ export default function MenuDrawerForm({
                 variant="outline"
                 className="flex-1 h-11"
                 type="button"
-                onClick={() => router.push("/dashboard/provider/menu")}
+                onClick={() => setOpen(false)}
               >
                 Cancel
               </Button>

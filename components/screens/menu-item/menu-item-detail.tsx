@@ -59,11 +59,11 @@ interface IMenu {
   name: string;
   description?: string;
   category: "breakfast" | "lunch" | "dinner";
-  weeklyItems: IWeeklyMenu;
+  menuItems: any;
   basePrice: number;
   providerId: string | null;
   monthlyPlanPrice?: number;
-  imageUrl: string[];
+  image: string;
   isAvailable: boolean;
   isVegetarian: boolean;
   weekType: "whole" | "weekdays" | "weekends";
@@ -264,15 +264,8 @@ if (loading) return <MenuItemDetailSkeleton />;
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              providerId: menu.providerId,
-              items: [
-                {
-                  menuItemId: menu._id,
-                  name: menu.name,
-                  price: menu.basePrice,
-                  quantity: totalDays,
-                },
-              ],
+              menuId: menu._id,
+              providerId: menu._id,
               totalAmount,
               deliveryAddress: {address:location,latitude:latitude,longitude:longitude},
               orderType: orderData.deliveryPeriod,
@@ -314,7 +307,7 @@ if (loading) return <MenuItemDetailSkeleton />;
             <Image
               height={420}
               width={672}
-              src={menu.imageUrl[0]}
+              src={menu.image}
               alt={menu.name}
               className="w-full h-full object-cover"
             />
@@ -336,10 +329,10 @@ if (loading) return <MenuItemDetailSkeleton />;
 
             {/* Weekly Menu */}
             <Accordion type="single" collapsible>
-              {Object.entries(menu.weeklyItems).map(([day, item]) => (
-                <AccordionItem key={day} value={day}>
+              {menu.menuItems.map((item:any,index:any) => (
+                <AccordionItem key={index} value={index}>
                   <AccordionTrigger className="capitalize font-medium">
-                    {day}
+                    {item.day}
                   </AccordionTrigger>
                   <AccordionContent>
                     <p className="font-medium">{item?.name}</p>
@@ -412,7 +405,7 @@ if (loading) return <MenuItemDetailSkeleton />;
                   <div>
                     <Label>Select Days of the Week</Label>
                     <div className="grid grid-cols-4 gap-2 mt-2">
-                      {getValidDays(menu.weeklyItems).map((day) => (
+                      {getValidDays(menu.menuItems).map((day) => (
                         <Button
                           key={day}
                           variant={
@@ -463,7 +456,7 @@ if (loading) return <MenuItemDetailSkeleton />;
 
                             // Valid days from your weeklyItems logic
                             const validDays = getValidDays(
-                              menu.weeklyItems
+                              menu.menuItems
                             ).map((d) => dayMap[d]);
 
                             // Disable if it's a past date OR not a valid day

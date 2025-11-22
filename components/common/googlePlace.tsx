@@ -179,7 +179,7 @@ const PlaceAutocomplete = ({
   return (
     <div className="">
       <Input
-        className="border pb-[21px] z-[999]  max-w-[700px] w-full"
+        className="border  z-[999]  max-w-[700px] w-full"
         // labelStyle={{ top: "0.6rem" }}
         placeholder={placeholder}
         ref={inputRef}
