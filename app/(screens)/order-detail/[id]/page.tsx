@@ -5,73 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Calendar,
-  CheckCircle2,
-  Clock,
-  MapPin,
-  Package,
-  Truck,
-} from "lucide-react";
+import { Calendar, MapPin } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
+import ReviewsSection from "@/components/common/Reviews";
+import { Delivery, Order } from "@/types/order";
+import { formatISTDate, formatISTShort, statusSteps } from "@/utils/utils";
+import AddReview from "@/components/common/Reviews";
 
-// ---------- Types ----------
-interface Delivery {
-  _id: string;
-  deliveryDate: string;
-deliveryStatus:
-  | "pending"
-  | "confirmed"
-  | "ready"
-  | "assigned"
-  | "out_for_delivery"
-  | "delivered"
-  | "not_delivered"
-  | "cancelled";
-
-}
-
-interface Order {
-  _id: string;
-  providerId: { businessName: string };
-  items: { name: string; quantity: number; price: number }[];
-  totalAmount: number;
-  status: string;
-  deliveryAddress: { address: string };
-  deliveryDate: string;
-  paymentStatus: string;
-  createdAt: string;
-  notes?: string;
-  updatedAt?: string;
-}
-
-// ---------- Utility ----------
-const formatISTDate = (utcDate?: string) => {
-  if (!utcDate) return "N/A";
-  const parsed = new Date(utcDate);
-  if (isNaN(parsed.getTime())) return "Invalid Date";
-  return parsed.toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const formatISTShort = (utcDate?: string) => {
-  if (!utcDate) return "N/A";
-  const parsed = new Date(utcDate);
-  if (isNaN(parsed.getTime())) return "Invalid Date";
-  return parsed.toLocaleDateString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-  });
-};
-
-// ---------- Component ----------
 export default function OrderDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -90,7 +30,7 @@ export default function OrderDetailPage() {
       if (!res.ok) throw new Error("Failed to fetch order");
       const data = await res.json();
       console.log("data", data.data?.[0]?.deliveries);
-      setOrder(data.data?.[0]?.orderId || null);
+      setOrder(data.data?.[0]?.order || null);
       setDeliveries(data.data?.[0]?.deliveries || []);
     } catch (err) {
       console.error("Error fetching order:", err);
@@ -108,15 +48,9 @@ export default function OrderDetailPage() {
     );
 
   if (!order)
-    return <div className="p-10 text-center text-gray-600">Order not found</div>;
-
-  const statusSteps = [
-    { key: "pending", label: "Pending", icon: Clock },
-    { key: "confirmed", label: "Confirmed", icon: CheckCircle2 },
-    { key: "preparing", label: "Preparing", icon: Package },
-    { key: "ready", label: "Ready for Delivery", icon: Truck },
-    { key: "delivered", label: "Delivered", icon: Calendar },
-  ];
+    return (
+      <div className="p-10 text-center text-gray-600">Order not found</div>
+    );
 
   const currentStepIndex = statusSteps.findIndex((s) => s.key === order.status);
 
@@ -147,9 +81,9 @@ export default function OrderDetailPage() {
             <div className="flex flex-col md:flex-row justify-between gap-6">
               <div>
                 <p className="text-gray-600 text-sm">Provider</p>
-                <p className="font-medium text-lg text-gray-900">
+                {/* <p className="font-medium text-lg text-gray-900">
                   {order.providerId?.businessName}
-                </p>
+                </p> */}
               </div>
               <div className="text-right">
                 <p className="text-gray-600 text-sm">Total Amount</p>
@@ -157,16 +91,16 @@ export default function OrderDetailPage() {
                   ₹{order.totalAmount?.toFixed(2)}
                 </p>
                 <Badge
-                  className={`mt-1 ${order.paymentStatus === "paid"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
-                    }`}
+                  className={`mt-1 ${
+                    order.paymentStatus === "paid"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}
                 >
                   {order.paymentStatus}
                 </Badge>
               </div>
             </div>
-
             {/* Items Ordered */}
             <div>
               <h4 className="font-semibold mb-2">Items Ordered</h4>
@@ -184,7 +118,6 @@ export default function OrderDetailPage() {
                 ))}
               </div>
             </div>
-
             {/* Delivery Info */}
             <div>
               <h4 className="font-semibold mb-2">Delivery Details</h4>
@@ -197,7 +130,6 @@ export default function OrderDetailPage() {
                 Upcoming Delivery Date: {formatISTDate(order.deliveryDate)}
               </p>
             </div>
-
             {/* Order Progress */}
             <div>
               <h4 className="font-semibold mb-4">Order Progress</h4>
@@ -208,17 +140,19 @@ export default function OrderDetailPage() {
                   return (
                     <div key={step.key} className="flex items-start gap-4 ml-2">
                       <div
-                        className={`p-2 rounded-full ${active
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-200 text-gray-500"
-                          }`}
+                        className={`p-2 rounded-full ${
+                          active
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-200 text-gray-500"
+                        }`}
                       >
                         <Icon className="h-4 w-4" />
                       </div>
                       <div>
                         <p
-                          className={`font-medium ${active ? "text-gray-900" : "text-gray-500"
-                            }`}
+                          className={`font-medium ${
+                            active ? "text-gray-900" : "text-gray-500"
+                          }`}
                         >
                           {step.label}
                         </p>
@@ -233,7 +167,6 @@ export default function OrderDetailPage() {
                 })}
               </div>
             </div>
-
             {deliveries.length > 0 && (
               <div>
                 <h4 className="font-semibold mb-3">Delivery Schedule</h4>
@@ -298,22 +231,21 @@ export default function OrderDetailPage() {
                         break;
                     }
 
-
                     return (
                       <div
                         key={d._id}
                         className={`p-3 rounded-xl text-center text-sm font-medium shadow-sm border transition-all duration-300 ${colorClasses}`}
                       >
                         <div>{formatISTShort(d.deliveryDate)}</div>
-                        <div className="mt-1 text-xs font-semibold">{statusLabel}</div>
+                        <div className="mt-1 text-xs font-semibold">
+                          {statusLabel}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
-
-
             {/* Notes */}
             {order.notes && (
               <div>
@@ -321,6 +253,12 @@ export default function OrderDetailPage() {
                 <p className="text-sm text-gray-700">{order.notes}</p>
               </div>
             )}
+              <AddReview
+                consumerId={order.consumerId}
+                orderId={order._id}
+                providerId={order.providerId}
+              />
+            
           </CardContent>
         </Card>
       </div>

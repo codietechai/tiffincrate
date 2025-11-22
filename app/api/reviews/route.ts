@@ -8,18 +8,47 @@ export async function GET(request: NextRequest) {
     await connectMongoDB();
 
     const { searchParams } = new URL(request.url);
+
     const providerId = searchParams.get("providerId");
     const consumerId = searchParams.get("consumerId");
+    const rating = searchParams.get("rating"); // number or "all"
+    const search = searchParams.get("search"); // search text
+    const sort = searchParams.get("sort") || "latest"; // default sort
 
+    // ----------------------
+    // BUILD QUERY
+    // ----------------------
     const query: any = {};
-    if (providerId) query.providerId = providerId;
-    if (consumerId) query.consumerId = consumerId;
 
+    if (providerId && providerId !== "all") query.providerId = providerId;
+    if (consumerId && consumerId !== "all") query.consumerId = consumerId;
+    if (rating && rating !== "all") query.rating = Number(rating);
+
+    // text search on comment + user name
+    if (search && search.trim() !== "") {
+      query.$or = [
+        { comment: { $regex: search, $options: "i" } },
+        { "consumerId.name": { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // ----------------------
+    // SORT LOGIC
+    // ----------------------
+    let sortQuery: any = { createdAt: -1 }; // default = latest
+
+    if (sort === "oldest") sortQuery = { createdAt: 1 };
+    if (sort === "high") sortQuery = { rating: -1 };
+    if (sort === "low") sortQuery = { rating: 1 };
+
+    // ----------------------
+    // FETCH
+    // ----------------------
     const reviews = await Review.find(query)
-      .populate("consumerId", "name")
+      .populate("consumerId", "name avatar")
       .populate("providerId", "businessName")
       .populate("orderId", "totalAmount createdAt")
-      .sort({ createdAt: -1 });
+      .sort(sortQuery);
 
     return NextResponse.json({
       data: reviews,
@@ -33,6 +62,7 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
 
 export async function POST(request: NextRequest) {
   try {
