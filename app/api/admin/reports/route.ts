@@ -1,10 +1,11 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import User from "@/models/User";
+import { withCors } from "@/lib/cors";
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     await connectMongoDB();
 
@@ -182,7 +183,6 @@ export async function GET(request: NextRequest) {
       },
     ]);
 
-    // Revenue metrics
     const revenueMetrics = await Order.aggregate([
       {
         $facet: {
@@ -243,10 +243,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ reports });
   } catch (error) {
-    console.error("Get reports error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
+
+export const GET = withCors(handler);
+export const OPTIONS = withCors(handler);

@@ -6,6 +6,7 @@ type Role = "admin" | "provider" | "consumer";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
   if (
     pathname.startsWith("/api/auth/login") ||
     pathname.startsWith("/api/auth/register")
@@ -17,7 +18,7 @@ export async function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/api/admin")) {
     requiredRole = "admin";
-  } 
+  }
   // else if (pathname.startsWith("/api/provider")) {
   //   requiredRole = "provider";
   // }
@@ -35,9 +36,9 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  if (requiredRole && decoded.role !== requiredRole) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // if (requiredRole && decoded.role !== requiredRole) {
+  //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // }
 
   const response = NextResponse.next();
   response.headers.set("x-user-id", decoded.userId);

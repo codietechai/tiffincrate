@@ -67,7 +67,7 @@ export default function OrderHistoryPage() {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        setUser(data.data);
       } else {
         router.push("/auth/login");
       }
@@ -95,7 +95,7 @@ export default function OrderHistoryPage() {
       setLoading(false);
     }
   };
-  console.log(orders)
+  console.log(orders);
   const filterOrders = () => {
     let filtered = [...orders];
 
@@ -246,7 +246,7 @@ export default function OrderHistoryPage() {
     },
   ];
 
-  console.log(filteredOrders)
+  console.log(filteredOrders);
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />

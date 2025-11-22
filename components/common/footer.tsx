@@ -108,7 +108,7 @@ const Footer = () => {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        setUser(data.data);
 
         // Redirect to appropriate dashboard if already logged in
         // if (data.user.role === "admin") {

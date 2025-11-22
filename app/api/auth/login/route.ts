@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import { verifyPassword, generateToken } from "@/lib/auth";
+import { withCors } from "@/lib/cors";
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     await connectMongoDB();
     const { email, password } = await request.json();
@@ -50,9 +51,9 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
     });
 
     return response;
@@ -64,3 +65,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = withCors(handler);
+export const OPTIONS = withCors(handler);

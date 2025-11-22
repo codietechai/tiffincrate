@@ -71,7 +71,7 @@ export default function TrackOrdersPage() {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        setUser(data.data);
       } else {
         router.push("/auth/login");
       }
@@ -380,9 +380,14 @@ export default function TrackOrdersPage() {
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-4 border-t">
-                    <Button variant="outline" size="sm" onClick={()=>{router.push(`order-detail/${order._id}`)}}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        router.push(`order-detail/${order._id}`);
+                      }}
+                    >
                       <Eye className="mr-2 h-4 w-4" />
-                      
                       View Details
                     </Button>
                     {order.status === "pending" && (
