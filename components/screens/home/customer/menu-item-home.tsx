@@ -19,7 +19,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
       <CardContent className="flex flex-col sm:flex-row gap-4 p-4">
         <div className="flex gap-3">
           <Image
-            src={menu.imageUrl?.[0] || "/placeholder.jpg"}
+            src={menu.image || "/placeholder.jpg"}
             alt={menu.name}
             height={50}
             width={50}
@@ -42,7 +42,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
             <h3 className="font-semibold mb-1">
               {menu.name}{" "}
               {pathname.includes("home") &&
-                `by ${menu.providerId?.businessName}`}
+                `by ${menu?.providerName}`}
             </h3>
             <p className="text-sm text-muted-foreground mb-2">
               {menu.description}

@@ -19,6 +19,7 @@ type WeeklyItemInput = { _id?: string; name: string; description: string };
 export interface TMenu {
   _id: string;
   name: string;
+  providerName:string,
   providerId?: {
     _id: string;
     businessName: string;
@@ -26,10 +27,10 @@ export interface TMenu {
   description?: string;
   category: "breakfast" | "lunch" | "dinner" | "";
   // weeklyItems: TWeeklyMenu;
-  weeklyItems: Record<string, WeeklyItemInput>;
+  menuItems: any;
   basePrice: number;
   monthlyPlanPrice?: number;
-  imageUrl?: string[];
+  image?: string;
   isAvailable: boolean;
   isVegetarian: boolean;
   isActive: boolean;

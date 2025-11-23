@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Menu from "@/models/Menu";
 import MenuItem from "@/models/MenuItem";
+import mongoose from "mongoose";
 
 const DAYS = [
   "monday",
@@ -19,18 +20,58 @@ export async function GET(
 ) {
   try {
     await connectMongoDB();
-    const menu = await Menu.findById(params.id)
-      .populate({
-        path: "weeklyItems.monday weeklyItems.tuesday weeklyItems.wednesday weeklyItems.thursday weeklyItems.friday weeklyItems.saturday weeklyItems.sunday",
-        model: "MenuItem",
-      })
-      .populate("providerId", "businessName");
+    const menu = await Menu.aggregate([
+      { $match: {_id:new mongoose.Types.ObjectId(params.id)} },
+      {
+        $lookup: {
+          from: "menuitems", 
+          localField: "_id",
+          foreignField: "menuId",
+          as: "menuItems",
+        },
+      },
+      {
+        $lookup: {
+          from: "serviceproviders",
+          localField: "providerId",
+          foreignField: "_id",
+          as: "providerInfo",
+        },
+      },
+      {
+        $unwind: "$providerInfo",
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          description: 1,
+          category: 1,
+          basePrice: 1,
+          monthlyPlanPrice: 1,
+          image: 1,
+          isAvailable: 1,
+          isActive: 1,
+          isVegetarian: 1,
+          weekType: 1,
+          rating: 1,
+          draft: 1,
+          userRatingCount: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          providerId: "$providerInfo._id",
+          providerName: "$providerInfo.businessName",
+          menuItems: 1,
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ]);
 
     if (!menu) {
       return NextResponse.json({ error: "Menu not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ menu });
+    return NextResponse.json({ menu:menu[0] });
   } catch (error) {
     console.error("Get menu error:", error);
     return NextResponse.json(

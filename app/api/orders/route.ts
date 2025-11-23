@@ -15,12 +15,16 @@ import {
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import mongoose from "mongoose";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Kolkata");
 
-export const createDeliveryOrders = async (orderId: string, deliveryInfo: any) => {
+export const createDeliveryOrders = async (
+  orderId: string,
+  deliveryInfo: any
+) => {
   const deliveryOrders: any[] = [];
   const tz = "Asia/Kolkata";
 
@@ -33,8 +37,9 @@ export const createDeliveryOrders = async (orderId: string, deliveryInfo: any) =
     let current = startDate;
 
     while (current.isBefore(endDate) || current.isSame(endDate)) {
-
-      const localDate = new Date(current.format("YYYY-MM-DD") + "T00:00:00+05:30");
+      const localDate = new Date(
+        current.format("YYYY-MM-DD") + "T00:00:00+05:30"
+      );
       deliveryOrders.push({
         orderId,
         deliveryStatus: "pending",
@@ -42,44 +47,44 @@ export const createDeliveryOrders = async (orderId: string, deliveryInfo: any) =
       });
       current = current.add(1, "day");
     }
-  }
+  } else if (deliveryInfo?.type === "specific_days") {
+    const { days } = deliveryInfo;
+    const tz = "Asia/Kolkata";
 
-else if (deliveryInfo?.type === "specific_days") {
-  const { days } = deliveryInfo;
-  const tz = "Asia/Kolkata";
+    const now = dayjs().tz(tz).startOf("day");
+    const start = now; // start from today, not from start of month
+    const end = now.endOf("month");
 
-  const now = dayjs().tz(tz).startOf("day");
-  const start = now; // start from today, not from start of month
-  const end = now.endOf("month");
+    const dayMap: Record<string, number> = {
+      sunday: 0,
+      monday: 1,
+      tuesday: 2,
+      wednesday: 3,
+      thursday: 4,
+      friday: 5,
+      saturday: 6,
+    };
 
-  const dayMap: Record<string, number> = {
-    sunday: 0,
-    monday: 1,
-    tuesday: 2,
-    wednesday: 3,
-    thursday: 4,
-    friday: 5,
-    saturday: 6,
-  };
+    const targetDays = (days || []).map((d: string) => dayMap[d.toLowerCase()]);
+    let current = start;
 
-  const targetDays = (days || []).map((d: string) => dayMap[d.toLowerCase()]);
-  let current = start;
-
-  while (current.isBefore(end) || current.isSame(end)) {
-    if (targetDays.includes(current.day())) {
-      const localDate = new Date(current.format("YYYY-MM-DD") + "T00:00:00+05:30");
-      deliveryOrders.push({
-        orderId,
-        deliveryStatus: "pending",
-        deliveryDate: localDate,
-      });
+    while (current.isBefore(end) || current.isSame(end)) {
+      if (targetDays.includes(current.day())) {
+        const localDate = new Date(
+          current.format("YYYY-MM-DD") + "T00:00:00+05:30"
+        );
+        deliveryOrders.push({
+          orderId,
+          deliveryStatus: "pending",
+          deliveryDate: localDate,
+        });
+      }
+      current = current.add(1, "day");
     }
-    current = current.add(1, "day");
-  }
-}
-
-
-  else if (deliveryInfo?.type === "custom_dates" && Array.isArray(deliveryInfo.dates)) {
+  } else if (
+    deliveryInfo?.type === "custom_dates" &&
+    Array.isArray(deliveryInfo.dates)
+  ) {
     for (const dateStr of deliveryInfo.dates) {
       const localDate = new Date(`${dateStr}`);
       deliveryOrders.push({
@@ -90,10 +95,11 @@ else if (deliveryInfo?.type === "specific_days") {
     }
   }
 
-
   if (deliveryOrders.length > 0) {
     await DeliveryOrder.insertMany(deliveryOrders);
-    console.log(`✅ Created ${deliveryOrders.length} delivery orders for order ${orderId}`);
+    console.log(
+      `✅ Created ${deliveryOrders.length} delivery orders for order ${orderId}`
+    );
   } else {
     console.log("⚠️ No delivery orders generated for:", deliveryInfo);
   }
@@ -137,10 +143,15 @@ export async function GET(request: NextRequest) {
 
       const orders = await Order.find(query)
         .populate("consumerId", "name email")
-        .populate("providerId", "businessName")
+        .populate({
+          path:"menuId",
+          populate:{
+            path:'providerId',
+            select:'businessName location.address'
+          }
+        })
         .sort({ createdAt: -1 });
 
-        console.log('first')
 
       return NextResponse.json({ orders });
     } else if (role === "provider") {
@@ -155,19 +166,19 @@ export async function GET(request: NextRequest) {
       const orders = await DeliveryOrder.aggregate([
         {
           $match: {
-            'orderId.providerId': query.providerId.providerId,
-            deliveryDate: { $gte: startOfDay, $lte: endOfDay }
-          }
+            "orderId.providerId": query.providerId.providerId,
+            deliveryDate: { $gte: startOfDay, $lte: endOfDay },
+          },
         },
         {
           $lookup: {
-            from: 'orders',
-            localField: 'orderId',
-            foreignField: '_id',
-            as: 'order'
-          }
+            from: "orders",
+            localField: "orderId",
+            foreignField: "_id",
+            as: "order",
+          },
         },
-        { $unwind: '$order' },
+        { $unwind: "$order" },
         { $sort: { createdAt: -1 } },
         {
           $project: {
@@ -176,8 +187,9 @@ export async function GET(request: NextRequest) {
             deliveryStatus: 1,
             createdAt: 1,
             updatedAt: 1,
-            order:1
-          },}
+            order: 1,
+          },
+        },
       ]);
       return NextResponse.json({ orders });
     }
@@ -189,7 +201,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
 
 export async function POST(request: NextRequest) {
   try {
@@ -203,6 +214,7 @@ export async function POST(request: NextRequest) {
     await connectMongoDB();
 
     const {
+      menuId,
       providerId,
       items,
       totalAmount,
@@ -233,7 +245,7 @@ export async function POST(request: NextRequest) {
     }
 
     const order = new Order({
-      providerId,
+      menuId,
       items,
       totalAmount,
       deliveryAddress:
@@ -251,17 +263,15 @@ export async function POST(request: NextRequest) {
     });
 
     await order.save();
-
-    // ✅ Create Delivery Orders based on deliveryInfo
+    const updatedUser= await User.updateOne({ _id: new mongoose.Types.ObjectId(userId as string) }, { $inc: { wallet_amount: totalAmount } });
+    
     await createDeliveryOrders(order._id, deliveryInfo);
 
-    // Fetch related users
     const [consumer, provider] = await Promise.all([
       User.findById(userId),
       ServiceProvider.findById(providerId).populate("userId"),
     ]);
 
-    // Notifications for both consumer and provider
     await Promise.all([
       new Notification({
         userId,

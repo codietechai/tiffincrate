@@ -1,49 +1,6 @@
-import mongoose, { Document, Schema, model, models, Types } from "mongoose";
+import {  Schema, model, models, Types } from "mongoose";
 
-export interface IWeeklyMenu {
-  monday?: Types.ObjectId;
-  tuesday?: Types.ObjectId;
-  wednesday?: Types.ObjectId;
-  thursday?: Types.ObjectId;
-  friday?: Types.ObjectId;
-  saturday?: Types.ObjectId;
-  sunday?: Types.ObjectId;
-}
-
-export interface IMenu extends Document {
-  providerId: Types.ObjectId;
-  name: string;
-  description?: string;
-  category: "breakfast" | "lunch" | "dinner";
-  weeklyItems: IWeeklyMenu;
-  basePrice: number;
-  monthlyPlanPrice?: number;
-  imageUrl?: string[];
-  isAvailable: boolean;
-  isVegetarian: boolean;
-  isActive: boolean;
-  weekType: "whole" | "weekdays" | "weekends";
-  rating: number;
-  draft: boolean;
-  userRatingCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const weeklyMenuSchema = new Schema<IWeeklyMenu>(
-  {
-    monday: { type: Schema.Types.ObjectId, ref: "MenuItem" },
-    tuesday: { type: Schema.Types.ObjectId, ref: "MenuItem" },
-    wednesday: { type: Schema.Types.ObjectId, ref: "MenuItem" },
-    thursday: { type: Schema.Types.ObjectId, ref: "MenuItem" },
-    friday: { type: Schema.Types.ObjectId, ref: "MenuItem" },
-    saturday: { type: Schema.Types.ObjectId, ref: "MenuItem" },
-    sunday: { type: Schema.Types.ObjectId, ref: "MenuItem" },
-  },
-  { _id: false }
-);
-
-const menuSchema = new Schema<IMenu>(
+const menuSchema = new Schema(
   {
     providerId: {
       type: Schema.Types.ObjectId,
@@ -53,18 +10,16 @@ const menuSchema = new Schema<IMenu>(
     name: {
       type: String,
       required: [true, "Menu name is required"],
-      trim: true,
     },
-    description: { type: String, trim: true },
+    description: { type: String },
     category: {
       type: String,
       required: true,
       enum: ["breakfast", "lunch", "dinner"],
     },
-    weeklyItems: { type: weeklyMenuSchema, required: true },
     basePrice: { type: Number, required: true, min: 0 },
     monthlyPlanPrice: { type: Number },
-    imageUrl: [{ type: String }],
+    image: { type: String },
     isAvailable: { type: Boolean, default: true },
     isVegetarian: { type: Boolean, default: true },
     isActive: { type: Boolean, default: true },
@@ -80,4 +35,4 @@ const menuSchema = new Schema<IMenu>(
   { timestamps: true }
 );
 
-export default models.Menu || model<IMenu>("Menu", menuSchema);
+export default models.Menu || model("Menu", menuSchema);

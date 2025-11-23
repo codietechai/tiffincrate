@@ -289,7 +289,7 @@ export default function NewMenuPage() {
                 }`}
               >
                 <Label className="capitalize font-semibold">{day}</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <div className="flex flex-col gap-4 mt-2">
                   <Input
                     disabled={isDayDisabled(day)}
                     placeholder="Item name"
@@ -304,6 +304,11 @@ export default function NewMenuPage() {
                     placeholder="Item description"
                     {...register(`weeklyItems.${day}.description` as const)}
                   />
+                              <div>
+              <Label>Image URL</Label>
+              <Input {...register("imageUrl")} placeholder="https://..." />
+            </div>
+
                 </div>
               </div>
             ))}

@@ -8,11 +8,6 @@ export interface IOrderItem {
   quantity: number;
 }
 
-export interface IDeliveryAddress {
-  address: string;
-  latitude: number;
-  longitude: number;
-}
 
 export interface IDeliveryInfo {
   type: "month" | "specific_days" | "custom_dates";
@@ -23,7 +18,7 @@ export interface IDeliveryInfo {
 
 export interface IOrder extends Document {
   consumerId: mongoose.Types.ObjectId;
-  providerId: mongoose.Types.ObjectId;
+  menuId: mongoose.Types.ObjectId;
   items: IOrderItem[];
   orderType: "month" | "specific_days" | "custom_dates";
   deliveryInfo: IDeliveryInfo;
@@ -35,7 +30,7 @@ export interface IOrder extends Document {
     | "ready"
     | "delivered"
     | "cancelled";
-  deliveryAddress: IDeliveryAddress;
+  address: mongoose.Types.ObjectId;
   timeSlot: "breakfast" | "lunch" | "dinner";
   deliveryPartnerId?: mongoose.Types.ObjectId;
   deliveryAssignmentId?: mongoose.Types.ObjectId;
@@ -45,13 +40,6 @@ export interface IOrder extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-
-const orderItemSchema = new Schema<IOrderItem>({
-  menuItemId: { type: String, required: true },
-  name: { type: String, required: true },
-  price: { type: Number, required: true, min: 0 },
-  quantity: { type: Number, required: true, min: 1 },
-});
 
 // Delivery Info Sub-Schema
 const deliveryInfoSchema = new Schema<IDeliveryInfo>(
@@ -72,8 +60,7 @@ const deliveryInfoSchema = new Schema<IDeliveryInfo>(
 const orderSchema = new Schema<IOrder>(
   {
     consumerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    providerId: { type: Schema.Types.ObjectId, ref: "ServiceProvider", required: true },
-    items: [orderItemSchema],
+    menuId: { type: Schema.Types.ObjectId, ref: "Menu", required: true },
     orderType: {
       type: String,
       enum: ["month", "specific_days", "custom_dates"],
@@ -89,11 +76,7 @@ const orderSchema = new Schema<IOrder>(
       default: "pending",
     },
 
-    deliveryAddress: {
-      address: { type: String, required: true },
-      latitude: { type: Number, required: true },
-      longitude: { type: Number, required: true },
-    },
+    address:{ type: Schema.Types.ObjectId, ref: "Address",require:true },
 
     timeSlot: {
       type: String,

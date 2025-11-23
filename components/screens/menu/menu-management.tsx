@@ -17,7 +17,7 @@ export function MenuManagement() {
   const [selectedMenu, setSelectedMenu] = useState<null | TMenu>(null);
   const [queryData, setQueryData] = useState({
     page: 1,
-    limit: 2,
+    limit: 10,
     category: "all",
     search: "",
   });
@@ -216,9 +216,9 @@ export function MenuManagement() {
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {item.imageUrl?.length ? (
+                      {item.image ? (
                         <img
-                          src={item.imageUrl[0]}
+                          src={item.image}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
@@ -268,9 +268,9 @@ export function MenuManagement() {
                         </p>
                       </div>
 
-                      {item.weeklyItems && (
+                      {item.menuItems && (
                         <div className="flex flex-wrap gap-1 mt-2">
-                          {Object.entries(item.weeklyItems)
+                          {Object.entries(item.menuItems)
                             .filter(([_, menuItem]) => menuItem) // only include defined days
                             .map(([day]) => (
                               <Badge

@@ -23,12 +23,11 @@ import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import { Search, Calendar, Star, RotateCcw, Eye } from "lucide-react";
 import StatsGrid from "@/components/common/stats-grid";
+import OrderHistoryUI from "./OrderSample";
 
 interface Order {
   _id: string;
-  providerId: {
-    businessName: string;
-  };
+  menuId: any;
   items: Array<{
     name: string;
     quantity: number;
@@ -101,15 +100,10 @@ export default function OrderHistoryPage() {
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(
-        (order) =>
-          order.providerId.businessName
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          order.items.some((item) =>
-            item.name.toLowerCase().includes(searchTerm.toLowerCase())
-          ) ||
-          order._id.includes(searchTerm)
+      filtered = filtered.filter((order) =>
+        order.menuId.providerId.businessName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
       );
     }
 
@@ -187,7 +181,7 @@ export default function OrderHistoryPage() {
   };
 
   const handleReorder = async (order: Order) => {
-    router.push(`/providers/${order.providerId}`);
+    router.push(`/providers/${order.menuId.providerId}`);
   };
 
   const getTotalSpent = () => {
@@ -246,194 +240,124 @@ export default function OrderHistoryPage() {
     },
   ];
 
-  console.log(filteredOrders);
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <h1 className="text-2xl md:text-3xl font-semibold mb-4">Your Orders</h1>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-4">
-          <h1 className="text-3xl font-semibold text-gray-900">
-            Order History
-          </h1>
-          <p className="text-gray-600">View and manage all your past orders</p>
+        <div className="relative mb-6 max-w-lg mx-auto md:mx-0">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search by restaurant or dish"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
-        <StatsGrid stats={statsData} />
-
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Filter Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search orders, providers..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="preparing">Preparing</SelectItem>
-                  <SelectItem value="ready">Ready</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Time" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="week">Last Week</SelectItem>
-                  <SelectItem value="month">Last Month</SelectItem>
-                  <SelectItem value="3months">Last 3 Months</SelectItem>
-                  <SelectItem value="year">Last Year</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm("");
-                  setStatusFilter("");
-                  setDateFilter("");
-                }}
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order) => (
-              <Card key={order._id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        Order #{order._id}
-                        <Badge className={getStatusColor(order.status)}>
-                          {order?.status?.charAt(0).toUpperCase() +
-                            order?.status?.slice(1)}
-                        </Badge>
-                      </CardTitle>
-                      <CardDescription>
-                        {order?.providerId?.businessName} •{" "}
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </CardDescription>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-semibold">
-                        ₹{order.totalAmount}
-                      </p>
-                      <Badge
-                        className={getPaymentStatusColor(order.paymentStatus)}
-                      >
-                        {order?.paymentStatus?.charAt(0).toUpperCase() +
-                          order?.paymentStatus?.slice(1)}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
+              <Card
+                key={order._id}
+                className="shadow-sm hover:shadow-md transition border border-gray-100"
+              >
+                <CardContent className="p-4 flex flex-col justify-between h-full">
+                  <div
+                    className="flex gap-3 cursor-pointer"
+                    onClick={() => router.push(`/order-detail/${order._id}`)}
+                  >
+                    <img
+                      src={
+                        order?.menuId?.image ||
+                        "https://dummyimage.com/100x100/eee/aaa&text=Food"
+                      }
+                      alt={order?.menuId?.name || "food"}
+                      className="h-16 w-16 rounded-md object-cover flex-shrink-0"
+                    />
 
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Items Ordered:</h4>
-                      <div className="space-y-1">
-                        {order?.items?.slice(0, 3).map((item, index) => (
-                          <div
-                            key={index}
-                            className="flex justify-between text-sm"
-                          >
-                            <span>
-                              {item.quantity}x {item.name}
-                            </span>
-                            <span>₹{item.price * item.quantity}</span>
-                          </div>
-                        ))}
-                        {order?.items?.length > 3 && (
-                          <p className="text-sm text-gray-500">
-                            +{order?.items.length - 3} more items
-                          </p>
-                        )}
+                    <div className="flex-1">
+                      <h2 className="font-semibold text-gray-900 text-sm md:text-base">
+                        {order?.menuId?.name || "Unknown Provider"}
+                      </h2>
+                      <p className="text-gray-500 text-xs md:text-sm">
+                        {order?.menuId?.providerId?.businessName}
+                      </p>
+
+                      {/* 🛠️ FIX: stop click from bubbling to parent */}
+                      <p
+                        className="text-red-500 text-xs font-medium cursor-pointer hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation(); // 🚫 prevent parent click
+                          router.push(`/new-menu-item/${order.menuId._id}`);
+                        }}
+                      >
+                        View menu
+                      </p>
+
+                      <div className="mt-2 text-sm text-gray-700">
+                        <p className="text-xs text-gray-500">
+                          Placed on{" "}
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-green-600 font-medium">
+                          {order.status.charAt(0).toUpperCase() +
+                            order.status.slice(1)}
+                        </p>
                       </div>
                     </div>
 
-                    <div>
-                      <h4 className="font-medium mb-2">Delivery Details:</h4>
-                      <p className="text-sm text-gray-600 mb-1">
-                        <Calendar className="inline h-3 w-3 mr-1" />
-                        {new Date(order?.deliveryDate).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {JSON.stringify(order?.deliveryAddress?.address)}
+                    <div className="text-right">
+                      <p className="font-semibold text-sm md:text-base">
+                        ₹{order.totalAmount}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4 pt-4 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/order-detail/${order._id}`)}
-                    >
-                      <Eye className="mr-2 h-4 w-4" />
-                      View Details
-                    </Button>
+                  <div className="mt-3 flex justify-between items-center border-t pt-2">
+                    <div className="flex text-yellow-400 text-sm gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 text-gray-300" />
+                      ))}
+                    </div>
 
-                    {order.status === "delivered" && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleReorder(order)}
-                        >
-                          <RotateCcw className="mr-2 h-4 w-4" />
-                          Reorder
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Star className="mr-2 h-4 w-4" />
-                          Rate & Review
-                        </Button>
-                      </>
+                    {order.status === "delivered" ? (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="flex items-center gap-1 text-xs md:text-sm"
+                        onClick={() => handleReorder(order)}
+                      >
+                        <RotateCcw className="h-4 w-4" /> Reorder
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled
+                        className="text-xs md:text-sm"
+                      >
+                        Currently not delivering
+                      </Button>
                     )}
                   </div>
                 </CardContent>
               </Card>
             ))
           ) : (
-            <div className="text-center py-12">
+            <div className="col-span-full text-center py-12">
               <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <h3 className="font-medium text-gray-900 mb-2">
                 No orders found
               </h3>
               <p className="text-gray-600 mb-4">
-                {searchTerm || statusFilter || dateFilter
-                  ? "Try adjusting your filters"
+                {searchTerm
+                  ? "Try a different search term"
                   : "You haven't placed any orders yet"}
               </p>
-              {!searchTerm && !statusFilter && !dateFilter && (
-                <Button asChild>
-                  <a href="/browse-providers">Browse Providers</a>
-                </Button>
-              )}
+              <Button asChild>
+                <a href="/browse-providers">Browse Providers</a>
+              </Button>
             </div>
           )}
         </div>
