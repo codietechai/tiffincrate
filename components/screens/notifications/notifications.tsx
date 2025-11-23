@@ -171,8 +171,6 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
-
       <div className="mx-auto max-w-xl px-4 py-4">
         <TitleHeader
           description="Stay updated with your orders"

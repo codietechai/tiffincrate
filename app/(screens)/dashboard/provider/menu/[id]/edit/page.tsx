@@ -232,7 +232,6 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
   if (!menu) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Alert variant="destructive">
             <AlertDescription>Menu not found.</AlertDescription>
@@ -244,7 +243,6 @@ export default function EditMenuPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-4 flex items-center gap-4">
           <Button variant="outline" onClick={() => router.back()}>

@@ -9,8 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import User from "@/models/User";
-import { Lock, Mail, MapPin, Phone } from "lucide-react";
+import { Lock, Mail, MapPin, Phone, User } from "lucide-react";
 const PersonalTab = ({
   message,
   error,

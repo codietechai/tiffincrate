@@ -315,7 +315,6 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
   if (!provider)
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Alert variant="destructive">
             <AlertDescription>Provider not found</AlertDescription>
@@ -348,8 +347,6 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
-      <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Provider Info */}
         <Card className="mb-4 bg-gradient-to-r from-orange-100 to-yellow-100">

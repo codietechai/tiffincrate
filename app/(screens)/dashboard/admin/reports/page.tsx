@@ -141,7 +141,6 @@ export default function AdminReportsPage() {
   if (!reportData) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-xl font-semibold text-gray-900 mb-4">
@@ -158,8 +157,6 @@ export default function AdminReportsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-4 flex justify-between items-start">
           <div>

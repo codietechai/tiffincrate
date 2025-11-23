@@ -52,7 +52,7 @@ export default function LocationHeader({ isSticky }: { isSticky: boolean }) {
           setAddress("");
         },
         {
-          enableHighAccuracy: true, 
+          enableHighAccuracy: true,
           timeout: 10000,
           maximumAge: 0,
         }
@@ -68,13 +68,12 @@ export default function LocationHeader({ isSticky }: { isSticky: boolean }) {
         isSticky ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
       }`}
     >
-      <div
-        className="flex justify-between items-start md:items-center flex-col md:flex-row gap-2 md:gap-0 cursor-pointer"
-        onClick={() => {
-          router.push("/home/address");
-        }}
-      >
-        <div>
+      <div className="flex justify-between items-center gap-2 md:gap-0 cursor-pointer">
+        <div
+          onClick={() => {
+            router.push("/home/address");
+          }}
+        >
           <div className="flex gap-2 items-center">
             <NavigationIcon className="h-4 w-4 fill-primary text-primary" />
             <span className="font-extrabold">{locationName}</span>
@@ -94,7 +93,7 @@ export default function LocationHeader({ isSticky }: { isSticky: boolean }) {
           <Settings
             className="text-primary cursor-pointer"
             size={20}
-            onClick={() => router.push("/provider-settings")}
+            onClick={() => router.push("/settings")}
           />
         </div>
       </div>

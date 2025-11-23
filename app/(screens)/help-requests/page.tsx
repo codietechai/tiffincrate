@@ -241,8 +241,6 @@ export default function HelpRequestsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
       <div className="mx-auto max-w-xl lg:max-w-4xl px-4 py-4">
         <TitleHeader
           title="Help Requests"

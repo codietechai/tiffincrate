@@ -94,8 +94,6 @@ export default function FavoritesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
       <div className="max-w-xl lg:max-w-4xl px-4 py-4 mx-auto">
         <TitleHeader
           title="My Favorite Providers"

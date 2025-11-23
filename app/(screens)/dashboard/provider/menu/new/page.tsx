@@ -134,7 +134,6 @@ export default function NewMenuPage() {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-6 flex items-center gap-4">
           <Button variant="outline" onClick={() => router.back()}>
@@ -304,11 +303,13 @@ export default function NewMenuPage() {
                     placeholder="Item description"
                     {...register(`weeklyItems.${day}.description` as const)}
                   />
-                              <div>
-              <Label>Image URL</Label>
-              <Input {...register("imageUrl")} placeholder="https://..." />
-            </div>
-
+                  <div>
+                    <Label>Image URL</Label>
+                    <Input
+                      {...register("imageUrl")}
+                      placeholder="https://..."
+                    />
+                  </div>
                 </div>
               </div>
             ))}

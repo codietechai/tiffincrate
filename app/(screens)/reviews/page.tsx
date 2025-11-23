@@ -136,8 +136,6 @@ export default function ReviewsPage() {
 
   return (
     <div className="min-h-screen ">
-      <Navbar />
-
       <div className="max-w-7xl  mx-auto bg-white rounded-2xl shadow-xl p-10">
         {/* Header */}
         <div className="text-center mb-10">

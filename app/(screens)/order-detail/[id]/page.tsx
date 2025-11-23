@@ -66,66 +66,68 @@ export default function OrderDetailPage() {
 
   const currentStepIndex = statusSteps.findIndex((s) => s.key === order.status);
 
-// 🚫 Cancel next delivery
-const handleCancelNextDelivery = async () => {
-  try {
-    const nextDelivery = deliveries.find(
-      (d) => !["delivered", "cancelled"].includes(d.deliveryStatus)
-    );
+  // 🚫 Cancel next delivery
+  const handleCancelNextDelivery = async () => {
+    try {
+      const nextDelivery = deliveries.find(
+        (d) => !["delivered", "cancelled"].includes(d.deliveryStatus)
+      );
 
-    if (!nextDelivery) {
-      alert("No upcoming deliveries to cancel.");
-      return;
+      if (!nextDelivery) {
+        alert("No upcoming deliveries to cancel.");
+        return;
+      }
+
+      const confirmCancel = confirm(
+        `Are you sure you want to cancel delivery on ${formatISTDate(
+          nextDelivery.deliveryDate
+        )}?`
+      );
+      if (!confirmCancel) return;
+
+      const res = await fetch(`/api/deliveries/${nextDelivery._id}/cancel`, {
+        method: "PATCH",
+      });
+
+      if (!res.ok) throw new Error("Failed to cancel delivery");
+
+      alert("Next delivery cancelled successfully.");
+      fetchOrder(); // refresh order data
+    } catch (err) {
+      console.error("Cancel delivery error:", err);
+      alert("Something went wrong while cancelling delivery.");
     }
+  };
 
-    const confirmCancel = confirm(
-      `Are you sure you want to cancel delivery on ${formatISTDate(nextDelivery.deliveryDate)}?`
-    );
-    if (!confirmCancel) return;
+  // ❌ Cancel entire order
+  const handleCancelNextOrder = async () => {
+    try {
+      if (order.status === "cancelled") {
+        alert("This order is already cancelled.");
+        return;
+      }
 
-    const res = await fetch(`/api/deliveries/${nextDelivery._id}/cancel`, {
-      method: "PATCH",
-    });
+      const confirmCancel = confirm(
+        "Are you sure you want to cancel the entire order?"
+      );
+      if (!confirmCancel) return;
 
-    if (!res.ok) throw new Error("Failed to cancel delivery");
+      const res = await fetch(`/api/orders/${order._id}/cancel`, {
+        method: "PATCH",
+      });
 
-    alert("Next delivery cancelled successfully.");
-    fetchOrder(); // refresh order data
-  } catch (err) {
-    console.error("Cancel delivery error:", err);
-    alert("Something went wrong while cancelling delivery.");
-  }
-};
+      if (!res.ok) throw new Error("Failed to cancel order");
 
-// ❌ Cancel entire order
-const handleCancelNextOrder = async () => {
-  try {
-    if (order.status === "cancelled") {
-      alert("This order is already cancelled.");
-      return;
+      alert("Order cancelled successfully.");
+      fetchOrder();
+    } catch (err) {
+      console.error("Cancel order error:", err);
+      alert("Something went wrong while cancelling order.");
     }
-
-    const confirmCancel = confirm(
-      "Are you sure you want to cancel the entire order?"
-    );
-    if (!confirmCancel) return;
-
-    const res = await fetch(`/api/orders/${order._id}/cancel`, {
-      method: "PATCH",
-    });
-
-    if (!res.ok) throw new Error("Failed to cancel order");
-
-    alert("Order cancelled successfully.");
-    fetchOrder();
-  } catch (err) {
-    console.error("Cancel order error:", err);
-    alert("Something went wrong while cancelling order.");
-  }
-};
+  };
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* <Navbar /> */}
+      {/* */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Back Button */}
         <Button
@@ -241,80 +243,81 @@ const handleCancelNextOrder = async () => {
             </div>
 
             {/* Delivery Schedule */}
-{/* Delivery Schedule */}
-{deliveries.length > 0 && (
-  <div>
-    <h4 className="font-semibold mb-3 text-gray-800">
-      Delivery Schedule
-    </h4>
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
-      {deliveries.map((d) => {
-        let colorClasses = "";
-        let label = "";
+            {/* Delivery Schedule */}
+            {deliveries.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-3 text-gray-800">
+                  Delivery Schedule
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
+                  {deliveries.map((d) => {
+                    let colorClasses = "";
+                    let label = "";
 
-        switch (d.deliveryStatus) {
-          case "pending":
-            colorClasses = "bg-gray-100 text-gray-700";
-            label = "Pending";
-            break;
-          case "confirmed":
-            colorClasses = "bg-blue-100 text-blue-700";
-            label = "Confirmed";
-            break;
-          case "ready":
-            colorClasses = "bg-green-100 text-green-700";
-            label = "Ready";
-            break;
-          case "out_for_delivery":
-            colorClasses = "bg-orange-100 text-orange-700";
-            label = "Out for Delivery";
-            break;
-          case "delivered":
-            colorClasses = "bg-green-100 text-green-700";
-            label = "Delivered";
-            break;
-          case "cancelled":
-            colorClasses = "bg-red-100 text-red-700";
-            label = "Cancelled";
-            break;
-          default:
-            colorClasses = "bg-slate-100 text-slate-700";
-            label = d.deliveryStatus;
-        }
+                    switch (d.deliveryStatus) {
+                      case "pending":
+                        colorClasses = "bg-gray-100 text-gray-700";
+                        label = "Pending";
+                        break;
+                      case "confirmed":
+                        colorClasses = "bg-blue-100 text-blue-700";
+                        label = "Confirmed";
+                        break;
+                      case "ready":
+                        colorClasses = "bg-green-100 text-green-700";
+                        label = "Ready";
+                        break;
+                      case "out_for_delivery":
+                        colorClasses = "bg-orange-100 text-orange-700";
+                        label = "Out for Delivery";
+                        break;
+                      case "delivered":
+                        colorClasses = "bg-green-100 text-green-700";
+                        label = "Delivered";
+                        break;
+                      case "cancelled":
+                        colorClasses = "bg-red-100 text-red-700";
+                        label = "Cancelled";
+                        break;
+                      default:
+                        colorClasses = "bg-slate-100 text-slate-700";
+                        label = d.deliveryStatus;
+                    }
 
-        return (
-          <div
-            key={d._id}
-            className={`p-3 rounded-xl text-center text-sm font-medium border ${colorClasses}`}
-          >
-            <div>{formatISTShort(d.deliveryDate)}</div>
-            <div className="mt-1 text-xs font-semibold">{label}</div>
-          </div>
-        );
-      })}
-    </div>
+                    return (
+                      <div
+                        key={d._id}
+                        className={`p-3 rounded-xl text-center text-sm font-medium border ${colorClasses}`}
+                      >
+                        <div>{formatISTShort(d.deliveryDate)}</div>
+                        <div className="mt-1 text-xs font-semibold">
+                          {label}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-    {/* 🆕 Action Buttons Section */}
-    <div className="flex flex-col sm:flex-row gap-3 justify-end mt-4">
-      <Button
-        variant="destructive"
-        className="flex-1 sm:flex-none"
-        onClick={handleCancelNextDelivery}
-      >
-        Cancel Next Delivery
-      </Button>
+                {/* 🆕 Action Buttons Section */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-end mt-4">
+                  <Button
+                    variant="destructive"
+                    className="flex-1 sm:flex-none"
+                    onClick={handleCancelNextDelivery}
+                  >
+                    Cancel Next Delivery
+                  </Button>
 
-      <Button
-        variant="outline"
-        className="flex-1 sm:flex-none border-red-400 text-red-600 hover:bg-red-50"
-        onClick={handleCancelNextOrder}
-      >
-        Cancel Entire Order
-      </Button>
-    </div>
-  </div>
-)}
-
+                  <Button
+                    variant="outline"
+                    className="flex-1 sm:flex-none border-red-400 text-red-600 hover:bg-red-50"
+                    onClick={handleCancelNextOrder}
+                  >
+                    Cancel Entire Order
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Notes */}
             {order.notes && (

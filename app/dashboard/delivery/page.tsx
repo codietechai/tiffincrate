@@ -174,8 +174,6 @@ export default function DeliveryDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
-      <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-4">
           <h1 className="text-3xl font-semibold text-gray-900">
