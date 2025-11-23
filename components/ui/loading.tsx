@@ -16,7 +16,7 @@ export function Loading({ className, size = "md" }: LoadingProps) {
     <div className={cn("flex items-center justify-center", className)}>
       <div
         className={cn(
-          "animate-spin rounded-full border-2 border-gray-300 border-t-blue-600",
+          "animate-spin rounded-full border-2 border-gray-300 border-t-red-600",
           sizeClasses[size]
         )}
       />
@@ -29,7 +29,6 @@ export function LoadingPage() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <Loading size="lg" />
-        <p className="mt-4 text-gray-600">Loading...</p>
       </div>
     </div>
   );
