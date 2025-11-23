@@ -241,7 +241,7 @@ export default function OrderHistoryPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 py-6">
         <h1 className="text-2xl md:text-3xl font-semibold mb-4">Your Orders</h1>
 
@@ -258,10 +258,7 @@ export default function OrderHistoryPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order) => (
-              <Card
-                key={order._id}
-                className="shadow-sm hover:shadow-md transition border border-gray-100"
-              >
+              <Card key={order._id}>
                 <CardContent className="p-4 flex flex-col justify-between h-full">
                   <div
                     className="flex gap-3 cursor-pointer"

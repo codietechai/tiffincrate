@@ -41,8 +41,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
           <div className="hidden lg:block">
             <h3 className="font-semibold mb-1">
               {menu.name}{" "}
-              {pathname.includes("home") &&
-                `by ${menu?.providerName}`}
+              {pathname.includes("home") && `by ${menu?.providerName}`}
             </h3>
             <p className="text-sm text-muted-foreground mb-2">
               {menu.description}
@@ -57,7 +56,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
 
           <div className="flex flex-wrap gap-2 mb-3">
             <Badge variant="outline">{menu.category}</Badge>
-            <Badge variant={menu.isVegetarian ? "default" : "destructive"}>
+            <Badge variant={menu.isVegetarian ? "success" : "destructive"}>
               {menu.isVegetarian ? "Vegetarian" : "Non-Vegetarian"}
             </Badge>
             <Badge variant="secondary">{menu.weekType}</Badge>

@@ -49,7 +49,7 @@ export default function FavoritesPage() {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const data = await response.json();
-        if (data.user.role !== "consumer") {
+        if (data.data.role !== "consumer") {
           router.push("/");
           return;
         }
