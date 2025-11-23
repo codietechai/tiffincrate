@@ -5,7 +5,6 @@ import {
   TProvider,
   TProviderQueryData,
 } from "@/types";
-import { TPagination } from "@/types/common";
 
 export class ProviderService {
   private static baseUrl = "/api/providers";

@@ -1,9 +1,11 @@
-export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
+import "@/models/User";
+import "@/models/ServiceProvider";
 import ServiceProvider from "@/models/ServiceProvider";
 import { withCors } from "@/lib/cors";
 import { SUCCESSMESSAGE } from "@/constants/response-messages";
+import User from "@/models/User";
 
 async function handler(request: NextRequest) {
   try {
@@ -41,7 +43,7 @@ async function handler(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     let sortOption: Record<string, 1 | -1> = { rating: -1, totalOrders: -1 };
-
+    console.log("skip", skip);
     if (sorting === "rating") sortOption = { rating: -1 };
     else if (sorting === "orders") sortOption = { totalOrders: -1 };
     else if (sorting === "name") sortOption = { businessName: 1 };
@@ -51,12 +53,16 @@ async function handler(request: NextRequest) {
       .skip(skip)
       .limit(limit)
       .sort(sortOption);
+
     const verifiedProviders = await ServiceProvider.countDocuments({
       isVerified: true,
     });
     const activeProviders = await ServiceProvider.countDocuments({
       isActive: true,
     });
+
+    const totalProviders = await ServiceProvider.countDocuments();
+
     const total = await ServiceProvider.countDocuments(query);
 
     return NextResponse.json({
@@ -65,6 +71,7 @@ async function handler(request: NextRequest) {
         count: {
           verified: verifiedProviders,
           active: activeProviders,
+          total: totalProviders,
         },
       },
       pagination: {

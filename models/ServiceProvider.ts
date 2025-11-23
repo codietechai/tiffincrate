@@ -12,11 +12,26 @@ export interface IServiceProvider extends mongoose.Document {
   isVerified: boolean;
   isActive: boolean;
   operatingHours: {
-    start: string;
-    end: string;
+    breakfast: {
+      enabled: boolean;
+      selfDelivery: boolean;
+    };
+    lunch: {
+      enabled: boolean;
+      selfDelivery: boolean;
+    };
+    dinner: {
+      enabled: boolean;
+      selfDelivery: boolean;
+    };
   };
-  createdAt: Date;
-  updatedAt: Date;
+  location: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 const serviceProviderSchema = new mongoose.Schema(
