@@ -271,7 +271,7 @@ export default function TrackOrdersPage() {
                   <div>
                     <h4 className="font-medium mb-2">Order Items:</h4>
                     <div className="space-y-1">
-                      {order.items.map((item, index) => (
+                      {/* {order.items.map((item, index) => (
                         <div
                           key={index}
                           className="flex justify-between text-sm"
@@ -281,7 +281,7 @@ export default function TrackOrdersPage() {
                           </span>
                           <span>₹{item.price * item.quantity}</span>
                         </div>
-                      ))}
+                      ))} */}
                     </div>
                   </div>
 
@@ -290,7 +290,7 @@ export default function TrackOrdersPage() {
                     <div>
                       <h4 className="font-medium mb-1">Delivery Address:</h4>
                       <p className="text-sm text-gray-600">
-                        {order.deliveryAddress.address}
+                        {order?.deliveryAddress?.address}
                       </p>
                     </div>
                     <div>

@@ -297,10 +297,10 @@ export default function OrderHistoryPage() {
                           Placed on{" "}
                           {new Date(order.createdAt).toLocaleDateString()}
                         </p>
-                        <p className="text-xs text-green-600 font-medium">
+                        {/* <p className="text-xs text-green-600 font-medium">
                           {order.status.charAt(0).toUpperCase() +
                             order.status.slice(1)}
-                        </p>
+                        </p> */}
                       </div>
                     </div>
 

@@ -265,7 +265,7 @@ if (loading) return <MenuItemDetailSkeleton />;
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               menuId: menu._id,
-              providerId: menu._id,
+              providerId: menu.providerId,
               totalAmount,
               deliveryAddress: {address:location,latitude:latitude,longitude:longitude},
               orderType: orderData.deliveryPeriod,
