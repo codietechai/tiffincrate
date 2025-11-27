@@ -3,127 +3,18 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import ServiceProvider from "@/models/ServiceProvider";
 import User from "@/models/User";
+import "@/models/Menu"; 
+
 import DeliveryOrder from "@/models/deliveryOrders";
 import Notification from "@/models/Notification";
 import { verifyRazorpayPayment } from "@/lib/razorpay";
 import {
-  sendEmail,
-  sendSMS,
   getOrderConfirmationEmail,
   getOrderConfirmationSMS,
 } from "@/lib/notifications";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 import mongoose from "mongoose";
+import { createDeliveryOrders, getOrderTypeSummary } from "@/utils/orders";
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.tz.setDefault("Asia/Kolkata");
-
-export const createDeliveryOrders = async (
-  orderId: string,
-  deliveryInfo: any
-) => {
-  const deliveryOrders: any[] = [];
-  const tz = "Asia/Kolkata";
-
-  if (deliveryInfo?.type === "month") {
-    const startDate = deliveryInfo.startDate
-      ? dayjs.tz(deliveryInfo.startDate, tz).startOf("day")
-      : dayjs().tz(tz).startOf("month");
-
-    const endDate = startDate.endOf("month");
-    let current = startDate;
-
-    while (current.isBefore(endDate) || current.isSame(endDate)) {
-      const localDate = new Date(
-        current.format("YYYY-MM-DD") + "T00:00:00+05:30"
-      );
-      deliveryOrders.push({
-        orderId,
-        deliveryStatus: "pending",
-        deliveryDate: localDate,
-      });
-      current = current.add(1, "day");
-    }
-  } else if (deliveryInfo?.type === "specific_days") {
-    const { days } = deliveryInfo;
-    const tz = "Asia/Kolkata";
-
-    const now = dayjs().tz(tz).startOf("day");
-    const start = now; // start from today, not from start of month
-    const end = now.endOf("month");
-
-    const dayMap: Record<string, number> = {
-      sunday: 0,
-      monday: 1,
-      tuesday: 2,
-      wednesday: 3,
-      thursday: 4,
-      friday: 5,
-      saturday: 6,
-    };
-
-    const targetDays = (days || []).map((d: string) => dayMap[d.toLowerCase()]);
-    let current = start;
-
-    while (current.isBefore(end) || current.isSame(end)) {
-      if (targetDays.includes(current.day())) {
-        const localDate = new Date(
-          current.format("YYYY-MM-DD") + "T00:00:00+05:30"
-        );
-        deliveryOrders.push({
-          orderId,
-          deliveryStatus: "pending",
-          deliveryDate: localDate,
-        });
-      }
-      current = current.add(1, "day");
-    }
-  } else if (
-    deliveryInfo?.type === "custom_dates" &&
-    Array.isArray(deliveryInfo.dates)
-  ) {
-    for (const dateStr of deliveryInfo.dates) {
-      const localDate = new Date(`${dateStr}`);
-      deliveryOrders.push({
-        orderId,
-        deliveryStatus: "pending",
-        deliveryDate: localDate,
-      });
-    }
-  }
-
-  if (deliveryOrders.length > 0) {
-    await DeliveryOrder.insertMany(deliveryOrders);
-    console.log(
-      `✅ Created ${deliveryOrders.length} delivery orders for order ${orderId}`
-    );
-  } else {
-    console.log("⚠️ No delivery orders generated for:", deliveryInfo);
-  }
-
-  return deliveryOrders;
-};
-
-function getOrderTypeSummary(deliveryInfo: {
-  type: "month" | "specific_days" | "custom_dates";
-  startDate?: string;
-  days?: string[];
-  dates?: string[];
-}) {
-  switch (deliveryInfo.type) {
-    case "month":
-      return `Monthly from ${deliveryInfo.startDate || "start date unknown"}`;
-    case "specific_days":
-      return `Specific days: ${deliveryInfo.days?.join(", ")}`;
-    case "custom_dates":
-      return `Custom dates: ${deliveryInfo.dates?.join(", ")}`;
-    default:
-      return "Unknown";
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -182,7 +73,7 @@ export async function GET(request: NextRequest) {
         { $sort: { createdAt: -1 } },
         {
           $project: {
-            _id: 1,
+            _id: 1, 
             deliveryDate: 1,
             deliveryStatus: 1,
             createdAt: 1,
@@ -263,28 +154,24 @@ export async function POST(request: NextRequest) {
     });
 
     await order.save();
-    const updatedUser= await User.updateOne({ _id: new mongoose.Types.ObjectId(userId as string) }, { $inc: { wallet_amount: totalAmount } });
-    
+    await User.updateOne({ _id: new mongoose.Types.ObjectId(userId as string) }, { $inc: { wallet_amount: totalAmount } });
     await createDeliveryOrders(order._id, deliveryInfo);
-
-    const [consumer, provider] = await Promise.all([
-      User.findById(userId),
-      ServiceProvider.findById(providerId).populate("userId"),
-    ]);
+    const providerDetails=await ServiceProvider.findOne({_id:new mongoose.Types.ObjectId(providerId)});
+    const customerDetails=await User.findById(userId);
 
     await Promise.all([
       new Notification({
         userId,
         title: "Order Confirmed",
-        message: `Your order from ${provider.businessName} has been confirmed.`,
+        message: `Your order from ${providerDetails?.businessName} has been confirmed.`,
         type: "order",
         data: { orderId: order._id, providerId },
       }).save(),
 
       new Notification({
-        userId: provider.userId._id,
+        userId: customerDetails?._id,
         title: "New Order Received",
-        message: `You have received a new order from ${consumer.name}.`,
+        message: `You have received a new order from ${customerDetails?.name}.`,
         type: "order",
         data: { orderId: order._id, consumerId: userId },
       }).save(),
@@ -295,22 +182,22 @@ export async function POST(request: NextRequest) {
       const orderTypeSummary = getOrderTypeSummary(deliveryInfo);
       const orderNotificationData = {
         orderId: order._id.toString().slice(-8),
-        customerName: consumer.name,
-        providerName: provider.businessName,
+        customerName: customerDetails.name,
+        providerName: providerDetails.businessName,
         totalAmount,
         order_type: orderTypeSummary,
       };
 
       const emailData = getOrderConfirmationEmail(orderNotificationData);
-      await sendEmail({ to: consumer.email, ...emailData });
+      // await sendEmail({ to: customerDetails.email, ...emailData });
 
-      if (consumer.phone) {
+      if (customerDetails.phone) {
         const smsMessage = getOrderConfirmationSMS(orderNotificationData);
-        await sendSMS({ to: consumer.phone, message: smsMessage });
+        // await sendSMS({ to: customerDetails.phone, message: smsMessage });
       }
 
       // If provider doesn’t handle self-delivery, auto-assign
-      if (!provider.operatingHours[timeSlot]?.selfDelivery) {
+      if (!providerDetails.operatingHours[timeSlot]?.selfDelivery) {
         await fetch("/api/delivery/auto-assign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
