@@ -7,11 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 export const GET = withCors(async (request: NextRequest) => {
   try {
     await connectMongoDB();
-
     const user_id = request.headers.get("x-user-id");
-
-    const addresses = await Address.find({ user_id }).sort({ created_at: -1 });
-
+    const addresses = await Address.find({ user_id }).sort({ isdefault: -1 });
     return NextResponse.json({
       success: true,
       data: addresses,

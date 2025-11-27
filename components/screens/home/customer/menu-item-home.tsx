@@ -14,7 +14,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
   return (
     <Card
       key={menu._id}
-      className=" rounded-xl"
+      className="rounded-xl cursor-pointer"
       onClick={() => router.push(`/new-menu-item/${menu._id}`)}
     >
       <CardContent className="flex flex-col sm:flex-row gap-4 p-4">

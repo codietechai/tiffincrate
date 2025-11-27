@@ -7,119 +7,101 @@ import GoogleMapAutoComplete from "@/components/common/googlePlace";
 import { useState, useEffect } from "react";
 import { useLocation } from "@/hooks/use-location";
 import { AddressService } from "@/services/address-service";
-import AddressCard from "@/components/screens/address/address-card";
+import { AddressCard } from "@/components/screens/address/address-card";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import BackHeader from "@/components/common/back-header";
 
 export default function SelectLocationPage() {
   const router = useRouter();
-
-  // Auto-detected
-  const { locationName, address, latitude, longitude, loading } = useLocation();
-
-  // Google locations
-  const [gLatitude, setGLatitude] = useState<number | null>(null);
-  const [gLongitude, setGLongitude] = useState<number | null>(null);
-  const [selectedAddress, setSelectedAddress] = useState("");
-
   const [addresses, setAddresses] = useState<any[]>([]);
-  const [defaultAddress, setDefaultAddress] = useState<any>(null);
+  const { locationName, address, latitude, longitude, loading } = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch from API
-  useEffect(() => {
-    (async () => {
-      const all = await AddressService.fetchAll();
-      const def = await AddressService.fetchDefault();
-      setAddresses(all.data);
-      setDefaultAddress(def.data);
-    })();
-  }, []);
-
-  const handleUseCurrentLocation = async () => {
-    if (!latitude || !longitude) return;
-
-    await AddressService.create({
-      first_name: "Auto",
-      last_name: "Detected",
-      address_line_1: address,
-      address_line_2: "",
-      city: locationName,
-      region: "",
-      country: "India",
-      country_code: "IN",
-      postal_code: "",
-      latitude,
-      longitude,
-      is_default: true,
-    });
-
-    router.push("/home");
+  const fetchAddresses = async () => {
+    setIsLoading(true);
+    try {
+      const data = await AddressService.fetchAll();
+      setAddresses(data.data);
+      console.log("data", data);
+    } catch (err: any) {
+      console.error("Error fetching addresses:", err);
+      toast.error(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchAddresses();
+  }, []);
+
+  const onSetDefault = async (addressId: string) => {
+    await AddressService.setDefault(addressId);
+    fetchAddresses();
+  };
+  const onDelete = async (addressId: string) => {
+    await AddressService.delete(addressId);
+    setAddresses(addresses.filter((a) => a._id !== addressId));
+  };
+
+  const onEdit = (addressId: string) =>
+    router.push(`/address/edit/${addressId}`);
+
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <h1 className="text-xl font-semibold mb-4">Select a location</h1>
+    <>
+      <BackHeader />
+      <div className="min-h-screen bg-background px-4 py-6 relative ">
+        <h1 className="text-2xl font-bold tracking-tight mb-6">
+          Select a Location
+        </h1>
 
-      {/* Search Box */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+        <Card
+          onClick={() => router.push("/address/add")}
+          className="group mt-3 p-4 cursor-pointer transition-all hover:shadow-md border border-dashed border-gray-300 hover:border-red-400"
+        >
+          <div className="flex items-center gap-3 font-medium text-red-600">
+            <div className="p-2 rounded-lg bg-red-100 text-red-600 group-hover:bg-red-600 group-hover:text-white transition">
+              <Plus className="h-4 w-4" />
+            </div>
+            Add New Address
+          </div>
+        </Card>
 
-        {/* <GoogleMapAutoComplete
-          setSelectedLocation={setSelectedAddress}
-          setLongitude={setGLongitude}
-          setlatitude={setGLatitude}
-          placeholder="Enter your delivery address"
-          className="pl-9"
-        /> */}
+        <div className="flex items-center justify-between mt-8 mb-3">
+          <h2 className="text-sm font-semibold text-gray-600 tracking-wider uppercase">
+            Saved Addresses
+          </h2>
+          <div className="h-[1px] flex-1 ml-3 bg-gray-200" />
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-4">
+            {Array(4)
+              .fill(0)
+              .map((_, i) => (
+                <Skeleton key={i} className="h-[130px] rounded-xl" />
+              ))}
+          </div>
+        ) : addresses.length === 0 ? (
+          <p className="text-center text-gray-500 mt-10">
+            No addresses saved yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {addresses.map((address) => (
+              <AddressCard
+                key={address._id}
+                address={address}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onSetDefault={onSetDefault}
+              />
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Current Location */}
-      <Card
-        onClick={handleUseCurrentLocation}
-        className="p-4 cursor-pointer hover:bg-gray-100 transition"
-      >
-        <div className="flex items-center gap-3 text-red-600 font-medium">
-          <LocateFixed className="h-5 w-5 text-red-500" />
-          Use current location
-        </div>
-
-        <p className="text-sm text-gray-600 ml-8">
-          {loading
-            ? "Detecting location..."
-            : address || locationName || "Unable to detect"}
-        </p>
-      </Card>
-
-      {/* Add Address */}
-      <Card
-        onClick={() => router.push("/address/add")}
-        className="mt-3 p-4 cursor-pointer hover:bg-gray-100 transition"
-      >
-        <div className="flex items-center gap-3 font-medium text-red-500">
-          <Plus className="h-5 w-5" /> Add Address
-        </div>
-      </Card>
-
-      {/* Saved Addresses */}
-      <h2 className="text-sm font-semibold text-gray-500 mt-6 mb-2 uppercase">
-        Saved Addresses
-      </h2>
-
-      {addresses.map((addr) => (
-        <AddressCard
-          key={addr._id}
-          address={addr}
-          isDefault={defaultAddress?._id === addr._id}
-          onEdit={() => router.push(`/address/edit/${addr._id}`)}
-          onSetDefault={async () => {
-            await AddressService.setDefault(addr._id);
-            const def = await AddressService.fetchDefault();
-            setDefaultAddress(def.data);
-          }}
-          onDelete={async () => {
-            await AddressService.delete(addr._id);
-            setAddresses(addresses.filter((a) => a._id !== addr._id));
-          }}
-        />
-      ))}
-    </div>
+    </>
   );
 }
