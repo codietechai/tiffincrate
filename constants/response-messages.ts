@@ -86,6 +86,11 @@ export const SUCCESSMESSAGE = {
   PASSWORD_RESET: "Password reset successfully",
   TOKEN_REFRESH: "Token refreshed successfully",
   LOGOUT: "Logged out successfully",
+
+  ADDRESS_CREATED: "Address created successfully",
+  ADDRESS_FETCHED: "Address fetched successfully",
+  ADDRESS_UPDATED: "Address updated successfully",
+  ADDRESS_REMOVED: "Address removed successfully",
 };
 
 export const ERRORMESSAGE = {

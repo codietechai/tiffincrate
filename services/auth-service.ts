@@ -1,9 +1,9 @@
-import { IUser } from "@/models/User";
+import { TUser } from "@/types";
 
 export class AuthService {
   private static baseUrl = "/api/auth";
 
-  static async checkAuth(): Promise<{ user: IUser; message: string }> {
+  static async checkAuth(): Promise<{ data: TUser; message: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/me`, {
         method: "GET",
@@ -27,7 +27,7 @@ export class AuthService {
   static async signin(data: {
     email: string;
     password: string;
-  }): Promise<{ user: IUser; message: string }> {
+  }): Promise<{ user: TUser; message: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/login`, {
         method: "POST",
@@ -51,7 +51,7 @@ export class AuthService {
 
   static async signup(
     data: unknown
-  ): Promise<{ user: IUser; message: string }> {
+  ): Promise<{ user: TUser; message: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/register`, {
         method: "POST",

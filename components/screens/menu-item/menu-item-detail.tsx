@@ -104,9 +104,9 @@ export function MenuItemDetail() {
 
   const [orderData, setOrderData] = useState({
     deliveryAddress: {
-      address:"",
-      longitude:"",
-      latitude:""
+      address: "",
+      longitude: "",
+      latitude: "",
     },
     deliveryDate: "",
     deliveryPeriod: "month" as "month" | "specific_days" | "custom_dates",
@@ -204,7 +204,7 @@ export function MenuItemDetail() {
     return dates;
   };
 
-if (loading) return <MenuItemDetailSkeleton />;
+  if (loading) return <MenuItemDetailSkeleton />;
   if (error) return <p className="p-6 text-red-600">{error}</p>;
   if (!menu) return <p className="p-6">No menu found.</p>;
 
@@ -267,7 +267,11 @@ if (loading) return <MenuItemDetailSkeleton />;
               menuId: menu._id,
               providerId: menu._id,
               totalAmount,
-              deliveryAddress: {address:location,latitude:latitude,longitude:longitude},
+              deliveryAddress: {
+                address: location,
+                latitude: latitude,
+                longitude: longitude,
+              },
               orderType: orderData.deliveryPeriod,
               deliveryInfo,
               timeSlot: autoTimeSlot,
@@ -298,11 +302,11 @@ if (loading) return <MenuItemDetailSkeleton />;
   };
 
   return (
-    <div className="min-h-screen bg-white pb-32">
+    <div className="min-h-screen bg-[#fafafa] pb-28">
       <BackHeader />
 
       <div className="max-w-2xl mx-auto space-y-6">
-        <Card className="rounded-none overflow-hidden">
+        <Card className="rounded-none overflow-hidden rounded-b-xl">
           <div className="relative aspect-[16/10] bg-gray-100">
             <Image
               height={420}
@@ -311,15 +315,18 @@ if (loading) return <MenuItemDetailSkeleton />;
               alt={menu.name}
               className="w-full h-full object-cover"
             />
-            {menu.isVegetarian && (
-              <Badge className="absolute top-4 right-4 bg-green-600 text-white">
+            {menu.isVegetarian ? (
+              <Badge className="absolute top-4 right-4" variant="success">
                 Veg
+              </Badge>
+            ) : (
+              <Badge className="absolute top-4 right-4" variant="destructive">
+                Non-Veg
               </Badge>
             )}
           </div>
 
           <div className="p-6 space-y-6">
-            {/* Title + Description */}
             <div>
               <h1 className="text-xl font-semibold mb-2">{menu.name}</h1>
               <p className="text-gray-600">{menu.description}</p>
@@ -327,9 +334,8 @@ if (loading) return <MenuItemDetailSkeleton />;
 
             <Separator />
 
-            {/* Weekly Menu */}
-            <Accordion type="single" collapsible>
-              {menu.menuItems.map((item:any,index:any) => (
+            <Accordion type="single" collapsible className="space-y-2">
+              {menu.menuItems.map((item: any, index: any) => (
                 <AccordionItem key={index} value={index}>
                   <AccordionTrigger className="capitalize font-medium">
                     {item.day}
@@ -342,29 +348,16 @@ if (loading) return <MenuItemDetailSkeleton />;
               ))}
             </Accordion>
 
-            {/* Pricing */}
             <div className="flex items-center gap-2">
               <IndianRupee className="h-4 w-4 text-orange-600" />
               <span className="font-semibold">{menu.basePrice}</span>
               <span className="text-gray-500 ml-1">per meal</span>
             </div>
 
-            {/* Delivery details form */}
             {user?.role === "consumer" && (
               <div className="space-y-4 mt-4">
                 <div>
                   <Label>Delivery Address</Label>
-                  {/* <Input
-                    placeholder="Enter your delivery address"
-                    value={orderData.deliveryAddress}
-                    onChange={(e) =>
-                      setOrderData((prev) => ({
-                        ...prev,
-                        deliveryAddress: e.target.value,
-                      }))
-                    }
-                  /> */}
-
                   <GoogleMapAutoComplete
                     setSelectedLocation={setLocation}
                     setLongitude={setLongitude}
@@ -400,10 +393,9 @@ if (loading) return <MenuItemDetailSkeleton />;
                   </Select>
                 </div>
 
-                {/* Specific Days */}
                 {orderData.deliveryPeriod === "specific_days" && (
                   <div>
-                    <Label>Select Days of the Week</Label>
+                    <Label>Select Days</Label>
                     <div className="grid grid-cols-4 gap-2 mt-2">
                       {getValidDays(menu.menuItems).map((day) => (
                         <Button
@@ -421,7 +413,6 @@ if (loading) return <MenuItemDetailSkeleton />;
                   </div>
                 )}
 
-                {/* Custom Dates */}
                 {orderData.deliveryPeriod === "custom_dates" && (
                   <div>
                     <Label>Select Custom Dates</Label>
@@ -455,9 +446,9 @@ if (loading) return <MenuItemDetailSkeleton />;
                             today.setHours(0, 0, 0, 0);
 
                             // Valid days from your weeklyItems logic
-                            const validDays = getValidDays(
-                              menu.menuItems
-                            ).map((d) => dayMap[d]);
+                            const validDays = getValidDays(menu.menuItems).map(
+                              (d) => dayMap[d]
+                            );
 
                             // Disable if it's a past date OR not a valid day
                             return date < today || !validDays.includes(day);

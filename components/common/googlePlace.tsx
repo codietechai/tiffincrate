@@ -1,197 +1,126 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
-import {
-  APIProvider,
-  useMapsLibrary,
-  useAdvancedMarkerRef,
-} from "@vis.gl/react-google-maps";
-import { useForm } from "react-hook-form";
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Input } from "@/components/ui/input";
 
-const GoogleMapAutoComplete = ({
+interface AddressPayload {
+  address: string;
+  components: google.maps.GeocoderAddressComponent[];
+}
+
+interface Props {
+  setSelectedLocation: (v: AddressPayload) => void;
+  setLongitude: (v: number) => void;
+  setLatitude: (v: number) => void;
+  isError?: (v: boolean) => void;
+  placeholder: string;
+  className?: string;
+}
+
+export default function GoogleMapAutoComplete({
   setSelectedLocation,
   setLongitude,
-  setlatitude,
+  setLatitude,
   isError,
   placeholder,
-}: {
-  setSelectedLocation: any;
-  setLongitude: any;
-  setlatitude: any;
-  isError: any;
-  placeholder: string;
-}) => {
-  const [state, setState] = useState<string>("");
+  className,
+}: Props) {
+  const [state, setState] = useState("");
 
-  useState<google.maps.places.PlaceResult | null>(null);
-  const [markerRef, marker] = useAdvancedMarkerRef();
-  const mapRef = useRef<google.maps.Map | null>(null);
   const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
-    if (place.geometry?.location) {
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-    }
-    if (place.geometry?.location) {
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
+    let detectedState = "";
 
-      let neighbourhood = "";
-      let city = "";
-      let state = "";
-      let country = "";
-      if (place.address_components) {
-        place.address_components.forEach((component) => {
-          if (
-            component.types.includes("sublocality_level_1") ||
-            component.types.includes("neighborhood")
-          ) {
-            neighbourhood = component.long_name;
-          }
-          if (
-            component.types.includes("locality") ||
-            component.types.includes("postal_town")
-          ) {
-            city = component.long_name;
-          }
-          if (component.types.includes("administrative_area_level_1")) {
-            state = component.long_name;
-          }
-          if (component.types.includes("country")) {
-            country = component.long_name;
-          }
-        });
+    place.address_components?.forEach((component) => {
+      if (component.types.includes("administrative_area_level_1")) {
+        detectedState = component.long_name;
       }
-      setState(state);
-    }
+    });
+
+    setState(detectedState);
   };
 
   return (
     <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string}>
-      <div className="autocomplete-control">
-        <PlaceAutocomplete
-          onPlaceSelect={handlePlaceSelect}
-          setState={setState}
-          state={state}
-          isError={isError}
-          setSelectedLocation={setSelectedLocation}
-          setLongitude={setLongitude}
-          setLatitude={setlatitude}
-          placeholder={placeholder}
-        />
-      </div>
+      <PlaceAutocomplete
+        onPlaceSelect={handlePlaceSelect}
+        setState={setState}
+        isError={isError}
+        setSelectedLocation={setSelectedLocation}
+        setLongitude={setLongitude}
+        setLatitude={setLatitude}
+        placeholder={placeholder}
+        className={className}
+      />
     </APIProvider>
   );
-};
+}
 
 const PlaceAutocomplete = ({
   onPlaceSelect,
   setState,
-  state,
   isError,
   setSelectedLocation,
   setLongitude,
   setLatitude,
   placeholder,
+  className,
 }: {
   onPlaceSelect: (place: google.maps.places.PlaceResult) => void;
-  setState: any;
-  state: string;
-  setSelectedLocation: any;
-  setLongitude: any;
-  setLatitude: any;
+  setState: (v: string) => void;
+  isError?: (v: boolean) => void;
+  setSelectedLocation: (v: {
+    address: string;
+    components: google.maps.GeocoderAddressComponent[];
+  }) => void;
+  setLongitude: (v: number) => void;
+  setLatitude: (v: number) => void;
   placeholder: string;
-
-  isError: (log: boolean) => void;
+  className?: string;
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const places = useMapsLibrary("places");
-  const {
-    control,
-    setValue,
-    reset,
-    trigger,
-    getValues,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      location: "",
-      State: state,
-    },
-  });
-
-  const [location, setLocation] = useState<string>("");
-  const [error, setError] = useState<boolean>(false);
-  const [isPlaceSelected, setIsPlaceSelected] = useState(false);
-
-  useEffect(() => {
-    reset({
-      location: "",
-      State: state,
-    });
-  }, []);
 
   useEffect(() => {
     if (!places || !inputRef.current) return;
 
     const autocomplete = new places.Autocomplete(inputRef.current, {
-      fields: ["geometry", "name", "formatted_address", "address_components"],
+      fields: ["geometry", "formatted_address", "address_components"],
       componentRestrictions: { country: "in" },
     });
 
-    autocomplete.addListener("place_changed", async () => {
+    autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
-      if (place) {
-        onPlaceSelect(place);
-        setIsPlaceSelected(true);
-        let state = "";
+      if (!place) return;
 
-        if (place.address_components) {
-          place.address_components.forEach((component) => {
-            if (component.types.includes("administrative_area_level_1")) {
-              state = component.long_name;
-            }
-          });
-        }
+      onPlaceSelect(place);
 
-        const lat = place.geometry?.location?.lat();
-        const lng = place.geometry?.location?.lng();
+      const lat = place.geometry?.location?.lat();
+      const lng = place.geometry?.location?.lng();
 
-        if (lat && lng) {
-          setLatitude(lat);
-          setLongitude(lng);
-        }
-
-        setError(false);
-
-        setSelectedLocation(place?.formatted_address || "");
-        setValue("location", place.formatted_address || "");
-        setValue("State", state);
-        setState(state);
+      if (lat && lng) {
+        setLatitude(lat);
+        setLongitude(lng);
       }
+
+      setSelectedLocation({
+        address: place.formatted_address || "",
+        components: place.address_components || [],
+      });
+
+      isError?.(false);
     });
+  }, [places]);
 
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.placeholder = "";
-      }
-    }, 100);
-  }, [places, onPlaceSelect]);
-
+  console.log("placeholder", placeholder);
   return (
-    <div className="">
+    <>
       <Input
-        className="border  z-[999]  max-w-[700px] w-full"
-        // labelStyle={{ top: "0.6rem" }}
+        className={`border z-[999] max-w-[700px] w-full ${className}`}
         placeholder={placeholder}
         ref={inputRef}
         name="location"
-        // errors={errors}
-        required={true}
-        // control={control}
-        // setValue={setLocation}
-        defaultValue={location}
       />
-    </div>
+    </>
   );
 };
-
-export default GoogleMapAutoComplete;

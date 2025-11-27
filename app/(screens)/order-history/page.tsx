@@ -5,25 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
-import { Search, Calendar, Star, RotateCcw, Eye } from "lucide-react";
-import StatsGrid from "@/components/common/stats-grid";
-import OrderHistoryUI from "./OrderSample";
+import { Search, Star, RotateCcw } from "lucide-react";
 
 interface Order {
   _id: string;
