@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 
 interface LocationResult {
-  locationName: string;
-  address: string;
+  address_line_1: string;
+  city: string;
+  region: string;
+  postal_code: string;
   latitude: number | null;
   longitude: number | null;
   loading: boolean;
@@ -11,64 +13,62 @@ interface LocationResult {
 }
 
 export function useLocation(): LocationResult {
-  const [locationName, setLocationName] = useState("Detecting location...");
-  const [address, setAddress] = useState("");
+  const [address_line_1, setAddressLine1] = useState("");
+  const [city, setCity] = useState("");
+  const [region, setRegion] = useState("");
+  const [postal_code, setPostalCode] = useState("");
+
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchLocation = async (lat: number, lon: number) => {
-      try {
-        const res = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lon}`);
-        const data = await res.json();
+  // Reverse Geocode Function
+  const fetchLocationDetails = async (lat: number, lon: number) => {
+    try {
+      const res = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lon}`);
+      const data = await res.json();
+      const a = data.address;
 
-        const cityName =
-          data.address?.city ||
-          data.address?.town ||
-          data.address?.village ||
-          data.address?.county ||
-          "Unknown";
-
-        const preciseAddress = [
-          data.address?.house_number,
-          data.address?.road,
-          data.address?.neighbourhood,
-          data.address?.suburb,
-        ]
+      setAddressLine1(
+        [a?.house_number, a?.road, a?.neighbourhood, a?.suburb]
           .filter(Boolean)
-          .join(", ");
+          .join(", ")
+      );
 
-        setLocationName(cityName);
-        setAddress(preciseAddress || "Unable to determine street location");
-      } catch (err) {
-        setError("Failed to fetch address");
-        setLocationName("Location unavailable");
-      } finally {
-        setLoading(false);
-      }
-    };
+      setCity(a?.city || a?.town || a?.village || a?.county || "");
 
-    if (!("geolocation" in navigator)) {
+      setRegion(a?.state || "");
+
+      setPostalCode(a?.postcode || "");
+    } catch (err) {
+      setError("Failed to fetch address");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get GPS Location
+  useEffect(() => {
+    if (!navigator.geolocation) {
       setError("Geolocation not supported");
-      setLocationName("Geolocation not supported");
       setLoading(false);
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const { latitude, longitude } = pos.coords;
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
 
-        setLatitude(latitude);
-        setLongitude(longitude);
+        setLatitude(lat);
+        setLongitude(lon);
 
-        fetchLocation(latitude, longitude);
+        fetchLocationDetails(lat, lon);
       },
       () => {
         setError("Location access denied");
-        setLocationName("Location access denied");
         setLoading(false);
       },
       {
@@ -80,8 +80,10 @@ export function useLocation(): LocationResult {
   }, []);
 
   return {
-    locationName,
-    address,
+    address_line_1,
+    city,
+    region,
+    postal_code,
     latitude,
     longitude,
     loading,

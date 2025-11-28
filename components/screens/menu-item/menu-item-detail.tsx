@@ -43,6 +43,9 @@ import { CartItem } from "@/app/(screens)/providers/[id]/page";
 import BackHeader from "@/components/common/back-header";
 import GoogleMapAutoComplete from "@/components/common/googlePlace";
 import { MenuItemDetailSkeleton } from "./menu-detail-skeleton";
+import { TAddress } from "@/types";
+import { AddressService } from "@/services/address-service";
+import { AddressCard } from "../address/address-card";
 
 interface IWeeklyMenu {
   monday?: { name: string; description: string };
@@ -93,7 +96,6 @@ export function MenuItemDetail() {
   const [user, setUser] = useState<any>(null);
   const params = useParams();
   const router = useRouter();
-  const [isFavorite, setIsFavorite] = useState(false);
   const [menu, setMenu] = useState<IMenu | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +103,7 @@ export function MenuItemDetail() {
   const [longitude, setLongitude] = useState<number>(0);
   const [latitude, setLatitude] = useState<number>(0);
   const [isOrdering, setIsOrdering] = useState(false);
-
+  const [defaultAddress, setDefaultAddress] = useState<TAddress | null>(null);
   const [orderData, setOrderData] = useState({
     deliveryAddress: {
       address: "",
@@ -116,18 +118,21 @@ export function MenuItemDetail() {
     notes: "",
   });
 
+  const fetchDefaultAddress = async () => {
+    try {
+      const response = await AddressService.fetchDefault();
+      setDefaultAddress(response.data);
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDefaultAddress();
+  }, []);
+
   const [multiDates, setMultiDates] = useState<Date[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
-
-  const weekDays = [
-    { label: "Mon", value: "monday" },
-    { label: "Tue", value: "tuesday" },
-    { label: "Wed", value: "wednesday" },
-    { label: "Thu", value: "thursday" },
-    { label: "Fri", value: "friday" },
-    { label: "Sat", value: "saturday" },
-    { label: "Sun", value: "sunday" },
-  ];
 
   const toggleDay = (day: string) => {
     setSelectedDays((prev) => {
@@ -301,6 +306,9 @@ export function MenuItemDetail() {
     }
   };
 
+  const onEdit = (addressId: string) =>
+    router.push(`/address/edit/${addressId}?choose-another=true`);
+
   return (
     <div className="min-h-screen bg-[#fafafa] pb-28">
       <BackHeader />
@@ -356,17 +364,16 @@ export function MenuItemDetail() {
 
             {user?.role === "consumer" && (
               <div className="space-y-4 mt-4">
-                <div>
-                  <Label>Delivery Address</Label>
-                  <GoogleMapAutoComplete
-                    setSelectedLocation={setLocation}
-                    setLongitude={setLongitude}
-                    setlatitude={setLatitude}
-                    isError={isOrdering}
-                    placeholder="Enter your delivery address"
+                <div className="">
+                  <Label>Default Address</Label>
+                  <AddressCard
+                    chooseAnother={() =>
+                      router.push("/address?choose-another=true")
+                    }
+                    onEdit={onEdit}
+                    address={defaultAddress}
                   />
                 </div>
-
                 <div>
                   <Label>Delivery Period</Label>
                   <Select

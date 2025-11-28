@@ -1,7 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { Search, Plus, MapPin, Home, LocateFixed } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Search,
+  Plus,
+  MapPin,
+  Home,
+  LocateFixed,
+  LocateIcon,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import GoogleMapAutoComplete from "@/components/common/googlePlace";
 import { useState, useEffect } from "react";
@@ -12,11 +19,12 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import BackHeader from "@/components/common/back-header";
+import TitleHeader from "@/components/common/title-header";
 
 export default function SelectLocationPage() {
   const router = useRouter();
   const [addresses, setAddresses] = useState<any[]>([]);
-  const { locationName, address, latitude, longitude, loading } = useLocation();
+
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchAddresses = async () => {
@@ -39,7 +47,11 @@ export default function SelectLocationPage() {
 
   const onSetDefault = async (addressId: string) => {
     await AddressService.setDefault(addressId);
-    fetchAddresses();
+    if (chooseAnother) {
+      router.back();
+    } else {
+      fetchAddresses();
+    }
   };
   const onDelete = async (addressId: string) => {
     await AddressService.delete(addressId);
@@ -48,17 +60,25 @@ export default function SelectLocationPage() {
 
   const onEdit = (addressId: string) =>
     router.push(`/address/edit/${addressId}`);
-
+  const searchParams = useSearchParams();
+  const chooseAnother = searchParams.get("choose-another");
   return (
     <>
       <BackHeader />
       <div className="min-h-screen bg-background px-4 py-6 relative ">
-        <h1 className="text-2xl font-bold tracking-tight mb-6">
-          Select a Location
-        </h1>
+        <TitleHeader
+          title="Select a Location"
+          icon={<LocateIcon />}
+          description={
+            chooseAnother ? "Change default address for your order" : ""
+          }
+        />
 
         <Card
-          onClick={() => router.push("/address/add")}
+          onClick={() => {
+            if (chooseAnother) router.push("/address/add?choose-another=true");
+            else router.push("/address/add");
+          }}
           className="group mt-3 p-4 cursor-pointer transition-all hover:shadow-md border border-dashed border-gray-300 hover:border-red-400"
         >
           <div className="flex items-center gap-3 font-medium text-red-600">

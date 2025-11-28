@@ -14,8 +14,9 @@ import { useEffect, useState } from "react";
 import { TUser } from "@/types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
+import { useLocation } from "@/hooks/use-location";
 
 export const AddressSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -49,7 +50,16 @@ export default function AddressForm({
   const router = useRouter();
   const [user, setUser] = useState<null | TUser>(null);
   const [isSaving, setIsSaving] = useState(false);
-
+  const {
+    address_line_1,
+    city,
+    region,
+    postal_code,
+    latitude,
+    longitude,
+    loading,
+    error,
+  } = useLocation();
   const {
     register,
     handleSubmit,
@@ -106,6 +116,11 @@ export default function AddressForm({
     });
   };
 
+  const windowExist = !!(window && typeof window !== "undefined");
+  const searchParams = useSearchParams();
+  const chooseAnother = searchParams.get("choose-another");
+
+  const pathname = usePathname();
   const onSubmit = async (data: AddressFormType) => {
     setIsSaving(true);
 
@@ -125,8 +140,10 @@ export default function AddressForm({
         await AddressService.create(payload);
         toast.success("Address saved!");
       }
-
-      router.push("/address");
+      if (chooseAnother && windowExist && pathname.includes("address/add"))
+        window.history.go(-2);
+      else if (chooseAnother) router.back();
+      else router.push("/address");
       reset();
     } catch (error) {
       console.log("error", error);
@@ -138,15 +155,26 @@ export default function AddressForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Current Location */}
-      <Card className="p-4 cursor-pointer hover:bg-gray-100 transition">
+      <Card
+        className="p-4 cursor-pointer hover:bg-gray-100 transition"
+        onClick={() => {
+          if (!loading) {
+            setValue("address_line_1", address_line_1);
+            setValue("city", city);
+            setValue("region", region);
+            setValue("postal_code", postal_code);
+            setValue("latitude", latitude ?? undefined);
+            setValue("longitude", longitude ?? undefined);
+
+            toast.success("Location detected!");
+          }
+        }}
+      >
         <div className="flex items-center gap-3 text-red-600 font-medium">
-          <LocateFixed className="h-5 w-5" />
-          Use current location
+          {loading ? "Detecting..." : "Use current location"}
         </div>
       </Card>
 
-      {/* Search Input */}
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400 z-20" />
         <GoogleMapAutoComplete
@@ -201,7 +229,11 @@ export default function AddressForm({
         control={control}
         render={({ field }) => (
           <Label className="flex items-center gap-2 cursor-pointer">
-            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+            <Checkbox
+              checked={field.value || !!chooseAnother}
+              disabled={!!chooseAnother}
+              onCheckedChange={field.onChange}
+            />
             Set as default
           </Label>
         )}
