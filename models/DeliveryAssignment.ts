@@ -14,6 +14,7 @@ export interface IDeliveryAssignment extends mongoose.Document {
   deliveryLocation: {
     latitude: number;
     longitude: number;
+    
     address: string;
   };
   estimatedDistance: number; // in km
