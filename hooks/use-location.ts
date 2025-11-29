@@ -10,6 +10,8 @@ interface LocationResult {
   longitude: number | null;
   loading: boolean;
   error: string | null;
+
+  
 }
 
 export function useLocation(): LocationResult {
