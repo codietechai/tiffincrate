@@ -3,7 +3,7 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import ServiceProvider from "@/models/ServiceProvider";
 import User from "@/models/User";
-import "@/models/Menu"; 
+import "@/models/Menu";
 
 import DeliveryOrder from "@/models/deliveryOrders";
 import Notification from "@/models/Notification";
@@ -14,7 +14,6 @@ import {
 } from "@/lib/notifications";
 import mongoose from "mongoose";
 import { createDeliveryOrders, getOrderTypeSummary } from "@/utils/orders";
-
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,14 +34,13 @@ export async function GET(request: NextRequest) {
       const orders = await Order.find(query)
         .populate("consumerId", "name email")
         .populate({
-          path:"menuId",
-          populate:{
-            path:'providerId',
-            select:'businessName location.address'
-          }
+          path: "menuId",
+          populate: {
+            path: "providerId",
+            select: "businessName location.address",
+          },
         })
         .sort({ createdAt: -1 });
-
 
       return NextResponse.json({ orders });
     } else if (role === "provider") {
@@ -54,13 +52,12 @@ export async function GET(request: NextRequest) {
       const startOfDay = new Date(today.setHours(0, 0, 0, 0));
       const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
+      const currentDay = new Date()
+        .toLocaleString("en-US", { weekday: "long" })
+        .toLowerCase();
+
       const orders = await DeliveryOrder.aggregate([
-        {
-          $match: {
-            "orderId.providerId": query.providerId.providerId,
-            deliveryDate: { $gte: startOfDay, $lte: endOfDay },
-          },
-        },
+        { $match: { "orderId.providerId": query.providerId.providerId, deliveryDate: { $gte: startOfDay, $lte: endOfDay }, }, },
         {
           $lookup: {
             from: "orders",
@@ -70,18 +67,71 @@ export async function GET(request: NextRequest) {
           },
         },
         { $unwind: "$order" },
+
+        {
+          $lookup: {
+            from: "users",
+            localField: "order.consumerId",
+            foreignField: "_id",
+            as: "consumer",
+          },
+        },
+        {
+          $lookup: {
+            from: "menus",
+            localField: "order.menuId",
+            foreignField: "_id",
+            as: "menu",
+          },
+        },
+
+        // ✅ Lookup and filter menuitems for current day only
+        {
+          $lookup: {
+            from: "menuitems",
+            let: { menuId: "$order.menuId", today: currentDay },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$menuId", "$$menuId"] },
+                      { $eq: ["$day", "$$today"] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "menuitems",
+          },
+        },
+
+        // {
+        //   $match: {
+        //     "order.deliveryPartnerId": new mongoose.Types.ObjectId(
+        //       query.providerId
+        //     ),
+        //     deliveryDate: { $gte: startOfDay, $lte: endOfDay },
+        //   },
+        // },
+
         { $sort: { createdAt: -1 } },
+
         {
           $project: {
-            _id: 1, 
+            _id: 1,
             deliveryDate: 1,
             deliveryStatus: 1,
+            "consumer.name": 1,
             createdAt: 1,
             updatedAt: 1,
             order: 1,
+            menu: 1,
+            menuitems: 1,
           },
         },
       ]);
+
       return NextResponse.json({ orders });
     }
   } catch (error) {
@@ -154,10 +204,15 @@ export async function POST(request: NextRequest) {
     });
 
     await order.save();
-    await User.updateOne({ _id: new mongoose.Types.ObjectId(userId as string) }, { $inc: { wallet_amount: totalAmount } });
+    await User.updateOne(
+      { _id: new mongoose.Types.ObjectId(userId as string) },
+      { $inc: { wallet_amount: totalAmount } }
+    );
     await createDeliveryOrders(order._id, deliveryInfo);
-    const providerDetails=await ServiceProvider.findOne({_id:new mongoose.Types.ObjectId(providerId)});
-    const customerDetails=await User.findById(userId);
+    const providerDetails = await ServiceProvider.findOne({
+      _id: new mongoose.Types.ObjectId(providerId),
+    });
+    const customerDetails = await User.findById(userId);
 
     await Promise.all([
       new Notification({
