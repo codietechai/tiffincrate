@@ -24,7 +24,6 @@ import TitleHeader from "@/components/common/title-header";
 export default function SelectLocationPage() {
   const router = useRouter();
   const [addresses, setAddresses] = useState<any[]>([]);
-
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchAddresses = async () => {

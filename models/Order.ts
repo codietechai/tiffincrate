@@ -8,12 +8,11 @@ export interface IOrderItem {
   quantity: number;
 }
 
-
 export interface IDeliveryInfo {
   type: "month" | "specific_days" | "custom_dates";
-  startDate?: string;        // for monthly plans
-  days?: string[];           // for specific days: ["monday", "wednesday"]
-  dates?: string[];          // for custom dates: ["2025-10-25", "2025-10-30"]
+  startDate?: string; // for monthly plans
+  days?: string[]; // for specific days: ["monday", "wednesday"]
+  dates?: string[]; // for custom dates: ["2025-10-25", "2025-10-30"]
 }
 
 export interface IOrder extends Document {
@@ -50,8 +49,8 @@ const deliveryInfoSchema = new Schema<IDeliveryInfo>(
       required: true,
     },
     startDate: { type: String }, // for monthly
-    days: [String],              // for specific_days
-    dates: [String],             // for custom_dates (ISO date strings)
+    days: [String], // for specific_days
+    dates: [String], // for custom_dates (ISO date strings)
   },
   { _id: false }
 );
@@ -72,11 +71,18 @@ const orderSchema = new Schema<IOrder>(
 
     status: {
       type: String,
-      enum: ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"],
+      enum: [
+        "pending",
+        "confirmed",
+        "preparing",
+        "ready",
+        "delivered",
+        "cancelled",
+      ],
       default: "pending",
     },
 
-    address:{ type: Schema.Types.ObjectId, ref: "Address",require:true },
+    address: { type: Schema.Types.ObjectId, ref: "Address", require: true },
 
     timeSlot: {
       type: String,
@@ -85,7 +91,10 @@ const orderSchema = new Schema<IOrder>(
     },
 
     deliveryPartnerId: { type: Schema.Types.ObjectId, ref: "DeliveryPartner" },
-    deliveryAssignmentId: { type: Schema.Types.ObjectId, ref: "DeliveryAssignment" },
+    deliveryAssignmentId: {
+      type: Schema.Types.ObjectId,
+      ref: "DeliveryAssignment",
+    },
 
     paymentStatus: {
       type: String,
@@ -101,4 +110,3 @@ const orderSchema = new Schema<IOrder>(
 
 export default mongoose.models.Order ||
   mongoose.model<IOrder>("Order", orderSchema);
-

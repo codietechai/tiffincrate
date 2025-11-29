@@ -78,6 +78,10 @@ const addressSchema = new mongoose.Schema(
       enum: ["mutable", "immutable"],
       default: "mutable",
     },
+    ref_address: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Address",
+    },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },

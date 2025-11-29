@@ -99,17 +99,10 @@ export function MenuItemDetail() {
   const [menu, setMenu] = useState<IMenu | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [location, setLocation] = useState<string>("");
-  const [longitude, setLongitude] = useState<number>(0);
-  const [latitude, setLatitude] = useState<number>(0);
   const [isOrdering, setIsOrdering] = useState(false);
   const [defaultAddress, setDefaultAddress] = useState<TAddress | null>(null);
   const [orderData, setOrderData] = useState({
-    deliveryAddress: {
-      address: "",
-      longitude: "",
-      latitude: "",
-    },
+    address: "",
     deliveryDate: "",
     deliveryPeriod: "month" as "month" | "specific_days" | "custom_dates",
     dates: "",
@@ -219,24 +212,20 @@ export function MenuItemDetail() {
       return;
     }
 
-    const autoTimeSlot = menu?.category; // "breakfast" | "lunch" | "dinner"
+    const autoTimeSlot = menu?.category;
     setIsOrdering(true);
 
     try {
-      // Determine total number of delivery days
       let totalDays = 0;
       let deliveryInfo: any = { type: orderData.deliveryPeriod };
 
       if (orderData.deliveryPeriod === "month") {
-        // assume 30 days for monthly plan
         totalDays = 30;
         deliveryInfo.startDate = new Date().toISOString().split("T")[0];
       } else if (orderData.deliveryPeriod === "specific_days") {
-        // count selected weekdays for 4 weeks (1 month)
         totalDays = selectedDays.length * 4;
         deliveryInfo.days = selectedDays;
       } else if (orderData.deliveryPeriod === "custom_dates") {
-        // count manually selected dates
         totalDays = multiDates.length;
         deliveryInfo.dates = multiDates.map((date) =>
           date.toLocaleDateString("en-CA")
@@ -245,7 +234,6 @@ export function MenuItemDetail() {
 
       const totalAmount = menu.basePrice * totalDays;
 
-      // Create Razorpay order for full amount
       const razorpayResponse = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -272,11 +260,7 @@ export function MenuItemDetail() {
               menuId: menu._id,
               providerId: menu.providerId,
               totalAmount,
-              deliveryAddress: {
-                address: location,
-                latitude: latitude,
-                longitude: longitude,
-              },
+              address: defaultAddress?._id,
               orderType: orderData.deliveryPeriod,
               deliveryInfo,
               timeSlot: autoTimeSlot,

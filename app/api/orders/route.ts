@@ -4,7 +4,6 @@ import Order from "@/models/Order";
 import ServiceProvider from "@/models/ServiceProvider";
 import User from "@/models/User";
 import "@/models/Menu";
-
 import DeliveryOrder from "@/models/deliveryOrders";
 import Notification from "@/models/Notification";
 import { verifyRazorpayPayment } from "@/lib/razorpay";
@@ -14,6 +13,7 @@ import {
 } from "@/lib/notifications";
 import mongoose from "mongoose";
 import { createDeliveryOrders, getOrderTypeSummary } from "@/utils/orders";
+import Address from "@/models/Address";
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
 
-    // Build query based on user role
     let query: any = {};
     if (role === "consumer") {
       query.consumerId = userId;
@@ -57,7 +56,12 @@ export async function GET(request: NextRequest) {
         .toLowerCase();
 
       const orders = await DeliveryOrder.aggregate([
-        { $match: { "orderId.providerId": query.providerId.providerId, deliveryDate: { $gte: startOfDay, $lte: endOfDay }, }, },
+        {
+          $match: {
+            "orderId.providerId": query.providerId.providerId,
+            deliveryDate: { $gte: startOfDay, $lte: endOfDay },
+          },
+        },
         {
           $lookup: {
             from: "orders",
@@ -159,7 +163,7 @@ export async function POST(request: NextRequest) {
       providerId,
       items,
       totalAmount,
-      deliveryAddress,
+      address,
       orderType,
       deliveryInfo,
       timeSlot,
@@ -185,14 +189,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    let newAddressId;
+    const existing = await Address.findOne({
+      ref_address: address,
+      address_mutability: "immutable",
+    });
+
+    if (existing) {
+      newAddressId = address;
+    } else {
+      const original = await Address.findById(address);
+      const newAddress = await Address.create({
+        ...original.toObject(),
+        _id: undefined,
+        address_mutability: "immutable",
+        ref_address: address,
+      });
+      newAddressId = newAddress._id;
+    }
+
     const order = new Order({
       menuId,
       items,
       totalAmount,
-      deliveryAddress:
-        typeof deliveryAddress === "string"
-          ? { address: deliveryAddress, latitude: 0, longitude: 0 }
-          : deliveryAddress,
+      address: newAddressId,
       orderType,
       deliveryInfo,
       timeSlot,
