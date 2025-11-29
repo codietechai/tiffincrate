@@ -26,12 +26,9 @@ import StatsGrid from "@/components/common/stats-grid";
 import { LoadingPage } from "@/components/ui/loading";
 
 interface MenuItem {
-
   _id: string;
   name: string;
   description: string;
-
-  
   day?: string;
   images?: string[];
 }
