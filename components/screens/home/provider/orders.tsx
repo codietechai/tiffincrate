@@ -30,10 +30,6 @@ interface MenuItem {
   name: string;
   description: string;
   day?: string;
-
-
-
-  
   images?: string[];
 }
 
