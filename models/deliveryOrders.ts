@@ -4,6 +4,7 @@ const deliveryOrder = new Schema(
     orderId: { type: Schema.Types.ObjectId, ref: "Order", required: true },
     deliveryStatus: {
       type: String,
+      
       enum: ["confirmed","pending", "delivered", "cancelled", "not_delivered","ready","assigned","out_for_delivery"],
       default: "pending",
     },    
