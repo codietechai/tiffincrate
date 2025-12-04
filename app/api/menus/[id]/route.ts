@@ -3,6 +3,7 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Menu from "@/models/Menu";
 import MenuItem from "@/models/MenuItem";
 import mongoose from "mongoose";
+import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
 
 const DAYS = [
   "monday",
@@ -21,10 +22,10 @@ export async function GET(
   try {
     await connectMongoDB();
     const menu = await Menu.aggregate([
-      { $match: {_id:new mongoose.Types.ObjectId(params.id)} },
+      { $match: { _id: new mongoose.Types.ObjectId(params.id) } },
       {
         $lookup: {
-          from: "menuitems", 
+          from: "menuitems",
           localField: "_id",
           foreignField: "menuId",
           as: "menuItems",
@@ -68,10 +69,16 @@ export async function GET(
     ]);
 
     if (!menu) {
-      return NextResponse.json({ error: "Menu not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: ERRORMESSAGE.MENU_NOT_FOUND },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ menu:menu[0] });
+    return NextResponse.json({
+      data: menu[0],
+      message: SUCCESSMESSAGE.MENU_FETCH,
+    });
   } catch (error) {
     console.error("Get menu error:", error);
     return NextResponse.json(

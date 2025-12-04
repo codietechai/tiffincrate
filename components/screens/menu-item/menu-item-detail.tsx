@@ -43,9 +43,12 @@ import { CartItem } from "@/app/(screens)/providers/[id]/page";
 import BackHeader from "@/components/common/back-header";
 import GoogleMapAutoComplete from "@/components/common/googlePlace";
 import { MenuItemDetailSkeleton } from "./menu-detail-skeleton";
-import { TAddress } from "@/types";
+import { TAddress, TMenu } from "@/types";
 import { AddressService } from "@/services/address-service";
 import { AddressCard } from "../address/address-card";
+import { OrderService } from "@/services/order-service";
+import { MenuService } from "@/services/menu-service";
+import { AuthService } from "@/services/auth-service";
 
 interface IWeeklyMenu {
   monday?: { name: string; description: string };
@@ -55,23 +58,6 @@ interface IWeeklyMenu {
   friday?: { name: string; description: string };
   saturday?: { name: string; description: string };
   sunday?: { name: string; description: string };
-}
-
-interface IMenu {
-  _id: string;
-  name: string;
-  description?: string;
-  category: "breakfast" | "lunch" | "dinner";
-  menuItems: any;
-  basePrice: number;
-  providerId: string | null;
-  monthlyPlanPrice?: number;
-  image: string;
-  isAvailable: boolean;
-  isVegetarian: boolean;
-  weekType: "whole" | "weekdays" | "weekends";
-  rating: number;
-  userRatingCount: number;
 }
 
 interface MenuItemDetailProps {
@@ -96,7 +82,7 @@ export function MenuItemDetail() {
   const [user, setUser] = useState<any>(null);
   const params = useParams();
   const router = useRouter();
-  const [menu, setMenu] = useState<IMenu | null>(null);
+  const [menu, setMenu] = useState<TMenu | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOrdering, setIsOrdering] = useState(false);
@@ -139,11 +125,8 @@ export function MenuItemDetail() {
 
   const fetchMenu = async () => {
     try {
-      const res = await fetch(`/api/menus/${params.id}`);
-      console.log(res);
-      if (!res.ok) throw new Error("Failed to fetch menu");
-      const data = await res.json();
-      setMenu(data.menu);
+      const res = await MenuService.fetchMenu(params.id as string);
+      setMenu(res?.data);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -153,11 +136,8 @@ export function MenuItemDetail() {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch("/api/auth/me");
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.data);
-      }
+      const res = await AuthService.checkAuth();
+      setUser(res.data);
     } catch (err) {
       console.error(err);
     }
@@ -253,23 +233,19 @@ export function MenuItemDetail() {
         name: "TiffinCrate",
         order_id: razorpayOrder.order.id,
         handler: async (response: any) => {
-          await fetch("/api/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              menuId: menu._id,
-              providerId: menu.providerId,
-              totalAmount,
-              address: defaultAddress?._id,
-              orderType: orderData.deliveryPeriod,
-              deliveryInfo,
-              timeSlot: autoTimeSlot,
-              paymentMethod: "razorpay",
-              notes: orderData.notes,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-            }),
+          await OrderService.placeOrder({
+            menuId: menu._id,
+            providerId: menu.providerId,
+            totalAmount,
+            address: defaultAddress?._id,
+            orderType: orderData.deliveryPeriod,
+            deliveryInfo,
+            timeSlot: autoTimeSlot,
+            paymentMethod: "razorpay",
+            notes: orderData.notes,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
           });
           router.push("/track-orders");
         },
@@ -300,13 +276,15 @@ export function MenuItemDetail() {
       <div className="max-w-2xl mx-auto space-y-6">
         <Card className="rounded-none overflow-hidden rounded-b-xl">
           <div className="relative aspect-[16/10] bg-gray-100">
-            <Image
-              height={420}
-              width={672}
-              src={menu.image}
-              alt={menu.name}
-              className="w-full h-full object-cover"
-            />
+            {menu.image && (
+              <Image
+                height={420}
+                width={672}
+                src={menu.image}
+                alt={menu.name}
+                className="w-full h-full object-cover"
+              />
+            )}
             {menu.isVegetarian ? (
               <Badge className="absolute top-4 right-4" variant="success">
                 Veg

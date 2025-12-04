@@ -3,7 +3,7 @@ import { TUser } from "@/types";
 export class AuthService {
   private static baseUrl = "/api/auth";
 
-  static async checkAuth(): Promise<{ data: TUser; message: string }> {
+  static async checkAuth(): Promise<{ data: TUser | null; message: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/me`, {
         method: "GET",

@@ -26,4 +26,28 @@ export class MenuService {
       throw error;
     }
   }
+
+  static async fetchMenu(id?: string): Promise<{
+    data: TMenu | null;
+    message: string;
+  }> {
+    try {
+      const url = `${this.baseUrl}/${id}`;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

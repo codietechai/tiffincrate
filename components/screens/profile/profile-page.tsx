@@ -5,11 +5,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import TitleHeader from "@/components/common/title-header";
 import PersonalTab from "./personal-tab";
-import BussinessTab from "../settings/provider/bussiness-details";
 import { Settings } from "lucide-react";
 
 export default function ProfilePage() {

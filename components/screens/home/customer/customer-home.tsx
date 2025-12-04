@@ -7,7 +7,6 @@ import MenuItemHome from "./menu-item-home";
 import { TMenu } from "@/types";
 import { MenuService } from "@/services/menu-service";
 import { Skeleton } from "@/components/ui/skeleton";
-import FilterDrawer from "../provider/filter-drawer";
 
 const ConsumerHome = () => {
   const [filters, setFilters] = useState({

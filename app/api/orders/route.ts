@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "Order placed successfully", order },
+      { message: "Order placed successfully", data: order },
       { status: 201 }
     );
   } catch (error) {
