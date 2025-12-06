@@ -5,7 +5,7 @@ import ServiceProvider from "@/models/ServiceProvider";
 import { SUCCESSMESSAGE } from "@/constants/response-messages";
 import { withCors } from "@/lib/cors";
 
-export async function handler(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     await connectMongoDB();
 

@@ -14,6 +14,7 @@ import {
 import mongoose from "mongoose";
 import { createDeliveryOrders, getOrderTypeSummary } from "@/utils/orders";
 import Address from "@/models/Address";
+import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,7 +42,14 @@ export async function GET(request: NextRequest) {
         })
         .sort({ createdAt: -1 });
 
-      return NextResponse.json({ orders });
+      return NextResponse.json(
+        {
+          data: orders,
+          message: SUCCESSMESSAGE.ORDERS_FETCH,
+          success: true,
+        },
+        { status: 200 }
+      );
     } else if (role === "provider") {
       query.providerId = userId;
 
@@ -136,8 +144,21 @@ export async function GET(request: NextRequest) {
         },
       ]);
 
-      return NextResponse.json({ orders });
+      return NextResponse.json(
+        {
+          data: orders,
+          message: SUCCESSMESSAGE.ORDERS_FETCH,
+          success: true,
+        },
+        { status: 200 }
+      );
     }
+
+    return NextResponse.json({
+      data: {},
+      message: "You are admin",
+      success: false,
+    });
   } catch (error) {
     console.error("Get orders error:", error);
     return NextResponse.json(
@@ -153,7 +174,10 @@ export async function POST(request: NextRequest) {
     const role = request.headers.get("x-user-role");
 
     if (role !== "consumer") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden", success: false },
+        { status: 403 }
+      );
     }
 
     await connectMongoDB();
@@ -284,14 +308,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "Order placed successfully", data: order },
+      { success: true, data: order, message: SUCCESSMESSAGE.ORDER_COMPLETE },
       { status: 201 }
     );
   } catch (error) {
     console.error("Create order error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: ERRORMESSAGE.INTERNAL }, { status: 500 });
   }
 }

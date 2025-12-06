@@ -9,6 +9,7 @@ import {
   Calendar as CalendarIcon,
   Users,
   MapPin,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -326,16 +327,27 @@ export function MenuItemDetail() {
 
             {user?.role === "consumer" && (
               <div className="space-y-4 mt-4">
-                <div className="">
-                  <Label>Default Address</Label>
-                  <AddressCard
-                    chooseAnother={() =>
-                      router.push("/address?choose-another=true")
-                    }
-                    onEdit={onEdit}
-                    address={defaultAddress}
-                  />
-                </div>
+                {!!defaultAddress ? (
+                  <div>
+                    <Label>Default Address</Label>
+                    <AddressCard
+                      chooseAnother={() =>
+                        router.push("/address?choose-another=true")
+                      }
+                      onEdit={onEdit}
+                      address={defaultAddress}
+                    />
+                  </div>
+                ) : (
+                  <Button
+                    variant={"outline"}
+                    className="border-dashed text-primary"
+                    size={"sm"}
+                    onClick={() => router.push("/address/add")}
+                  >
+                    <Plus /> Add Address
+                  </Button>
+                )}
                 <div>
                   <Label>Delivery Period</Label>
                   <Select
