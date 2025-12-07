@@ -40,7 +40,7 @@ import { IServiceProvider } from "@/models/ServiceProvider";
 import { HelpRequestService } from "@/services/help-request-service";
 import { SUCCESSMESSAGE } from "@/constants/response-messages";
 import TitleHeader from "@/components/common/title-header";
-import { ElseComponent } from "@/components/common/else-component";
+import { EmptyDataComponent } from "@/components/common/empty-data-component";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HelpRequestsPage() {
@@ -505,7 +505,7 @@ export default function HelpRequestsPage() {
                 <div className="text-center py-12">
                   <h3 className="font-medium text-gray-900 mb-2"></h3>
                   <p className="text-gray-600"></p>
-                  <ElseComponent
+                  <EmptyDataComponent
                     icon={<MessageCircle />}
                     description="Create a new help request to get started"
                     heading={"No help requests found"}

@@ -248,7 +248,7 @@ export function MenuItemDetail() {
             razorpayPaymentId: response.razorpay_payment_id,
             razorpaySignature: response.razorpay_signature,
           });
-          router.push("/track-orders");
+          router.push("/order-history");
         },
         prefill: {
           name: user.name,

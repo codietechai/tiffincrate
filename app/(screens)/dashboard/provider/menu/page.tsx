@@ -339,11 +339,11 @@ export default function ProviderMenuPage() {
                   : "Create your first menu to start offering your tiffin services"}
               </p>
               {!searchTerm && !categoryFilter && !statusFilter && (
-                <Button asChild>
-                  <Link href="/dashboard/provider/menu/new">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Your First Menu
-                  </Link>
+                <Button
+                  onClick={() => router.push("/dashboard/provider/menu/new")}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Your First Menu
                 </Button>
               )}
             </div>

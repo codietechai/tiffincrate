@@ -312,7 +312,7 @@ export default function MenuDrawerForm({
                 const isDisabled = isDayDisabled(d.key);
                 const images = dayImages[d.key] || [];
                 const existingItem = menuData?.menuItems?.find(
-                  (m:any) => m.day?.toLowerCase() === d.key
+                  (m: any) => m.day?.toLowerCase() === d.key
                 );
 
                 return (

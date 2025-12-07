@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth";
-import { TDecoded } from "@/types";
 
 type Role = "admin" | "provider" | "consumer";
 
