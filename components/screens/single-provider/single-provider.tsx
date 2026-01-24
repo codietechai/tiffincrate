@@ -32,7 +32,7 @@ const SingleProvider = ({ id }: { id: string }) => {
 
   const fetchProvider = async () => {
     try {
-      const res = await ProviderService.fetchProvider(id);
+      const res:any = await ProviderService.fetchProvider(id);
       setProvider(res.data);
     } catch (error) {
       console.log("error", error);

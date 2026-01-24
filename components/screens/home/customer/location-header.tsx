@@ -7,7 +7,7 @@ import React from "react";
 
 export default function LocationHeader({ isSticky }: { isSticky: boolean }) {
   const router = useRouter();
-  const { locationName, address } = useLocation();
+  const { city, address_line_1 } = useLocation();
 
   return (
     <div
@@ -19,12 +19,12 @@ export default function LocationHeader({ isSticky }: { isSticky: boolean }) {
         <div onClick={() => router.push("/address")}>
           <div className="flex gap-2 items-center">
             <NavigationIcon className="h-4 w-4 fill-primary text-primary" />
-            <span className="font-extrabold">{locationName}</span>
+            <span className="font-extrabold">{city}</span>
             <ChevronDown className="h-4 w-4" />
           </div>
 
           <div className="text-[#666] text-xs mt-1 max-w-xs truncate">
-            {address || "Fetching exact address..."}
+            {address_line_1 || "Fetching exact address..."}
           </div>
         </div>
 

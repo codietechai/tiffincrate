@@ -3,9 +3,9 @@ import type { NextRequest } from "next/server";
 
 const allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
 
-export function withCors(
-  handler: (req: NextRequest) => Promise<Response> | Response
-) {
+export function withCors<
+  T extends (req: NextRequest, ...args: any[]) => Promise<Response> | Response
+>(handler: T) {
   return async function (req: NextRequest) {
     const origin = req.headers.get("origin") || "";
     const isAllowed = allowedOrigins.includes(origin);
@@ -25,6 +25,7 @@ export function withCors(
       });
     }
 
+    // 👇 TS now allows handlers with extra args (like params)
     const response = await handler(req);
 
     Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -34,34 +35,3 @@ export function withCors(
     return response;
   };
 }
-
-// lib/cors.ts
-// import { NextRequest } from "next/server";
-
-// const allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
-
-// export function withCors(
-//   handler: (req: NextRequest, context?: any) => Promise<Response> | Response
-// ) {
-//   return async function (req: NextRequest, context?: any) {
-//     const origin = req.headers.get("origin") || "";
-//     const isAllowed = allowedOrigins.includes(origin);
-
-//     const response = await handler(req, context);
-
-//     if (!isAllowed) return response;
-
-//     // Add CORS headers
-//     response.headers.set("Access-Control-Allow-Origin", origin);
-//     response.headers.set(
-//       "Access-Control-Allow-Methods",
-//       "GET, POST, PUT, DELETE, OPTIONS"
-//     );
-//     response.headers.set(
-//       "Access-Control-Allow-Headers",
-//       "Content-Type, Authorization"
-//     );
-
-//     return response;
-//   };
-// }

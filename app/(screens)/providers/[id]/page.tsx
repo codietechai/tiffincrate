@@ -419,7 +419,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                        {Object.entries(menu?.weeklyItems).map(([day, item]) =>
+                        {Object.entries((menu as any)?.weeklyItems).map(([day, item]) =>
                           item ? (
                             <div
                               key={day}
@@ -427,7 +427,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                             >
                               <h4 className="capitalize font-medium">{day}</h4>
                               <p className="text-sm text-gray-600">
-                                {item.name}
+                                {(item as any).name}
                               </p>
                             </div>
                           ) : (

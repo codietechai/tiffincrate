@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
           message: SUCCESSMESSAGE.ORDERS_FETCH,
           success: true,
         },
-        { status: 200 }
+        { status: 200 },
       );
     } else if (role === "provider") {
       query.providerId = userId;
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
           message: SUCCESSMESSAGE.ORDERS_FETCH,
           success: true,
         },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
     console.error("Get orders error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
     if (role !== "consumer") {
       return NextResponse.json(
         { error: "Forbidden", success: false },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -202,13 +202,13 @@ export async function POST(request: NextRequest) {
       const isValidPayment = verifyRazorpayPayment(
         razorpayOrderId,
         razorpayPaymentId,
-        razorpaySignature
+        razorpaySignature,
       );
 
       if (!isValidPayment) {
         return NextResponse.json(
           { error: "Invalid payment signature" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -223,6 +223,11 @@ export async function POST(request: NextRequest) {
       newAddressId = address;
     } else {
       const original = await Address.findById(address);
+
+      if (!original) {
+        throw new Error("Address not found");
+      }
+
       const newAddress = await Address.create({
         ...original.toObject(),
         _id: undefined,
@@ -250,7 +255,7 @@ export async function POST(request: NextRequest) {
     await order.save();
     await User.updateOne(
       { _id: new mongoose.Types.ObjectId(userId as string) },
-      { $inc: { wallet_amount: totalAmount } }
+      { $inc: { wallet_amount: totalAmount } },
     );
     await createDeliveryOrders(order._id, deliveryInfo);
     const providerDetails = await ServiceProvider.findOne({
@@ -309,7 +314,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, data: order, message: SUCCESSMESSAGE.ORDER_COMPLETE },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Create order error:", error);

@@ -9,9 +9,7 @@ interface LocationResult {
   latitude: number | null;
   longitude: number | null;
   loading: boolean;
-  error: string | null;
-
-  
+  error: string | null; 
 }
 
 export function useLocation(): LocationResult {

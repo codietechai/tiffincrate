@@ -54,7 +54,7 @@ interface APIOrder {
     items?: Array<{ name: string; quantity: number }>;
   };
   consumer?: Array<{ name: string }>;
-  menu?: MenuInfo[];
+  menu?: any[];
   menuitems?: MenuItem[];
 }
 
@@ -62,8 +62,8 @@ interface Order {
   id: string;
   orderNumber: string;
   customer: string;
-  items: OrderItem[];
-  menu?: MenuInfo[];
+  items: any[];
+  menu?: any[];
   menuitems?: MenuItem[];
   deliverySlot: string;
   status: "confirmed" | "ready" | "assigned" | "out_for_delivery" | "delivered";

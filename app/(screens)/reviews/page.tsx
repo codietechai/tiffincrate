@@ -159,7 +159,7 @@ export default function ReviewsPage() {
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search reviews..."
-              value={filters.search}
+              value={(filters as any).search}
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, search: e.target.value }))
               }
@@ -232,7 +232,6 @@ export default function ReviewsPage() {
             variant="outline"
             onClick={() =>
               setFilters({
-                search: "",
                 provider: "all",
                 rating: "all",
                 sort: "newest",
@@ -282,7 +281,7 @@ export default function ReviewsPage() {
                   {/* Avatar */}
                   <img
                     src={
-                      review.consumerId?.avatar ||
+                      (review as any).consumerId?.avatar ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
                         review.consumerId?.name || "User"
                       )}`
@@ -319,7 +318,7 @@ export default function ReviewsPage() {
                       {review.comment}
                     </p>
 
-                    {review.comment.length > 120 && (
+                    {(review.comment?.length ?? 0) > 120 && (
                       <button
                         className="text-blue-600 text-sm mt-1"
                         onClick={() => toggleExpand(review._id)}
