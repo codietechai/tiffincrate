@@ -4,9 +4,11 @@ import React from "react";
 
 const layout = ({ children }: { children: React.ReactElement }) => {
   return (
-    <div>
-      {children}
-      <Footer />
+    <div className="min-h-screen flex justify-center">
+      <div className="w-full max-w-[900px] mx-auto relative">
+        {children}
+        <Footer />
+      </div>
     </div>
   );
 };

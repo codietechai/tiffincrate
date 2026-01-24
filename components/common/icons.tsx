@@ -11,7 +11,7 @@ export const CheifIcon = ({
     viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className="fill-black"
+    className="fill-gray-300"
   >
     <circle cx="10.5" cy="16.5" r="0.5" />
     <circle cx="10.5" cy="19.5" r="0.5" />

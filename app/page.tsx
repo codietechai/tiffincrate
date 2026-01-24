@@ -1,332 +1,239 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Navbar from "@/components/layout/Navbar";
-import { ChefHat, Clock, MapPin, Star, Users, TrendingUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ChefHat, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { AuthService } from "@/services/auth-service";
 
-interface ServiceProvider {
-  _id: string;
-  businessName: string;
-  description: string;
-  cuisine: string[];
-  deliveryAreas: string[];
-  rating: number;
-  totalOrders: number;
-  isVerified: boolean;
-  userId: {
-    name: string;
-  };
-}
+type LoginFormValues = {
+  email: string;
+  password: string;
+};
 
-export default function HomePage() {
-  const [providers, setProviders] = useState<ServiceProvider[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+export default function LoginPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>();
+
+  const [serverError, setServerError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    checkAuth();
-    fetchProviders();
-  }, []);
+  const onSubmit: SubmitHandler<LoginFormValues> = async (payload) => {
+    setServerError("");
+    setLoading(true);
 
-  const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth/me");
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.data);
-
-        // Redirect to appropriate dashboard if already logged in
-        if (data.user.role === "admin") {
-          router.push("/dashboard/admin");
-        } else if (data.user.role === "provider") {
-          router.push("/dashboard/provider");
-        }
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
-    }
-  };
-
-  const fetchProviders = async () => {
-    try {
-      const response = await fetch("/api/providers?limit=6");
-      if (response.ok) {
-        const data = await response.json();
-        setProviders(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching providers:", error);
+      const { user } = await AuthService.signin(payload);
+      router.push("/home");
+    } catch (err: any) {
+      setServerError(err.message || "Login failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <section className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-semibold mb-6">
-              Fresh, Home-Cooked
-              <br />
-              <span className="text-yellow-300">Tiffin Services</span>
-            </h1>
-            <p className="text-xl md:text-xl mb-4 text-blue-100">
-              Connect with local tiffin providers and enjoy delicious, healthy
-              meals delivered to your doorstep
-            </p>
-            {!user && (
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/auth/register">
-                  <Button
-                    size="lg"
-                    className="bg-white text-blue-600 hover:bg-gray-100"
-                  >
-                    Get Started
-                  </Button>
-                </Link>
-                <Link href="/auth/login">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="text-white border-white hover:bg-white/10"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-semibold text-gray-900 mb-4">
-              Why Choose TiffinCrate?
-            </h2>
-            <p className="text-xl text-gray-600">
-              Experience the best of home-cooked meals with our platform
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ChefHat className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Quality Food</h3>
-              <p className="text-gray-600">
-                Fresh, home-cooked meals prepared by verified local tiffin
-                providers
-              </p>
-            </div>
-
-            <div className="text-center p-6">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Timely Delivery</h3>
-              <p className="text-gray-600">
-                Reliable delivery schedules that fit your daily routine
-              </p>
-            </div>
-
-            <div className="text-center p-6">
-              <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Trusted Network</h3>
-              <p className="text-gray-600">
-                Verified providers with ratings and reviews from real customers
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 shadow-xl rounded-lg overflow-hidden">
+        <div className="flex flex-col justify-center items-center md:items-start p-8 md:p-12 bg-gradient-to-tr from-red-500 to-red-400 text-white">
+          <div className="flex items-center gap-3 mb-4">
+            <ChefHat className="h-10 w-10 text-white/95" />
+            <div>
+              <h2 className="text-xl md:text-3xl font-extrabold">
+                TiffinCrate
+              </h2>
+              <p className="text-xs md:text-sm opacity-90">
+                Delicious meals delivered daily
               </p>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Featured Providers Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-semibold text-gray-900 mb-4">
-              Featured Tiffin Providers
-            </h2>
-            <p className="text-xl text-gray-600">
-              Discover popular providers in your area
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="h-3 bg-gray-200 rounded"></div>
-                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* {providers.map((provider) => (
-                <Card
-                  key={provider._id}
-                  className="hover:shadow-lg transition-shadow"
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          {provider.businessName}
-                          {provider.isVerified && (
-                            <Badge variant="default" className="text-xs">
-                              Verified
-                            </Badge>
-                          )}
-                        </CardTitle>
-                        <CardDescription>
-                          by {provider?.userId?.name}
-                        </CardDescription>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium">
-                          {provider.rating.toFixed(1)}
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {provider.description}
-                    </p>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <ChefHat className="h-4 w-4 text-gray-500" />
-                        <div className="flex flex-wrap gap-1">
-                          {provider.cuisine.slice(0, 3).map((c, i) => (
-                            <Badge
-                              key={i}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {c}
-                            </Badge>
-                          ))}
-                          {provider.cuisine.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{provider.cuisine.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {provider.deliveryAreas.slice(0, 2).join(", ")}
-                          {provider.deliveryAreas.length > 2 &&
-                            ` +${provider.deliveryAreas.length - 2} more`}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {provider.totalOrders} orders completed
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      {user?.role === "consumer" ? (
-                        <Link href={`/providers/${provider._id}`}>
-                          <Button className="w-full">View Menu</Button>
-                        </Link>
-                      ) : (
-                        <Link href="/auth/register">
-                          <Button className="w-full">Sign Up to Order</Button>
-                        </Link>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))} */}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-blue-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-semibold mb-4">
-            Ready to Start Your Journey?
-          </h2>
-          <p className="text-xl mb-4 text-blue-100">
-            Join thousands of happy customers and providers on TiffinCrate
+          <h3 className="text-xl md:text-xl font-semibold mb-2 text-center md:text-left">
+            Welcome back
+          </h3>
+          <p className="md:max-w-xs text-sm mb-4 text-center md:text-left opacity-90">
+            Manage orders, menus and deliveries — all from your dashboard. Sign
+            in to continue.
           </p>
-          {!user && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/auth/register">
-                <Button
-                  size="lg"
-                  className="bg-white text-blue-600 hover:bg-gray-100"
-                >
-                  Join as Consumer
-                </Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="text-white border-white hover:bg-white/10"
-                >
-                  Become a Provider
-                </Button>
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center mb-4 md:mb-0">
-              <ChefHat className="h-8 w-8 text-blue-400" />
-              <span className="ml-2 text-xl font-semibold">TiffinCrate</span>
+          <ul className="space-y-3 mt-4 w-full md:w-auto">
+            <li className="flex items-center gap-3 justify-center md:justify-start">
+              <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center">
+                🍽️
+              </div>
+              <div>
+                <div className="text-sm font-medium">Fresh daily menus</div>
+                <div className="text-xs opacity-90">Curated by top chefs</div>
+              </div>
+            </li>
+            <li className="flex items-center gap-3 justify-center md:justify-start">
+              <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center">
+                🚚
+              </div>
+              <div>
+                <div className="text-sm font-medium">Fast delivery</div>
+                <div className="text-xs opacity-90">On-time, always</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        {/* Right form panel */}
+        <div className="bg-white p-8 md:p-12 flex flex-col justify-center">
+          <div className="max-w-md w-full mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <ChefHat className="h-10 w-10 text-red-500" />
+              <div>
+                <h1 className="text-xl font-semibold">
+                  Sign in to TiffinCrate
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Enter your account details below
+                </p>
+              </div>
             </div>
-            <div className="text-gray-400 text-sm">
-              © 2024 TiffinCrate. All rights reserved.
-            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {serverError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{serverError}</AlertDescription>
+                </Alert>
+              )}
+
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@company.com"
+                    className="pl-10"
+                    {...register("email", { required: "Email is required" })}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-red-500 text-sm">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Your password"
+                    className="pl-10 pr-10"
+                    {...register("password", {
+                      required: "Password is required",
+                    })}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-400"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-red-500 text-sm">
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <Link
+                    href="#"
+                    className="text-sm text-gray-600 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing in..." : "Sign in"}
+              </Button>
+              <div className="flex items-center gap-3 text-sm text-gray-400">
+                <span className="flex-1 h-px bg-gray-200" />
+                <span>or</span>
+                <span className="flex-1 h-px bg-gray-200" />
+              </div>
+              <div className="flex flex-row gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 flex items-center justify-center"
+                  aria-label="Sign in with Google"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 32 32"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M30.0014 16.3109C30.0014 15.1598 29.9061 14.3198 29.6998 13.4487H16.2871V18.6442H24.1601C24.0014 19.9354 23.1442 21.8798 21.2394 23.1864L21.2127 23.3604L25.4536 26.58L25.7474 26.6087C28.4458 24.1665 30.0014 20.5731 30.0014 16.3109Z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M16.2863 29.9998C20.1434 29.9998 23.3814 28.7553 25.7466 26.6086L21.2386 23.1863C20.0323 24.0108 18.4132 24.5863 16.2863 24.5863C12.5086 24.5863 9.30225 22.1441 8.15929 18.7686L7.99176 18.7825L3.58208 22.127L3.52441 22.2841C5.87359 26.8574 10.699 29.9998 16.2863 29.9998Z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M8.15964 18.769C7.85806 17.8979 7.68352 16.9645 7.68352 16.0001C7.68352 15.0356 7.85806 14.1023 8.14377 13.2312L8.13578 13.0456L3.67083 9.64746L3.52475 9.71556C2.55654 11.6134 2.00098 13.7445 2.00098 16.0001C2.00098 18.2556 2.55654 20.3867 3.52475 22.2845L8.15964 18.769Z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M16.2864 7.4133C18.9689 7.4133 20.7784 8.54885 21.8102 9.4978L25.8419 5.64C23.3658 3.38445 20.1435 2 16.2864 2C10.699 2 5.8736 5.1422 3.52441 9.71549L8.14345 13.2311C9.30229 9.85555 12.5086 7.4133 16.2864 7.4133Z"
+                      fill="#EB4335"
+                    />
+                  </svg>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 flex items-center justify-center"
+                  aria-label="Sign in with Apple"
+                >
+                  <svg
+                    fill="#000000"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" />
+                  </svg>
+                </Button>
+              </div>
+
+              <div className="text-center text-sm text-gray-600 mt-2">
+                New to TiffinCrate?{" "}
+                <Link
+                  href="/auth/register"
+                  className="text-red-500 font-medium"
+                >
+                  Create an account
+                </Link>
+              </div>
+            </form>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import {
   Bike,
   UtensilsCrossed,
   BarChart3,
-  SettingsIcon,
   Heart,
   User,
   Home,
@@ -12,9 +11,10 @@ import {
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 import { CheifIcon } from "./icons";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 const Footer = () => {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
 
@@ -31,73 +31,21 @@ const Footer = () => {
   }, []);
 
   const options = [
-    {
-      id: "home",
-      label: "Home",
-      icon: <Home className="h-5 w-5" />,
-      href: "/home",
-    },
-    {
-      id: "menu",
-      label: "Menu",
-      icon: <UtensilsCrossed className="h-5 w-5" />,
-      href: "/menu",
-    },
-    {
-      id: "browse-providers",
-      label: "Providers",
-      icon: <CheifIcon />,
-      href: "/browse-providers",
-    },
-    {
-      id: "orders",
-      label: "Orders",
-      icon: <ShoppingBag className="h-5 w-5" />,
-      href: "/order-history",
-    },
-    {
-      id: "delivery",
-      label: "Delivery",
-      icon: <Bike className="h-5 w-5" />,
-      href: "/delivery-info",
-    },
-    {
-      id: "analytics",
-      label: "Analytics",
-      icon: <BarChart3 className="h-5 w-5" />,
-      href: "/analytics",
-    },
-    {
-      id: "favorites",
-      label: "Favorites",
-      icon: <Heart className="h-5 w-5" />,
-      href: "/favorites",
-    },
-    {
-      id: "profile",
-      label: "Profile",
-      icon: <User className="h-5 w-5" />,
-      href: "/profile",
-    },
+    { id: "home", label: "Home", icon: <Home />, href: "/home" },
+    { id: "menu", label: "Menu", icon: <UtensilsCrossed />, href: "/menu" },
+    { id: "browse-providers", label: "Providers", icon: <CheifIcon />, href: "/browse-providers" },
+    { id: "orders", label: "Orders", icon: <ShoppingBag />, href: "/order-history" },
+    { id: "delivery", label: "Delivery", icon: <Bike />, href: "/delivery-info" },
+    { id: "analytics", label: "Analytics", icon: <BarChart3 />, href: "/analytics" },
+    { id: "favorites", label: "Favorites", icon: <Heart />, href: "/favorites" },
+    { id: "profile", label: "Profile", icon: <User />, href: "/profile" },
   ];
 
-  const consumer = [
-    "profile",
-    "orders",
-    "browse-providers",
-    "favorites",
-    "home",
-  ];
-  const provider = [
-    "profile",
-    "orders",
-    "analytics",
-    "delivery",
-    "menu",
-    "home",
-  ];
+  const consumer = ["profile", "orders", "browse-providers", "favorites", "home"];
+  const provider = ["profile", "orders", "analytics", "delivery", "menu", "home"];
 
-  const router = useRouter();
+  // Temporary role simulation (replace with API auth later)
+  const role = "consumer" as const;
   const [user, setUser] = useState<any>(null);
   useEffect(() => {
     checkAuth();
@@ -142,28 +90,32 @@ const Footer = () => {
       }
     }
   }, [user]);
-
   return (
     <nav
-      className={`fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-md border-t border-gray-200 shadow-md transition-transform duration-300 ${
-        isVisible ? "translate-y-0" : "translate-y-full"
+      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-50 transition-transform duration-300 ${
+        isVisible ? "translate-y-0" : "translate-y-24"
       }`}
     >
-      <div className="max-w-[1100px] mx-auto flex justify-between px-6 py-3">
-        {actualOptions.map((item) => (
-          <Link
-            href={item.href}
-            key={item.label}
-            className={`flex flex-col items-center text-sm ${
-              item.href === window.location.pathname
-                ? "text-orange-600"
-                : "text-gray-700 hover:text-black"
-            } transition-colors`}
-          >
-            {item.icon}
-            <span className="text-xs mt-1">{item.label}</span>
-          </Link>
-        ))}
+      <div className="bg-white rounded-full shadow-lg px-4 py-2 flex gap-2 items-center">
+        {actualOptions.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.id}
+              href={item.href}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                isActive
+                  ? "bg-orange-600 text-white"
+                  : "text-gray-300 hover:text-white"
+              }`}
+            >
+              <span className="w-5 h-5">{item.icon}</span>
+              {isActive && (
+                <span className="text-sm font-medium">{item.label}</span>
+              )}
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

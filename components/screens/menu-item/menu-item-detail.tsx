@@ -64,8 +64,8 @@ interface MenuItemDetailProps {
   onAddToCart: (item: any) => void;
 }
 
-const getValidDays = (weeklyItems: IWeeklyMenu) => {
-  return Object.keys(weeklyItems) as (keyof IWeeklyMenu)[];
+const getValidDaysFromMenuItems = (menuItems: any[]) => {
+  return menuItems.map((item) => item.day.toLowerCase());
 };
 
 const dayMap: Record<string, number> = {
@@ -155,33 +155,6 @@ export function MenuItemDetail() {
     document.body.appendChild(script);
   }, []);
 
-  const getNextWeekdayDates = (days: string[], countWeeks = 1) => {
-    const today = new Date();
-    const dates: Date[] = [];
-
-    const dayMap: Record<string, number> = {
-      sunday: 0,
-      monday: 1,
-      tuesday: 2,
-      wednesday: 3,
-      thursday: 4,
-      friday: 5,
-      saturday: 6,
-    };
-
-    for (let i = 0; i < countWeeks; i++) {
-      days.forEach((day) => {
-        const targetDay = dayMap[day];
-        const diff = ((targetDay + 7 - today.getDay()) % 7) + i * 7;
-        const nextDate = new Date(today);
-        nextDate.setDate(today.getDate() + diff);
-        dates.push(nextDate);
-      });
-    }
-
-    return dates;
-  };
-
   if (loading) return <MenuItemDetailSkeleton />;
   if (error) return <p className="p-6 text-red-600">{error}</p>;
   if (!menu) return <p className="p-6">No menu found.</p>;
@@ -202,13 +175,22 @@ export function MenuItemDetail() {
       if (orderData.deliveryPeriod === "month") {
         totalDays = 30;
         deliveryInfo.startDate = new Date().toISOString().split("T")[0];
-      } else if (orderData.deliveryPeriod === "specific_days") {
-        totalDays = selectedDays.length * 4;
+      }
+      if (orderData.deliveryPeriod === "specific_days") {
+        const startDate = new Date();
+        const endDate = getNextMonthSameDate();
+
+        totalDays = selectedDays.reduce((sum, day) => {
+          return sum + countDayOccurrencesBetween(day, startDate, endDate);
+        }, 0);
+
         deliveryInfo.days = selectedDays;
+        deliveryInfo.startDate = startDate.toISOString().split("T")[0];
+        deliveryInfo.endDate = endDate.toISOString().split("T")[0];
       } else if (orderData.deliveryPeriod === "custom_dates") {
         totalDays = multiDates.length;
         deliveryInfo.dates = multiDates.map((date) =>
-          date.toLocaleDateString("en-CA")
+          date.toLocaleDateString("en-CA"),
         );
       }
 
@@ -230,6 +212,11 @@ export function MenuItemDetail() {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: razorpayOrder.order.amount,
         currency: razorpayOrder.order.currency,
+        description: `${menu.name} - ${totalDays} meals × ₹${menu.basePrice}`,
+        notes: {
+          totalMeals: totalDays,
+          pricePerMeal: menu.basePrice,
+        },
         name: "TiffinCrate",
         order_id: razorpayOrder.order.id,
         handler: async (response: any) => {
@@ -269,6 +256,41 @@ export function MenuItemDetail() {
   const onEdit = (addressId: string) =>
     router.push(`/address/edit/${addressId}?choose-another=true`);
 
+  const validDays = getValidDaysFromMenuItems(menu.menuItems);
+
+  const getNextMonthSameDate = () => {
+    const today = new Date();
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(today.getMonth() + 1);
+
+    if (nextMonth.getDate() !== today.getDate()) {
+      nextMonth.setDate(0);
+    }
+
+    return nextMonth;
+  };
+
+  const countDayOccurrencesBetween = (
+    day: string,
+    startDate: Date,
+    endDate: Date,
+  ) => {
+    const targetDay = dayMap[day.toLowerCase()];
+    let count = 0;
+
+    const current = new Date(startDate);
+    current.setHours(0, 0, 0, 0);
+
+    while (current <= endDate) {
+      if (current.getDay() === targetDay) {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    return count;
+  };
+
   return (
     <div className="min-h-screen bg-[#fafafa] pb-28">
       <BackHeader />
@@ -305,14 +327,29 @@ export function MenuItemDetail() {
             <Separator />
 
             <Accordion type="single" collapsible className="space-y-2">
-              {menu.menuItems.map((item: any, index: any) => (
-                <AccordionItem key={index} value={index}>
+              {menu.menuItems.map((item: any, index: number) => (
+                <AccordionItem key={item._id} value={item._id}>
                   <AccordionTrigger className="capitalize font-medium">
                     {item.day}
                   </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="font-medium">{item?.name}</p>
-                    <p className="text-gray-600">{item?.description}</p>
+                  <AccordionContent className="space-y-2">
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-gray-600">{item.description}</p>
+
+                    <div className="flex gap-2 mt-2">
+                      {(item.images || item.imageUrl || []).map(
+                        (img: string, idx: number) => (
+                          <Image
+                            key={idx}
+                            src={img}
+                            alt={item.name}
+                            width={80}
+                            height={80}
+                            className="rounded object-cover"
+                          />
+                        ),
+                      )}
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               ))}
@@ -340,14 +377,16 @@ export function MenuItemDetail() {
                   <Label>Delivery Period</Label>
                   <Select
                     value={orderData.deliveryPeriod}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
                       setOrderData((prev) => ({
                         ...prev,
                         deliveryPeriod: value as any,
                         dates: "",
                         recurring: undefined,
-                      }))
-                    }
+                      }));
+                      setSelectedDays([]);
+                      setMultiDates([]);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select period" />
@@ -366,7 +405,7 @@ export function MenuItemDetail() {
                   <div>
                     <Label>Select Days</Label>
                     <div className="grid grid-cols-4 gap-2 mt-2">
-                      {getValidDays(menu.menuItems).map((day) => (
+                      {getValidDaysFromMenuItems(menu.menuItems).map((day) => (
                         <Button
                           key={day}
                           variant={
@@ -410,17 +449,15 @@ export function MenuItemDetail() {
                             }));
                           }}
                           disabled={(date) => {
-                            const day = date.getDay();
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
-
-                            // Valid days from your weeklyItems logic
-                            const validDays = getValidDays(menu.menuItems).map(
-                              (d) => dayMap[d]
+                            const day = date.getDay();
+                            const allowedDayIndexes = validDays.map(
+                              (d) => dayMap[d],
                             );
-
-                            // Disable if it's a past date OR not a valid day
-                            return date < today || !validDays.includes(day);
+                            return (
+                              date < today || !allowedDayIndexes.includes(day)
+                            );
                           }}
                         />
                       </PopoverContent>

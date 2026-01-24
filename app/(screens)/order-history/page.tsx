@@ -40,6 +40,8 @@ export default function OrderHistoryPage() {
   const [dateFilter, setDateFilter] = useState("");
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [hoverRatings, setHoverRatings] = useState<Record<string, number>>({});
 
   useEffect(() => {
     checkAuth();
@@ -92,7 +94,7 @@ export default function OrderHistoryPage() {
       filtered = filtered.filter((order) =>
         order.menuId.providerId.businessName
           .toLowerCase()
-          .includes(searchTerm.toLowerCase())
+          .includes(searchTerm.toLowerCase()),
       );
     }
 
@@ -122,14 +124,14 @@ export default function OrderHistoryPage() {
       }
 
       filtered = filtered.filter(
-        (order) => new Date(order.createdAt) >= startDate
+        (order) => new Date(order.createdAt) >= startDate,
       );
     }
 
     // Sort by date (newest first)
     filtered.sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     setFilteredOrders(filtered);
@@ -182,13 +184,13 @@ export default function OrderHistoryPage() {
   const getOrderStats = () => {
     const total = filteredOrders.length;
     const delivered = filteredOrders.filter(
-      (order) => order.status === "delivered"
+      (order) => order.status === "delivered",
     ).length;
     const cancelled = filteredOrders.filter(
-      (order) => order.status === "cancelled"
+      (order) => order.status === "cancelled",
     ).length;
     const pending = filteredOrders.filter(
-      (order) => !["delivered", "cancelled"].includes(order.status)
+      (order) => !["delivered", "cancelled"].includes(order.status),
     ).length;
 
     return { total, delivered, cancelled, pending };
@@ -231,10 +233,10 @@ export default function OrderHistoryPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="  px-4 py-6">
         <h1 className="text-2xl md:text-3xl font-semibold mb-4">Your Orders</h1>
 
-        <div className="relative mb-6 max-w-lg mx-auto md:mx-0">
+        <div className="relative mb-6 max-w-lg md:mx-0">
           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search by restaurant or dish"
@@ -244,7 +246,7 @@ export default function OrderHistoryPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order) => (
               <Card key={order._id}>
@@ -302,9 +304,51 @@ export default function OrderHistoryPage() {
 
                   <div className="mt-3 flex justify-between items-center border-t pt-2">
                     <div className="flex text-yellow-400 text-sm gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 text-gray-300" />
-                      ))}
+                      <div className="flex gap-1">
+                        {[...Array(5)].map((_, i) => {
+                          const starValue = i + 1;
+                          const currentRating = ratings[order._id] || 0;
+                          const currentHover = hoverRatings[order._id] || 0;
+
+                          return (
+                            <Star
+                              key={i}
+                              className={`h-5 w-5 cursor-pointer transition-colors ${
+                                starValue <= (currentHover || currentRating)
+                                  ? "text-yellow-400 fill-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                              onMouseEnter={(e) => {
+                                e.stopPropagation();
+                                setHoverRatings((prev) => ({
+                                  ...prev,
+                                  [order._id]: starValue,
+                                }));
+                              }}
+                              onMouseLeave={(e) => {
+                                e.stopPropagation();
+                                setHoverRatings((prev) => ({
+                                  ...prev,
+                                  [order._id]: 0,
+                                }));
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRatings((prev) => ({
+                                  ...prev,
+                                  [order._id]: starValue,
+                                }));
+                                console.log(
+                                  "⭐ Selected Rating:",
+                                  starValue,
+                                  "for Order ID:",
+                                  order._id,
+                                );
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {order.status === "delivered" ? (
