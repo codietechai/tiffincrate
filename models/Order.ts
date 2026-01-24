@@ -41,18 +41,18 @@ export interface IOrder extends Document {
 }
 
 // Delivery Info Sub-Schema
-const deliveryInfoSchema = new Schema<IDeliveryInfo>(
+const deliveryInfoSchema = new Schema(
   {
     type: {
       type: String,
       enum: ["month", "specific_days", "custom_dates"],
       required: true,
     },
-    startDate: { type: String }, // for monthly
-    days: [String], // for specific_days
-    dates: [String], // for custom_dates (ISO date strings)
+    startDate: { type: String },
+    days: [{ type: String }],
+    dates: [{ type: String }],
   },
-  { _id: false }
+  { _id: false },
 );
 
 // Order Schema
@@ -82,7 +82,7 @@ const orderSchema = new Schema<IOrder>(
       default: "pending",
     },
 
-    address: { type: Schema.Types.ObjectId, ref: "Address", require: true },
+    address: { type: Schema.Types.ObjectId, ref: "Address", required: true },
 
     timeSlot: {
       type: String,
@@ -105,7 +105,7 @@ const orderSchema = new Schema<IOrder>(
     paymentMethod: { type: String, required: true },
     notes: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.models.Order ||
