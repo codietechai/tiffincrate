@@ -51,6 +51,23 @@ const Footer = () => {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY;
+
+    const isScrollingDown = currentScrollY > lastScrollY.current;
+
+    // show only when scrolling down OR near top
+    setIsVisible(isScrollingDown || currentScrollY < 100);
+
+    lastScrollY.current = currentScrollY;
+  };
+
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
+
+
   const checkAuth = async () => {
     try {
       const response = await fetch("/api/auth/me");
