@@ -30,7 +30,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NotificationService } from "@/services/notification-service";
 import TitleHeader from "@/components/common/title-header";
-import { ElseComponent } from "@/components/common/else-component";
+import { EmptyDataComponent } from "@/components/common/empty-data-component";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TNotification {
@@ -318,7 +318,7 @@ export default function NotificationsPage() {
                 </Card>
               ))
             ) : (
-              <ElseComponent
+              <EmptyDataComponent
                 icon={<Bell />}
                 description="You're all caught up! Check back later for updates."
                 heading={

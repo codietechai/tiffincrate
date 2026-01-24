@@ -6,7 +6,7 @@ import { SUCCESSMESSAGE } from "@/constants/response-messages";
 import { withCors } from "@/lib/cors";
 import ServiceProvider from "@/models/ServiceProvider";
 
-export async function handler(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
     const arole = request.headers.get("x-user-role");

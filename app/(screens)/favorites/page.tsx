@@ -16,7 +16,7 @@ import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import { Heart, Star, ChefHat, MapPin, TrendingUp, Trash2 } from "lucide-react";
 import TitleHeader from "@/components/common/title-header";
-import { ElseComponent } from "@/components/common/else-component";
+import { EmptyDataComponent } from "@/components/common/empty-data-component";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ServiceProvider {
@@ -208,7 +208,7 @@ export default function FavoritesPage() {
                 ))}
           </div>
         ) : (
-          <ElseComponent
+          <EmptyDataComponent
             button={
               <Button asChild>
                 <Link href="/browse-providers">Browse Providers</Link>

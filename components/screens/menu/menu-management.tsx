@@ -354,15 +354,6 @@ export function MenuManagement() {
                     "Try adjusting your filters"
                   : "Create your first menu to start offering your tiffin services"}
               </p>
-              {!queryData.search && (
-                //  !categoryFilter && !statusFilter &&
-                <Button asChild>
-                  <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Your First Menu
-                  </>
-                </Button>
-              )}
             </div>
           )}
         </div>

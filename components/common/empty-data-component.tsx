@@ -1,7 +1,6 @@
-import { Bell } from "lucide-react";
 import React from "react";
 
-export const ElseComponent = ({
+export const EmptyDataComponent = ({
   icon,
   heading,
   description,
