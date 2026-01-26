@@ -46,6 +46,9 @@ export default function RouteMap() {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: ["places"],
   });
+  const [driverLocation, setDriverLocation] =
+    useState<google.maps.LatLngLiteral | null>(null);
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [navigationStarted, setNavigationStarted] = useState(false);
   const [orders, setOrders] = useState<TOrderDelivery[]>([]);
@@ -105,13 +108,6 @@ export default function RouteMap() {
         window.clearInterval(driverIntervalRef.current);
     };
   }, []);
-
-  // Compute coordinates array from orders (in original order)
-  const pathCoords = useMemo(() => {
-    return orders
-      .map((o) => toLatLng(o.address.latitude, o.address.longitude))
-      .filter((x): x is google.maps.LatLngLiteral => x !== null);
-  }, [orders]);
 
   // Map onLoad handler to capture map instance
   const handleMapLoad = (map: google.maps.Map) => {
@@ -192,10 +188,6 @@ export default function RouteMap() {
         })) || [];
 
       createAndAnimatePolyline(overviewPath);
-
-      if (navigationStarted) {
-        startLiveDriverTracking();
-      }
     } else {
       console.warn("Directions failed", status);
     }
@@ -205,26 +197,22 @@ export default function RouteMap() {
   const createAndAnimatePolyline = (path: google.maps.LatLngLiteral[]) => {
     if (!mapRef.current || path.length === 0) return;
 
-    // Clear existing polyline and driver marker and intervals
+    // 🔹 Clear ONLY the existing polyline (never touch driver marker here)
     if (polylineRef.current) {
       polylineRef.current.setMap(null);
       polylineRef.current = null;
     }
-    if (driverMarkerRef.current) {
-      driverMarkerRef.current.setMap(null);
-      driverMarkerRef.current = null;
-    }
+
+    // 🔹 Stop only polyline animation
     if (animationIntervalRef.current) {
       window.clearInterval(animationIntervalRef.current);
       animationIntervalRef.current = null;
     }
-    if (driverIntervalRef.current) {
-      window.clearInterval(driverIntervalRef.current);
-      driverIntervalRef.current = null;
-    }
+
+    // 🔹 Reset animated path
     animatedPathRef.current = [];
 
-    // Create polyline that will be drawn progressively
+    // 🔹 Create fresh polyline
     polylineRef.current = new google.maps.Polyline({
       path: [],
       strokeColor: "#ff4d4f",
@@ -234,26 +222,31 @@ export default function RouteMap() {
       zIndex: 5,
     });
 
-    // Animate draw: add one point per tick
+    // 🔹 Animate polyline drawing
     let idx = 0;
     const tickMs = 40;
+
     animationIntervalRef.current = window.setInterval(() => {
       if (!polylineRef.current) return;
+
       if (idx >= path.length) {
-        // done drawing
-        if (animationIntervalRef.current) {
-          window.clearInterval(animationIntervalRef.current);
-          animationIntervalRef.current = null;
-        }
-        // start driver after polyline drawn
-        // startDriverSimulation(path);
+        window.clearInterval(animationIntervalRef.current!);
+        animationIntervalRef.current = null;
         return;
       }
+
       animatedPathRef.current.push(path[idx]);
       polylineRef.current.setPath(animatedPathRef.current);
       idx++;
     }, tickMs);
   };
+
+  useEffect(() => {
+    if (!navigationStarted) return;
+
+    directionsCalculatedRef.current = false;
+    setDirectionsResult(null);
+  }, [navigationStarted]);
 
   // Simulate driver moving along the full path (looping) // Testing
   // const startDriverSimulation = (path: google.maps.LatLngLiteral[]) => {
@@ -294,6 +287,7 @@ export default function RouteMap() {
       (position) => {
         const { latitude, longitude } = position.coords;
         const livePos = { lat: latitude, lng: longitude };
+        setDriverLocation(livePos);
 
         if (!driverMarkerRef.current) {
           driverMarkerRef.current = new google.maps.Marker({
@@ -381,6 +375,24 @@ export default function RouteMap() {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   };
 
+  const sortOrdersByDistance = (
+    from: google.maps.LatLngLiteral,
+    orders: TOrderDelivery[],
+  ) => {
+    return [...orders]
+      .map((order) => ({
+        order,
+        distance: getDistanceInMeters(
+          from.lat,
+          from.lng,
+          order.address.latitude as number,
+          order.address.longitude as number,
+        ),
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .map((x) => x.order);
+  };
+
   const isDriverNearCustomer = useMemo(() => {
     if (!selectedOrder || !driverMarkerRef.current) return false;
 
@@ -432,6 +444,23 @@ export default function RouteMap() {
     }
   };
 
+  // Compute coordinates array from orders (in original order)
+  const pathCoords = useMemo(() => {
+    return orders
+      .map((o) => toLatLng(o.address.latitude, o.address.longitude))
+      .filter((x): x is google.maps.LatLngLiteral => x !== null);
+  }, [orders]);
+
+  const routingPoints = useMemo(() => {
+    if (!driverLocation || !orders.length) return [];
+
+    const sortedOrders = sortOrdersByDistance(driverLocation, orders);
+
+    return sortedOrders
+      .map((o) => toLatLng(o.address.latitude, o.address.longitude))
+      .filter((p): p is google.maps.LatLngLiteral => p !== null);
+  }, [driverLocation, orders]);
+
   if (!isLoaded) {
     return <div className="p-4">Loading map...</div>;
   }
@@ -456,6 +485,9 @@ export default function RouteMap() {
             setNavigationStarted(true);
             directionsCalculatedRef.current = false;
             setDirectionsResult(null);
+
+            // 🔥 START GPS IMMEDIATELY
+            startLiveDriverTracking();
           }}
         >
           {navigationStarted
@@ -580,17 +612,19 @@ export default function RouteMap() {
         >
           {/* If we have at least 2 points, request directions */}
           {navigationStarted &&
-            pathCoords.length >= 2 &&
+            driverLocation &&
+            routingPoints.length >= 1 &&
             !directionsCalculatedRef.current && (
               <DirectionsService
                 options={{
-                  origin: pathCoords[0],
-                  destination: pathCoords[pathCoords.length - 1],
-                  waypoints: pathCoords.slice(1, -1).map((p) => ({
+                  origin: driverLocation, // ✅ DRIVER START
+                  destination: routingPoints[routingPoints.length - 1],
+                  waypoints: routingPoints.slice(0, -1).map((p) => ({
                     location: p,
                     stopover: true,
                   })),
                   travelMode: google.maps.TravelMode.DRIVING,
+                  optimizeWaypoints: false,
                 }}
                 callback={(res, status) => {
                   if (status === "OK" && res) {
