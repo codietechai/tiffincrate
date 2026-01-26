@@ -3,18 +3,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   GoogleMap,
-  Marker,
   DirectionsService,
   DirectionsRenderer,
   useJsApiLoader,
 } from "@react-google-maps/api";
 import type { TOrderDelivery } from "@/types/order";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,6 +19,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { Menu, X } from "lucide-react";
 
 type Nullable<T> = T | null;
 
@@ -52,8 +46,8 @@ export default function RouteMap() {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: ["places"],
   });
-
-  // Orders state
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [navigationStarted, setNavigationStarted] = useState(false);
   const [orders, setOrders] = useState<TOrderDelivery[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
@@ -199,8 +193,9 @@ export default function RouteMap() {
 
       createAndAnimatePolyline(overviewPath);
 
-      // 🔥 START LIVE DRIVER TRACKING
-      startLiveDriverTracking();
+      if (navigationStarted) {
+        startLiveDriverTracking();
+      }
     } else {
       console.warn("Directions failed", status);
     }
@@ -399,7 +394,7 @@ export default function RouteMap() {
       selectedOrder.address.longitude as number,
     );
 
-    return distance <= 50; // ✅ 50 meters rule
+    return distance <= 50;
   }, [selectedOrder]);
 
   const updateOrderStatus = async (
@@ -448,9 +443,26 @@ export default function RouteMap() {
   }
 
   return (
-    <div className="flex h-screen w-full">
-      {/* Sidebar */}
-      <aside className="w-96 bg-white border-r p-4 space-y-4">
+    <div className="relative h-screen w-full overflow-hidden">
+      <aside
+        className={`absolute left-0 top-0 z-20 h-full w-96 bg-white border-r p-4 space-y-4
+    transition-transform duration-300 ease-in-out
+    ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        <Button
+          className="w-full mt-12"
+          disabled={navigationStarted}
+          onClick={() => {
+            setNavigationStarted(true);
+            directionsCalculatedRef.current = false;
+            setDirectionsResult(null);
+          }}
+        >
+          {navigationStarted
+            ? "Let's make it quick to earn more in less time"
+            : "Start Delivering orders now"}
+        </Button>
+
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Orders ({orders.length})</h3>
           <div>
@@ -546,7 +558,14 @@ export default function RouteMap() {
         </div>
       </aside>
 
-      <main className="flex-1 relative">
+      <main className="absolute inset-0">
+        <Button
+          size="icon"
+          className="absolute top-4 left-4 z-30 shadow-lg"
+          onClick={() => setSidebarOpen((prev) => !prev)}
+        >
+          {sidebarOpen ? <X /> : <Menu />}
+        </Button>
         <GoogleMap
           mapContainerStyle={MAP_CONTAINER_STYLE}
           center={pathCoords[0] || { lat: 0, lng: 0 }}
@@ -560,25 +579,27 @@ export default function RouteMap() {
           }}
         >
           {/* If we have at least 2 points, request directions */}
-          {pathCoords.length >= 2 && !directionsCalculatedRef.current && (
-            <DirectionsService
-              options={{
-                origin: pathCoords[0],
-                destination: pathCoords[pathCoords.length - 1],
-                waypoints: pathCoords.slice(1, -1).map((p) => ({
-                  location: p,
-                  stopover: true,
-                })),
-                travelMode: google.maps.TravelMode.DRIVING,
-              }}
-              callback={(res, status) => {
-                if (status === "OK" && res) {
-                  directionsCalculatedRef.current = true; // 🔒 LOCK IT
-                  handleDirectionsCallback(res, status);
-                }
-              }}
-            />
-          )}
+          {navigationStarted &&
+            pathCoords.length >= 2 &&
+            !directionsCalculatedRef.current && (
+              <DirectionsService
+                options={{
+                  origin: pathCoords[0],
+                  destination: pathCoords[pathCoords.length - 1],
+                  waypoints: pathCoords.slice(1, -1).map((p) => ({
+                    location: p,
+                    stopover: true,
+                  })),
+                  travelMode: google.maps.TravelMode.DRIVING,
+                }}
+                callback={(res, status) => {
+                  if (status === "OK" && res) {
+                    directionsCalculatedRef.current = true;
+                    handleDirectionsCallback(res, status);
+                  }
+                }}
+              />
+            )}
 
           {directionsResult && (
             <DirectionsRenderer
