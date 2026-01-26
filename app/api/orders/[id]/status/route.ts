@@ -4,7 +4,7 @@ import Order from "@/models/Order";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const userId = request.headers.get("x-user-id");
@@ -18,7 +18,6 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // Check permissions
     if (role === "provider" && order.providerId.toString() !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -35,7 +34,7 @@ export async function PATCH(
     console.error("Update order status error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

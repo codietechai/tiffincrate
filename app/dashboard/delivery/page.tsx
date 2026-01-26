@@ -105,14 +105,14 @@ export default function DeliveryDashboard() {
         },
         (error) => {
           console.error("Error getting location:", error);
-        }
+        },
       );
     }
   };
 
   const updateAssignmentStatus = async (
     assignmentId: string,
-    status: string
+    status: string,
   ) => {
     try {
       const response = await fetch(
@@ -126,7 +126,7 @@ export default function DeliveryDashboard() {
             status,
             location: currentLocation,
           }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -242,7 +242,7 @@ export default function DeliveryDashboard() {
               <div className="text-xl font-semibold text-purple-700">
                 {
                   assignments.filter(
-                    (a: any) => !["delivered", "failed"].includes(a.status)
+                    (a: any) => !["delivered", "failed"].includes(a.status),
                   ).length
                 }
               </div>

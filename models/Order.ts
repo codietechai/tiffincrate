@@ -27,6 +27,7 @@ export interface IOrder extends Document {
     | "confirmed"
     | "preparing"
     | "ready"
+    | "in_progress"
     | "delivered"
     | "cancelled";
   address: mongoose.Types.ObjectId;

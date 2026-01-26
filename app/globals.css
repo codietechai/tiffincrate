@@ -112,11 +112,21 @@
 /* helper to animate width with variable --chars and duration */
 .typewriter[data-anim="1"] {
   width: 0ch;
-  animation: typing 1.6s steps(var(--chars), end) 1 forwards,
+  animation:
+    typing 1.6s steps(var(--chars), end) 1 forwards,
     blink 1s step-end 1.6s infinite;
 }
 .typewriter[data-anim="2"] {
   width: 0ch;
-  animation: typing 1.6s steps(var(--chars), end) 1s forwards,
+  animation:
+    typing 1.6s steps(var(--chars), end) 1s forwards,
     blink 1s step-end 2.6s infinite;
+}
+
+.marker-label {
+  background: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
 }

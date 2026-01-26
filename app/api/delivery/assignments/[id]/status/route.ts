@@ -7,7 +7,7 @@ import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const role = request.headers.get("x-user-role");
@@ -25,11 +25,10 @@ export async function PATCH(
     if (!assignment) {
       return NextResponse.json(
         { error: "Assignment not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    // Update assignment status
     assignment.status = status;
 
     if (status === "picked_up") {
@@ -37,7 +36,6 @@ export async function PATCH(
     } else if (status === "delivered") {
       assignment.deliveryTime = new Date();
 
-      // Update order status
       await Order.findByIdAndUpdate(assignment.orderId._id, {
         status: "delivered",
       });
@@ -45,7 +43,6 @@ export async function PATCH(
 
     await assignment.save();
 
-    // Create notifications
     const statusMessages = {
       picked_up: "Your order has been picked up and is on the way!",
       in_transit: "Your order is in transit and will arrive soon!",
@@ -75,7 +72,7 @@ export async function PATCH(
     console.error("Update assignment status error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
