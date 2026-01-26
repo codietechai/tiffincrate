@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingPage } from "@/components/ui/loading";
 import TitleHeader from "@/components/common/title-header";
 import PersonalTab from "./personal-tab";
-import { Settings } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
@@ -42,6 +42,15 @@ export default function ProfilePage() {
     },
   });
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/auth/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   useEffect(() => {
     checkAuth();
     fetchProfile();
@@ -50,11 +59,8 @@ export default function ProfilePage() {
   const checkAuth = async () => {
     try {
       const response = await fetch("/api/auth/me");
-      if (!response.ok) {
-        router.push("/auth/login");
-      }
+      if (!response.ok) router.push("/auth/login");
     } catch (error) {
-      console.error("Auth check error:", error);
       router.push("/auth/login");
     }
   };
@@ -84,7 +90,6 @@ export default function ProfilePage() {
         });
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
       setError("Failed to load profile");
     } finally {
       setLoading(false);
@@ -114,23 +119,15 @@ export default function ProfilePage() {
         payload.serviceProvider = {
           businessName: data.businessName,
           description: data.description,
-          cuisine: data.cuisine
-            .split(",")
-            .map((c: string) => c.trim())
-            .filter(Boolean),
-          deliveryAreas: data.deliveryAreas
-            .split(",")
-            .map((a: string) => a.trim())
-            .filter(Boolean),
+          cuisine: data.cuisine.split(",").map((c: string) => c.trim()).filter(Boolean),
+          deliveryAreas: data.deliveryAreas.split(",").map((a: string) => a.trim()).filter(Boolean),
           operatingHours: data.operatingHours,
         };
       }
 
       const response = await fetch("/api/users/profile", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -143,7 +140,7 @@ export default function ProfilePage() {
       } else {
         setError(resData.error || "Failed to update profile");
       }
-    } catch (error) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setSaving(false);
@@ -153,47 +150,61 @@ export default function ProfilePage() {
   if (loading) return <LoadingPage />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <TitleHeader
-          title=" Profile Settings"
-          description="Manage your account information and preferences"
-          icon={<Settings />}
-        />
+    <div className="min-h-screen bg-gray-50 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <TitleHeader
+            title="Profile Settings"
+            description="Manage your account information and preferences"
+            icon={<Settings />}
+          />
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+            onClick={handleLogout}
+          >
+            <LogOut size={16} />
+            Logout
+          </Button>
+        </div>
 
-        <Tabs defaultValue="personal" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="personal">Personal Information</TabsTrigger>
-            {profile?.user.role === "provider" && (
-              <TabsTrigger value="business">Business Information</TabsTrigger>
-            )}
-          </TabsList>
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <Tabs defaultValue="personal" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="personal">Personal Information</TabsTrigger>
+              {profile?.user.role === "provider" && (
+                <TabsTrigger value="business">Business Information</TabsTrigger>
+              )}
+            </TabsList>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <TabsContent value="personal" className="space-y-6">
-              <PersonalTab
-                message={message}
-                error={error}
-                errors={errors}
-                register={register}
-                profile={profile}
-                watch={watch}
-              />
-            </TabsContent>
-
-            {profile?.user.role === "provider" && (
-              <TabsContent value="business" className="space-y-6">
-                {/* <BussinessTab errors={errors} register={register} /> */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <TabsContent value="personal" className="space-y-6">
+                <PersonalTab
+                  message={message}
+                  error={error}
+                  errors={errors}
+                  register={register}
+                  profile={profile}
+                  watch={watch}
+                />
               </TabsContent>
-            )}
 
-            <div className="flex justify-end">
-              <Button type="submit" disabled={saving}>
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </form>
-        </Tabs>
+              {profile?.user.role === "provider" && (
+                <TabsContent value="business" className="space-y-6">
+                  {/* Business Tab Here */}
+                </TabsContent>
+              )}
+
+              <div className="flex justify-end pt-4 border-t">
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </Tabs>
+        </div>
       </div>
     </div>
   );

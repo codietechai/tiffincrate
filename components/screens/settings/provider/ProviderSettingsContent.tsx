@@ -71,7 +71,7 @@ export function ProviderSettingsContent({ tab }: Props) {
                   <Input
                     id="email"
                     type="email"
-                    defaultValue="restaurant@swiggy.com"
+                    defaultValue="restaurant@Tiffincrate.com"
                   />
                 </div>
 
@@ -306,7 +306,7 @@ export function ProviderSettingsContent({ tab }: Props) {
                 },
                 {
                   title: "Online Payments",
-                  desc: "Accept online payments via Swiggy",
+                  desc: "Accept online payments via Tiffincrate",
                   checked: true,
                 },
                 {

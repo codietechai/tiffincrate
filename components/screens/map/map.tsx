@@ -85,7 +85,7 @@ export default function RouteMap() {
   const fetchOrders = async () => {
     try {
       setLoadingOrders(true);
-      const res = await fetch(`/api/orders/today?timeSlot=dinner`);
+      const res = await fetch(`/api/orders/today`);
       if (!res.ok) throw new Error("Failed to fetch");
       const json = await res.json();
       // Expect json.data to be TOrderDelivery[]
@@ -241,6 +241,52 @@ export default function RouteMap() {
     }, tickMs);
   };
 
+  const tiffincrateMapStyle = [
+  { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
+  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f5f5" }] },
+
+  {
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [{ color: "#ffffff" }]
+  },
+  {
+    featureType: "road.arterial",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#757575" }]
+  },
+  {
+    featureType: "poi",
+    elementType: "geometry",
+    stylers: [{ color: "#eeeeee" }]
+  },
+  {
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [{ color: "#c9e7f3" }]
+  }
+];
+
+
+const getBearing = (
+  from: google.maps.LatLngLiteral,
+  to: google.maps.LatLngLiteral
+) => {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const toDeg = (r: number) => (r * 180) / Math.PI;
+
+  const y = Math.sin(toRad(to.lng - from.lng)) * Math.cos(toRad(to.lat));
+  const x =
+    Math.cos(toRad(from.lat)) * Math.sin(toRad(to.lat)) -
+    Math.sin(toRad(from.lat)) *
+      Math.cos(toRad(to.lat)) *
+      Math.cos(toRad(to.lng - from.lng));
+
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+};
+
   useEffect(() => {
     if (!navigationStarted) return;
 
@@ -280,37 +326,71 @@ export default function RouteMap() {
   //   }, speedMs);
   // };
 
-  const startLiveDriverTracking = () => {
-    if (!navigator.geolocation || !mapRef.current) return;
+  const driverArrowSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+  <path d="M12 2L4 20l8-4 8 4z" fill="#2563EB"/>
+</svg>
+`)}`;
 
-    geoWatchIdRef.current = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const livePos = { lat: latitude, lng: longitude };
-        setDriverLocation(livePos);
+const startLiveDriverTracking = () => {
+  if (!navigator.geolocation || !mapRef.current) return;
 
-        if (!driverMarkerRef.current) {
-          driverMarkerRef.current = new google.maps.Marker({
-            position: livePos,
-            map: mapRef.current!,
-            icon: {
-              url: driverMarkerSvg,
-              scaledSize: new google.maps.Size(42, 42),
-            },
-            title: "You (Driver)",
+  geoWatchIdRef.current = navigator.geolocation.watchPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+      const livePos = { lat: latitude, lng: longitude };
+
+      setDriverLocation(livePos);
+
+      if (!driverMarkerRef.current) {
+        driverMarkerRef.current = new google.maps.Marker({
+          position: livePos,
+          map: mapRef.current!,
+          icon: {
+            url: driverArrowSvg,
+            scaledSize: new google.maps.Size(36, 36),
+            anchor: new google.maps.Point(18, 18),
+          },
+          zIndex: 999,
+          title: "You (Driver)",
+        });
+
+        mapRef.current?.setZoom(17);
+        mapRef.current?.setTilt(60);
+        mapRef.current?.setHeading(0);
+        mapRef.current?.panTo(livePos);
+        mapRef.current?.panBy(0, 140); 
+      } else {
+        const prevPos = driverMarkerRef.current.getPosition();
+        if (prevPos) {
+          const from = { lat: prevPos.lat(), lng: prevPos.lng() };
+          const to = livePos;
+
+          const bearing = getBearing(from, to);
+
+          mapRef.current?.setHeading(bearing);
+          mapRef.current?.setTilt(60);
+
+          mapRef.current?.panTo(to);
+          mapRef.current?.panBy(0, 140);
+
+          driverMarkerRef.current.setPosition(to);
+          driverMarkerRef.current.setIcon({
+            url: driverArrowSvg,
+            scaledSize: new google.maps.Size(36, 36),
+            anchor: new google.maps.Point(18, 18),
           });
-        } else {
-          driverMarkerRef.current.setPosition(livePos);
         }
-      },
-      (error) => console.error("GPS Error:", error),
-      {
-        enableHighAccuracy: true, // ✅ HERE
-        maximumAge: 5000,
-        timeout: 10000,
-      },
-    );
-  };
+      }
+    },
+    (error) => console.error("GPS Error:", error),
+    {
+      enableHighAccuracy: true,
+      maximumAge: 3000,
+      timeout: 10000,
+    }
+  );
+};
 
   // Clean up on unmount
   useEffect(() => {
@@ -598,18 +678,26 @@ export default function RouteMap() {
         >
           {sidebarOpen ? <X /> : <Menu />}
         </Button>
-        <GoogleMap
-          mapContainerStyle={MAP_CONTAINER_STYLE}
-          center={pathCoords[0] || { lat: 0, lng: 0 }}
-          zoom={13}
-          onLoad={handleMapLoad}
-          options={{
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: false,
-            clickableIcons: false,
-          }}
-        >
+<GoogleMap
+  mapContainerStyle={MAP_CONTAINER_STYLE}
+  center={pathCoords[0] || { lat: 0, lng: 0 }}
+  zoom={17}
+  onLoad={handleMapLoad}
+  options={{
+    styles: tiffincrateMapStyle,
+    streetViewControl: false,
+    mapTypeControl: false,
+    fullscreenControl: false,
+    clickableIcons: false,
+    zoomControl: false,
+    gestureHandling: "greedy",
+
+    tilt: 60, 
+    heading: 0,
+    disableDefaultUI: true,
+  }}
+>
+
           {/* If we have at least 2 points, request directions */}
           {navigationStarted &&
             driverLocation &&

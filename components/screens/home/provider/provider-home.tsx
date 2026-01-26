@@ -77,7 +77,7 @@ const ProviderHome = () => {
               </SheetContent>
             </Sheet>
 
-            <h1 className="text-orange-500">Swiggy Partner</h1>
+            <h1 className="text-orange-500">Tiffincrate Partner</h1>
           </div>
 
           <Button variant="ghost" size="icon" className="relative">
