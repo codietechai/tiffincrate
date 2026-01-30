@@ -52,20 +52,20 @@ const Footer = () => {
   }, []);
 
   useEffect(() => {
-  const handleScroll = () => {
-    const currentScrollY = window.scrollY;
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
 
-    const isScrollingDown = currentScrollY > lastScrollY.current;
+      const isScrollingDown = currentScrollY > lastScrollY.current;
 
-    // show only when scrolling down OR near top
-    setIsVisible(isScrollingDown || currentScrollY < 100);
+      // show only when scrolling down OR near top
+      setIsVisible(isScrollingDown || currentScrollY < 100);
 
-    lastScrollY.current = currentScrollY;
-  };
+      lastScrollY.current = currentScrollY;
+    };
 
-  window.addEventListener("scroll", handleScroll);
-  return () => window.removeEventListener("scroll", handleScroll);
-}, []);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
 
   const checkAuth = async () => {
@@ -107,11 +107,13 @@ const Footer = () => {
       }
     }
   }, [user]);
+  if (pathname.includes('delivery')) {
+    return <></>
+  }
   return (
     <nav
-      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-50 transition-transform duration-300 ${
-        isVisible ? "translate-y-0" : "translate-y-24"
-      }`}
+      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-50 transition-transform duration-300 ${isVisible ? "translate-y-0" : "translate-y-24"
+        }`}
     >
       <div className="bg-white rounded-full shadow-lg px-4 py-2 flex gap-2 items-center">
         {actualOptions.map((item) => {
@@ -120,11 +122,10 @@ const Footer = () => {
             <Link
               key={item.id}
               href={item.href}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                isActive
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${isActive
                   ? "bg-orange-600 text-white"
                   : "text-gray-300 hover:text-white"
-              }`}
+                }`}
             >
               <span className="w-5 h-5">{item.icon}</span>
               {isActive && (

@@ -238,6 +238,8 @@ export async function POST(request: NextRequest) {
     }
 
     const order = new Order({
+      consumerId: userId,
+      providerId,
       menuId,
       items,
       totalAmount,
@@ -247,7 +249,6 @@ export async function POST(request: NextRequest) {
       timeSlot,
       paymentMethod,
       notes,
-      consumerId: userId,
       paymentStatus: paymentMethod === "razorpay" ? "paid" : "pending",
       status: "confirmed",
     });

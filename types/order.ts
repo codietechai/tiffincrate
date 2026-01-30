@@ -4,14 +4,14 @@ export interface Delivery {
   _id: string;
   deliveryDate: string;
   deliveryStatus:
-    | "pending"
-    | "confirmed"
-    | "ready"
-    | "assigned"
-    | "out_for_delivery"
-    | "delivered"
-    | "not_delivered"
-    | "cancelled";
+  | "pending"
+  | "confirmed"
+  | "ready"
+  | "assigned"
+  | "out_for_delivery"
+  | "delivered"
+  | "not_delivered"
+  | "cancelled";
 }
 
 export interface Order {
@@ -38,6 +38,17 @@ export interface TOrderDelivery {
     _id: string;
     name: string;
     email: string;
+    phone?: string;
+  };
+
+  providerId: {
+    _id: string;
+    businessName: string;
+    location: {
+      latitude: number;
+      longitude: number;
+      address: string;
+    };
   };
 
   menuId: {
@@ -59,13 +70,13 @@ export interface TOrderDelivery {
   totalAmount: number;
 
   status:
-    | "in_progress"
-    | "pending"
-    | "confirmed"
-    | "preparing"
-    | "ready"
-    | "delivered"
-    | "cancelled";
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "ready"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
 
   address: TAddress;
 
@@ -75,6 +86,8 @@ export interface TOrderDelivery {
   paymentMethod: string;
 
   notes?: string;
+  estimatedDeliveryTime?: string;
+  actualDeliveryTime?: string;
 
   createdAt: string;
   updatedAt: string;

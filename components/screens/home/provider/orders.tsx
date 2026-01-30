@@ -38,7 +38,7 @@ interface APIOrder {
   deliveryStatus: string;
   deliveryDate: string;
 
-  
+
   createdAt: string;
   updatedAt: string;
   order: {
@@ -220,11 +220,11 @@ export function OrdersPage() {
       orders.map((order) =>
         order.id === orderId
           ? {
-              ...order,
-              deliveryPartner: partner,
-              deliveryType: partner === "Self Delivery" ? "self" : "partner",
-              status: "assigned",
-            }
+            ...order,
+            deliveryPartner: partner,
+            deliveryType: partner === "Self Delivery" ? "self" : "partner",
+            status: "assigned",
+          }
           : order
       )
     );
@@ -248,7 +248,7 @@ export function OrdersPage() {
     {
       label: "Out for Delivery",
       value: orders.filter(
-        (o) => o.status === "out_for_delivery" || o.status === "assigned"
+        (o) => o.status === "out_for_delivery"
       ).length,
       icon: Bike,
       color: "text-orange-600",
@@ -378,15 +378,6 @@ export function OrdersPage() {
                 <Bike className="w-4 h-4 mr-2" /> Start Self Delivery
               </Button>
             </div>
-          )}
-
-          {order.status === "assigned" && (
-            <Button
-              className="w-full bg-orange-600 hover:bg-orange-700"
-              onClick={() => handleStatusUpdate(order.id, "out_for_delivery")}
-            >
-              <Bike className="w-4 h-4 mr-2" /> Mark Out for Delivery
-            </Button>
           )}
 
           {order.status === "out_for_delivery" && (

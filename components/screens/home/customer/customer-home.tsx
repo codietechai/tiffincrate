@@ -34,7 +34,7 @@ const ConsumerHome = () => {
   useEffect(() => {
     fetchMenus();
   }, []);
-
+  console.log('menus :>> ', menus);
   return (
     <div>
       <HomeHeader />
@@ -50,11 +50,11 @@ const ConsumerHome = () => {
         <div className="space-y-4">
           {loading
             ? Array(5)
-                .fill(0)
-                .map((_, i) => <Skeleton className="w-full h-[200px]" />)
+              .fill(0)
+              .map((_, i) => <Skeleton className="w-full h-[200px]" />)
             : filteredMenus.map((menu) => (
-                <MenuItemHome key={menu._id} menu={menu} />
-              ))}
+              <MenuItemHome key={menu._id} menu={menu} />
+            ))}
         </div>
       </div>
     </div>
