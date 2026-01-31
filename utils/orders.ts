@@ -17,9 +17,9 @@ export const createDeliveryOrders = async (
   if (deliveryInfo?.type === "month") {
     const startDate = deliveryInfo.startDate
       ? dayjs.tz(deliveryInfo.startDate, tz).startOf("day")
-      : dayjs().tz(tz).startOf("month");
+      : dayjs().tz(tz).startOf("day"); // Start from today instead of start of month
 
-    const endDate = startDate.endOf("month");
+    const endDate = startDate.add(1, "month"); // Cover next month from start date
     let current = startDate;
 
     while (current.isBefore(endDate) || current.isSame(endDate)) {
@@ -38,8 +38,8 @@ export const createDeliveryOrders = async (
     const tz = "Asia/Kolkata";
 
     const now = dayjs().tz(tz).startOf("day");
-    const start = now; // start from today, not from start of month
-    const end = now.endOf("month");
+    const start = now; // start from today
+    const end = now.add(2, "months").endOf("month"); // Extended to cover next 2 months
 
     const dayMap: Record<string, number> = {
       sunday: 0,

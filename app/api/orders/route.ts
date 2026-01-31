@@ -15,6 +15,7 @@ import mongoose from "mongoose";
 import { createDeliveryOrders, getOrderTypeSummary } from "@/utils/orders";
 import Address from "@/models/Address";
 import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
+import { WalletService } from "@/services/wallet-service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -211,6 +212,21 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
+    } else if (paymentMethod === "wallet") {
+      // Process wallet payment
+      const walletPaymentResult = await WalletService.processOrderPayment(
+        userId as string,
+        "", // Will be updated with actual order ID after creation
+        totalAmount,
+        `Order payment for ${orderType} plan`
+      );
+
+      if (!walletPaymentResult.success) {
+        return NextResponse.json(
+          { error: walletPaymentResult.error },
+          { status: 400 }
+        );
+      }
     }
 
     let newAddressId;
@@ -249,7 +265,7 @@ export async function POST(request: NextRequest) {
       timeSlot,
       paymentMethod,
       notes,
-      paymentStatus: paymentMethod === "razorpay" ? "paid" : "pending",
+      paymentStatus: paymentMethod === "razorpay" || paymentMethod === "wallet" ? "paid" : "pending",
       status: "confirmed",
     });
 

@@ -1,4 +1,4 @@
-import { Calendar, CheckCircle2, Clock, Package, Truck } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, Package, Truck, CheckCircle } from "lucide-react";
 
 // ---------- Utility ----------
 export const formatISTDate = (utcDate?: string) => {
@@ -26,10 +26,12 @@ export const formatISTShort = (utcDate?: string) => {
   });
 };
 
-export   const statusSteps = [
-    { key: "pending", label: "Pending", icon: Clock },
-    { key: "confirmed", label: "Confirmed", icon: CheckCircle2 },
-    { key: "preparing", label: "Preparing", icon: Package },
-    { key: "ready", label: "Ready for Delivery", icon: Truck },
-    { key: "delivered", label: "Delivered", icon: Calendar },
-  ];
+// Updated status steps to match actual order statuses
+export const statusSteps = [
+  { key: "pending", label: "Pending", icon: Clock },
+  { key: "confirmed", label: "Confirmed", icon: CheckCircle2 },
+  { key: "preparing", label: "Preparing", icon: Package },
+  { key: "ready", label: "Ready", icon: Truck },
+  { key: "out_for_delivery", label: "Out for Delivery", icon: Truck },
+  { key: "delivered", label: "Delivered", icon: CheckCircle },
+];
