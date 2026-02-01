@@ -9,7 +9,14 @@ dayjs.tz.setDefault("Asia/Kolkata");
 
 export const createDeliveryOrders = async (
   orderId: string,
-  deliveryInfo: any
+  deliveryInfo: any,
+  orderData: {
+    consumerId: string;
+    providerId: string;
+    timeSlot: string;
+    items: any[];
+    address: string;
+  }
 ) => {
   const deliveryOrders: any[] = [];
   const tz = "Asia/Kolkata";
@@ -28,8 +35,13 @@ export const createDeliveryOrders = async (
       );
       deliveryOrders.push({
         orderId,
-        deliveryStatus: "pending",
+        consumerId: orderData.consumerId,
+        providerId: orderData.providerId,
         deliveryDate: localDate,
+        timeSlot: orderData.timeSlot,
+        status: "pending",
+        items: orderData.items || [],
+        address: orderData.address,
       });
       current = current.add(1, "day");
     }
@@ -61,8 +73,13 @@ export const createDeliveryOrders = async (
         );
         deliveryOrders.push({
           orderId,
-          deliveryStatus: "pending",
+          consumerId: orderData.consumerId,
+          providerId: orderData.providerId,
           deliveryDate: localDate,
+          timeSlot: orderData.timeSlot,
+          status: "pending",
+          items: orderData.items || [],
+          address: orderData.address,
         });
       }
       current = current.add(1, "day");
@@ -75,8 +92,13 @@ export const createDeliveryOrders = async (
       const localDate = new Date(`${dateStr}`);
       deliveryOrders.push({
         orderId,
-        deliveryStatus: "pending",
+        consumerId: orderData.consumerId,
+        providerId: orderData.providerId,
         deliveryDate: localDate,
+        timeSlot: orderData.timeSlot,
+        status: "pending",
+        items: orderData.items || [],
+        address: orderData.address,
       });
     }
   }

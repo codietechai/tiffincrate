@@ -1,17 +1,22 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Boxes, CheckCircle, XCircle, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Search, Edit, Trash2, ImagePlus, Plus } from "lucide-react";
+import { Search, Edit, Trash2, ImagePlus } from "lucide-react";
 import MenuDrawerForm from "./menu-drawer";
 import { TMenu } from "@/types";
 import { toTitleCase } from "@/lib/utils";
 import { PaginationComponent } from "@/components/common/pagination-component";
 import StatsGrid from "@/components/common/stats-grid";
+import { useMenus } from "@/services/menu-service";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { httpClient } from "@/lib/http-client";
+import { ROUTES } from "@/constants/routes";
+import { QUERY_KEYS } from "@/constants/query-keys";
 
 export function MenuManagement() {
   const [selectedMenu, setSelectedMenu] = useState<null | TMenu>(null);
@@ -21,111 +26,83 @@ export function MenuManagement() {
     category: "all",
     search: "",
   });
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const categories = ["all", "breakfast", "lunch", "dinner"];
 
-  const [menus, setMenus] = useState<{
-    data: TMenu[];
-    stats: {
-      total: number;
-      available: number;
-      active: number;
-    };
-    pagination: {
-      total: number;
-      page: number;
-      limit: number;
-      totalPages: number;
-    };
-  } | null>(null);
-  const fetchMenus = async () => {
-    try {
-      const params = new URLSearchParams({
-        search: queryData.search,
-        category: queryData.category,
-        page: queryData.page,
-        limit: queryData.limit,
-      } as any).toString();
-      const res = await fetch(`/api/menus?${params}`);
+  // Use React Query hook for fetching menus with query parameters
+  const { data: menusResponse, isLoading: loading } = useMenus({
+    page: queryData.page,
+    limit: queryData.limit,
+    category: queryData.category !== "all" ? queryData.category : undefined,
+    search: queryData.search || undefined,
+  });
 
-      if (res.ok) {
-        const data = await res.json();
-        console.log("data", data);
-        setMenus(data);
-      }
-    } catch (e) {
-      console.error("Error fetching menus:", e);
-    } finally {
-      // setLoading(false);
-    }
-  };
+  const menus = menusResponse?.data || [];
+  const stats = menusResponse?.stats;
+  const pagination = menusResponse?.pagination;
 
-  const toggleMenuStatus = async (
-    menuId: string,
-    boolean: boolean,
-    type: "isActive" | "isAvailable"
-  ) => {
-    try {
-      const res = await fetch(`/api/menus/${menuId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [type]: boolean }),
-      });
-      if (res.ok) {
-        fetchMenus();
-      }
-    } catch (e) {
-      console.error("Error updating menu status:", e);
-    }
-  };
-
-  const deleteMenu = async (menuId: string) => {
-    if (!confirm("Delete this menu permanently?")) return;
-    try {
-      const res = await fetch(`/api/menus/${menuId}`, { method: "DELETE" });
-      if (res.ok) fetchMenus();
-    } catch (e) {
-      console.error("Error deleting menu:", e);
-    }
-  };
-
-  useEffect(() => {
-    fetchMenus();
-  }, [queryData]);
-  const [open, setOpen] = useState(false);
-
+  // Create stats from server response or calculate from client data
   const menuStats = [
     {
       label: "Total Items",
-      value: menus?.stats?.total,
+      value: stats?.total || menus.length,
       icon: Boxes,
       bgColor: "bg-blue-100",
       color: "text-blue-600",
     },
     {
       label: "Available",
-      value: menus?.stats?.available,
+      value: stats?.available || menus.filter(menu => menu.isAvailable).length,
       icon: CheckCircle,
       bgColor: "bg-green-100",
       color: "text-green-600",
     },
     {
       label: "Unavailable",
-      value:
-        (menus?.stats?.total as number) - (menus?.stats?.available as number),
+      value: stats ? (stats.total - stats.available) : menus.filter(menu => !menu.isAvailable).length,
       icon: XCircle,
       bgColor: "bg-red-100",
       color: "text-red-600",
     },
     {
       label: "Active",
-      value: menus?.stats?.active,
+      value: stats?.active || menus.filter(menu => menu.isActive).length,
       icon: Zap,
       bgColor: "bg-yellow-100",
       color: "text-yellow-600",
     },
   ];
-  const [loading, setLoading] = useState(false);
+
+  // Mutations for menu operations
+  const toggleMenuStatusMutation = useMutation({
+    mutationFn: ({ menuId, data }: { menuId: string; data: any }) =>
+      httpClient.patch(ROUTES.MENU.BY_ID(menuId), data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['menu'] });
+    },
+  });
+
+  const deleteMenuMutation = useMutation({
+    mutationFn: (menuId: string) => httpClient.delete(ROUTES.MENU.BY_ID(menuId)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['menu'] });
+    },
+  });
+
+  const toggleMenuStatus = (
+    menuId: string,
+    boolean: boolean,
+    type: "isActive" | "isAvailable"
+  ) => {
+    toggleMenuStatusMutation.mutate({ menuId, data: { [type]: boolean } });
+  };
+
+  const deleteMenu = (menuId: string) => {
+    if (!confirm("Delete this menu permanently?")) return;
+    deleteMenuMutation.mutate(menuId);
+  };
 
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
@@ -138,7 +115,7 @@ export function MenuManagement() {
 
         <MenuDrawerForm
           menuData={selectedMenu}
-          refresh={fetchMenus}
+          refresh={() => queryClient.invalidateQueries({ queryKey: ['menu'] })}
           setMenuData={setSelectedMenu}
           open={open}
           setOpen={setOpen}
@@ -179,9 +156,8 @@ export function MenuManagement() {
                   };
                 })
               }
-              className={`flex-shrink-0 ${
-                queryData.category === category ? "" : ""
-              }`}
+              className={`flex-shrink-0 ${queryData.category === category ? "" : ""
+                }`}
             >
               {category === "all" ? "All Items" : toTitleCase(category)}
             </Button>
@@ -190,25 +166,25 @@ export function MenuManagement() {
       </div>
 
       <div>
-        <h3 className="px-1">Menu Items ({menus?.pagination.total})</h3>
+        <h3 className="px-1">Menu Items ({pagination?.total || menus.length})</h3>
         <div className="my-3">
-          {!!menus?.pagination.total && (
+          {(pagination?.total || menus.length) > 0 && (
             <PaginationComponent
-              page={menus.pagination.page}
+              page={pagination?.page || queryData.page}
               setPage={(value) =>
                 setQueryData((prev) => {
                   return { ...prev, page: value };
                 })
               }
-              pageSize={queryData.limit}
-              totalCount={menus?.pagination.total || 0}
+              pageSize={pagination?.limit || queryData.limit}
+              totalCount={pagination?.total || menus.length}
               scrollToTop={true}
             />
           )}
         </div>
         <div className="space-y-3">
-          {menus && menus?.data?.length > 0 ? (
-            menus?.data?.map((item) => (
+          {menus.length > 0 ? (
+            menus.map((item) => (
               <Card
                 key={item._id}
                 className="hover:shadow-md transition-shadow"
@@ -236,11 +212,10 @@ export function MenuManagement() {
                             </h3>
                             <Badge
                               variant="outline"
-                              className={`text-xs ${
-                                item.isVegetarian
-                                  ? "border-green-500 text-green-700"
-                                  : "border-red-500 text-red-700"
-                              }`}
+                              className={`text-xs ${item.isVegetarian
+                                ? "border-green-500 text-green-700"
+                                : "border-red-500 text-red-700"
+                                }`}
                             >
                               {item.isVegetarian ? "🟢" : "🔴"}
                             </Badge>
@@ -291,6 +266,7 @@ export function MenuManagement() {
                               onCheckedChange={(value) =>
                                 toggleMenuStatus(item._id, value, "isAvailable")
                               }
+                              disabled={toggleMenuStatusMutation.isPending}
                             />
                             <span className="text-gray-600 text-sm">
                               Available
@@ -301,8 +277,8 @@ export function MenuManagement() {
                               checked={item.isActive}
                               onCheckedChange={(value) => {
                                 toggleMenuStatus(item._id, value, "isActive");
-                                console.log("value", value);
                               }}
+                              disabled={toggleMenuStatusMutation.isPending}
                             />
                             <span className="text-gray-600 text-sm">
                               Active
@@ -328,6 +304,7 @@ export function MenuManagement() {
                             size="sm"
                             className="text-red-600 border-red-600 hover:bg-red-50 h-9"
                             onClick={() => deleteMenu(item._id)}
+                            disabled={deleteMenuMutation.isPending}
                           >
                             <Trash2 className="w-4 h-4 md:mr-2" />
                             <span className="hidden md:inline">Delete</span>
@@ -345,13 +322,13 @@ export function MenuManagement() {
               <h3 className="font-medium text-gray-900 mb-2">
                 {queryData.search
                   ? // || categoryFilter || statusFilter
-                    "No menus found"
+                  "No menus found"
                   : "No menus created yet"}
               </h3>
               <p className="text-gray-600 mb-4">
                 {queryData.search
                   ? //  || categoryFilter || statusFilter
-                    "Try adjusting your filters"
+                  "Try adjusting your filters"
                   : "Create your first menu to start offering your tiffin services"}
               </p>
             </div>

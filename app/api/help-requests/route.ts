@@ -16,37 +16,84 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const type = searchParams.get("type");
     const priority = searchParams.get("priority");
+    const category = searchParams.get("category");
+    const search = searchParams.get("search");
+    const assignedTo = searchParams.get("assignedTo");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
 
     const skip = (page - 1) * limit;
 
+    // Build query based on role and new schema fields
     let query: any = {};
 
     if (role === "admin") {
-      if (type !== "consumer_to_provider") {
-        query = {
-          $or: [{ type: "admin_support" }, { type: "provider_support" }],
-        };
+      // Admin can see all requests or filter by type
+      if (type && type !== "all") {
+        query.type = type;
+      }
+      // Admin can filter by assignment
+      if (assignedTo && assignedTo !== "all") {
+        query.assignedTo = assignedTo === "me" ? userId : assignedTo;
       }
     } else {
+      // Non-admin users can only see their own requests
       query = {
         $or: [{ fromUserId: userId }, { toUserId: userId }],
       };
     }
 
+    // Apply filters
     if (status && status !== "all") query.status = status;
-    if (type && type !== "all") query.type = type;
-    if (priority) query.priority = priority;
+    if (priority && priority !== "all") query.priority = priority;
+    if (category && category !== "all") query.category = category;
+
+    // Text search using index
+    if (search && search.trim() !== "") {
+      query.$text = { $search: search };
+    }
+
+    // Sort by priority and creation date
+    const sortQuery = search
+      ? { score: { $meta: "textScore" }, priority: -1, createdAt: -1 }
+      : { priority: -1, createdAt: -1 };
+
     const helpRequests = await HelpRequest.find(query)
       .populate("fromUserId", "name email role")
       .populate("toUserId", "name email role")
+      .populate("assignedTo", "name role")
+      .populate("resolvedBy", "name role")
       .populate("responses.userId", "name role")
-      .sort({ createdAt: -1 })
+      .populate("relatedOrderId", "totalAmount createdAt")
+      .sort(sortQuery)
       .skip(skip)
       .limit(limit);
 
     const total = await HelpRequest.countDocuments(query);
+
+    // Get statistics for admin dashboard
+    let stats = {};
+    if (role === "admin") {
+      stats = await HelpRequest.aggregate([
+        {
+          $facet: {
+            statusCounts: [
+              { $group: { _id: "$status", count: { $sum: 1 } } }
+            ],
+            priorityCounts: [
+              { $group: { _id: "$priority", count: { $sum: 1 } } }
+            ],
+            categoryCounts: [
+              { $group: { _id: "$category", count: { $sum: 1 } } }
+            ],
+            unassignedCount: [
+              { $match: { assignedTo: { $exists: false } } },
+              { $count: "count" }
+            ]
+          }
+        }
+      ]);
+    }
 
     return NextResponse.json({
       data: helpRequests,
@@ -56,6 +103,7 @@ export async function GET(request: NextRequest) {
         count: helpRequests.length,
         totalRecords: total,
       },
+      stats: role === "admin" ? stats[0] : undefined,
       message: SUCCESSMESSAGE.HELPREQUESTS_FETCH,
     });
   } catch (error) {
@@ -72,55 +120,120 @@ export async function POST(request: NextRequest) {
     const userId = request.headers.get("x-user-id");
 
     await connectMongoDB();
-    const { toUserId, type, subject, message, priority, category } =
-      await request.json();
-    let payload: any = {
-      fromUserId: userId,
+    const {
+      toUserId,
       type,
       subject,
       message,
-      priority: priority || "medium",
-      category: category || "general",
+      priority = "medium",
+      category = "general",
+      attachments = [],
+      tags = [],
+      relatedOrderId
+    } = await request.json();
+
+    // Validate required fields
+    if (!type || !subject || !message) {
+      return NextResponse.json(
+        { error: "Missing required fields: type, subject, message" },
+        { status: 400 }
+      );
+    }
+
+    // Validate field lengths
+    if (subject.length > 200) {
+      return NextResponse.json(
+        { error: "Subject must be 200 characters or less" },
+        { status: 400 }
+      );
+    }
+
+    if (message.length > 2000) {
+      return NextResponse.json(
+        { error: "Message must be 2000 characters or less" },
+        { status: 400 }
+      );
+    }
+
+    // Create help request with new schema fields
+    let payload: any = {
+      fromUserId: userId,
+      type,
+      subject: subject.trim(),
+      message: message.trim(),
+      priority,
+      category,
+      attachments: attachments.slice(0, 5), // Limit attachments
+      tags: tags.slice(0, 10).map((tag: string) => tag.trim()), // Limit and clean tags
+      status: "open",
+      responses: [],
     };
 
     if (toUserId) {
-      payload = {
-        ...payload,
-        toUserId,
-      };
+      payload.toUserId = toUserId;
+    }
+
+    if (relatedOrderId) {
+      payload.relatedOrderId = relatedOrderId;
     }
 
     const helpRequest = new HelpRequest(payload);
-
     await helpRequest.save();
 
-    const recipientId =
-      type === "admin_support" || type === "provider_support" ? null : toUserId;
-    const admins = await User.find({ role: "admin" });
+    // Create notifications for relevant users
+    const recipientId = type === "admin_support" || type === "provider_support" ? null : toUserId;
 
     if (type === "admin_support" || type === "provider_support") {
+      // Notify all admins
+      const admins = await User.find({ role: "admin", isActive: true });
+
       for (const admin of admins) {
         await new Notification({
           userId: admin._id,
           title: "New Help Request",
-          message: `You have received a new help request: ${subject}`,
+          message: `New ${priority} priority help request: ${subject}`,
           type: "system",
-          data: { helpRequestId: helpRequest._id, type },
+          priority: priority === "urgent" ? "high" : "medium",
+          data: {
+            helpRequestId: helpRequest._id,
+            type,
+            category,
+            priority
+          },
+          actionUrl: `/admin/help-requests/${helpRequest._id}`,
         }).save();
       }
     }
+
     if (recipientId) {
+      // Notify specific recipient
       await new Notification({
         userId: recipientId,
         title: "New Help Request",
         message: `You have received a new help request: ${subject}`,
         type: "system",
-        data: { helpRequestId: helpRequest._id, type },
+        priority: priority === "urgent" ? "high" : "medium",
+        data: {
+          helpRequestId: helpRequest._id,
+          type,
+          category,
+          priority
+        },
+        actionUrl: `/help-requests/${helpRequest._id}`,
       }).save();
     }
 
+    // Populate the response
+    const populatedRequest = await HelpRequest.findById(helpRequest._id)
+      .populate("fromUserId", "name email role")
+      .populate("toUserId", "name email role")
+      .populate("relatedOrderId", "totalAmount createdAt");
+
     return NextResponse.json(
-      { message: SUCCESSMESSAGE.HELPREQUEST_CREATE, data: helpRequest },
+      {
+        message: SUCCESSMESSAGE.HELPREQUEST_CREATE,
+        data: populatedRequest
+      },
       { status: 201 }
     );
   } catch (error) {

@@ -68,10 +68,15 @@ export const SUCCESSMESSAGE = {
   REVIEW_UPDATE: "Review updated successfully",
   REVIEW_DELETE: "Review deleted successfully",
 
+  // Delivery Orders
+  DELIVERY_ORDERS_FETCH: "Delivery orders fetched successfully",
+  DELIVERY_ORDER_FETCH: "Delivery order fetched successfully",
+  DELIVERY_ORDER_UPDATE: "Delivery order updated successfully",
+  DELIVERY_ORDER_CANCEL: "Delivery order cancelled successfully",
+  DELIVERY_ORDER_COMPLETE: "Delivery order completed successfully",
   // Delivery Assignment
   DELIVERYASSIGNMENT_CREATE: "Delivery assignment created successfully",
   DELIVERYASSIGNMENTS_FETCH: "Delivery assignments fetched successfully",
-  DELIVERYASSIGNMENT_FETCH: "Delivery assignment fetched successfully",
   DELIVERYASSIGNMENT_UPDATE: "Delivery assignment updated successfully",
   DELIVERYASSIGNMENT_CANCEL: "Delivery assignment cancelled successfully",
 
@@ -173,6 +178,13 @@ export const ERRORMESSAGE = {
   REVIEW_CREATE_FAILED: "Failed to create review",
   REVIEW_UPDATE_FAILED: "Failed to update review",
   REVIEW_DELETE_FAILED: "Failed to delete review",
+
+  // Delivery Orders
+  DELIVERY_ORDER_NOT_FOUND: "Delivery order not found",
+  DELIVERY_ORDERS_FETCH_FAILED: "Error while fetching delivery orders",
+  DELIVERY_ORDER_UPDATE_FAILED: "Failed to update delivery order",
+  DELIVERY_ORDER_CANCEL_FAILED: "Failed to cancel delivery order",
+  DELIVERY_ORDER_COMPLETE_FAILED: "Failed to complete delivery order",
 
   // Delivery Assignment
   DELIVERYASSIGNMENT_NOT_FOUND: "Delivery assignment not found",

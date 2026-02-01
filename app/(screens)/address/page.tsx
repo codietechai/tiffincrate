@@ -1,70 +1,45 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Search,
-  Plus,
-  MapPin,
-  Home,
-  LocateFixed,
-  LocateIcon,
-} from "lucide-react";
+import { Plus, LocateIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import GoogleMapAutoComplete from "@/components/common/googlePlace";
-import { useState, useEffect } from "react";
-import { useLocation } from "@/hooks/use-location";
+import { useState } from "react";
 import { AddressService } from "@/services/address-service";
-import { AddressCard } from "@/components/screens/address/address-card";
+import { AddressList } from "@/components/screens/address/address-list";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import BackHeader from "@/components/common/back-header";
 import TitleHeader from "@/components/common/title-header";
 
 export default function SelectLocationPage() {
   const router = useRouter();
-  const [addresses, setAddresses] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const fetchAddresses = async () => {
-    setIsLoading(true);
-    try {
-      const data = await AddressService.fetchAll();
-      setAddresses(data.data);
-      console.log("data", data);
-    } catch (err: any) {
-      console.error("Error fetching addresses:", err);
-      toast.error(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAddresses();
-  }, []);
+  const searchParams = useSearchParams();
+  const chooseAnother = searchParams.get("choose-another");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const onSetDefault = async (addressId: string) => {
-    await AddressService.setDefault(addressId);
-    if (chooseAnother) {
-      router.back();
-    } else {
-      fetchAddresses();
+    try {
+      await AddressService.setDefault(addressId);
+      if (chooseAnother) {
+        router.back();
+      } else {
+        setRefreshTrigger(prev => prev + 1);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update default address");
     }
   };
+
   const onDelete = async (addressId: string) => {
     await AddressService.delete(addressId);
-    setAddresses(addresses.filter((a) => a._id !== addressId));
   };
 
   const onEdit = (addressId: string) =>
     router.push(`/address/edit/${addressId}`);
-  const searchParams = useSearchParams();
-  const chooseAnother = searchParams.get("choose-another");
+
   return (
     <>
       <BackHeader />
-      <div className="min-h-screen bg-background px-4 py-6 relative ">
+      <div className="min-h-screen bg-background px-4 py-6 relative">
         <TitleHeader
           title="Select a Location"
           icon={<LocateIcon />}
@@ -95,31 +70,13 @@ export default function SelectLocationPage() {
           <div className="h-[1px] flex-1 ml-3 bg-gray-200" />
         </div>
 
-        {isLoading ? (
-          <div className="space-y-4">
-            {Array(4)
-              .fill(0)
-              .map((_, i) => (
-                <Skeleton key={i} className="h-[130px] rounded-xl" />
-              ))}
-          </div>
-        ) : addresses.length === 0 ? (
-          <p className="text-center text-gray-500 mt-10">
-            No addresses saved yet.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {addresses.map((address) => (
-              <AddressCard
-                key={address._id}
-                address={address}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onSetDefault={onSetDefault}
-              />
-            ))}
-          </div>
-        )}
+        <AddressList
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onSetDefault={onSetDefault}
+          refreshTrigger={refreshTrigger}
+          chooseAnother={chooseAnother ? () => router.back() : undefined}
+        />
       </div>
     </>
   );

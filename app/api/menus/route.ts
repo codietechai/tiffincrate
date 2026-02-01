@@ -15,23 +15,26 @@ export async function GET(request: NextRequest) {
     const providerId = searchParams.get("providerId");
     const category = searchParams.get("category");
     const search = searchParams.get("search");
+    const isVegetarian = searchParams.get("isVegetarian");
+    const weekType = searchParams.get("weekType");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
     let query: any = {};
 
+    // Text search using MongoDB text index
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
+      query.$text = { $search: search };
     }
 
+    // Role-based filtering
     if (role === "consumer") {
-      query = { isActive: true };
+      query.isActive = true;
+      query.isAvailable = true;
     }
 
+    // Provider filtering
     if (providerId) {
       const serviceProvider = await ServiceProvider.findById(providerId);
       if (!serviceProvider) {
@@ -43,17 +46,27 @@ export async function GET(request: NextRequest) {
       query.providerId = new Types.ObjectId(serviceProvider._id);
     }
 
+    // Category filtering
     if (category && category !== "all") query.category = category;
 
-    const total = await Menu.countDocuments(query);
-    const isAvailable = await Menu.countDocuments({ isAvailable: true });
-    const isActive = await Menu.countDocuments({ isActive: true });
+    // Vegetarian filtering
+    if (isVegetarian === "true") query.isVegetarian = true;
+    else if (isVegetarian === "false") query.isVegetarian = false;
 
-    const menus = await Menu.aggregate([
+    // Week type filtering
+    if (weekType && weekType !== "all") query.weekType = weekType;
+
+    // Get counts for stats
+    const total = await Menu.countDocuments(query);
+    const isAvailable = await Menu.countDocuments({ ...query, isAvailable: true });
+    const isActive = await Menu.countDocuments({ ...query, isActive: true });
+
+    // Build aggregation pipeline
+    const pipeline = [
       { $match: query },
       {
         $lookup: {
-          from: "menuitems", 
+          from: "menuitems",
           localField: "_id",
           foreignField: "menuId",
           as: "menuItems",
@@ -84,19 +97,32 @@ export async function GET(request: NextRequest) {
           isVegetarian: 1,
           weekType: 1,
           rating: 1,
-          draft: 1,
           userRatingCount: 1,
+          tags: 1,
+          preparationTime: 1,
+          servingSize: 1,
           createdAt: 1,
           updatedAt: 1,
           providerId: "$providerInfo._id",
           providerName: "$providerInfo.businessName",
           menuItems: 1,
+          // Add text search score if search was performed
+          ...(search && { score: { $meta: "textScore" } }),
         },
       },
-      { $sort: { createdAt: -1 } },
-      { $skip: skip },
-      { $limit: limit },
-    ]);
+    ];
+
+    // Add sorting
+    if (search) {
+      pipeline.push({ $sort: { score: { $meta: "textScore" }, rating: -1 } });
+    } else {
+      pipeline.push({ $sort: { rating: -1, createdAt: -1 } });
+    }
+
+    // Add pagination
+    pipeline.push({ $skip: skip }, { $limit: limit });
+
+    const menus = await Menu.aggregate(pipeline);
 
     return NextResponse.json({
       data: menus,
@@ -134,15 +160,15 @@ export async function POST(request: NextRequest) {
     await connectMongoDB();
     const menuData = await request.json();
 
-    // 🧩 Validate base menu data
-    if (!menuData.name || !menuData.category) {
+    // Validate required fields
+    if (!menuData.name || !menuData.category || !menuData.basePrice) {
       return NextResponse.json(
-        { error: "Menu name and category are required" },
+        { error: "Menu name, category, and base price are required" },
         { status: 400 }
       );
     }
 
-    // 🧠 Find provider by user ID
+    // Find provider by user ID
     const provider = await ServiceProvider.findOne({ userId });
     if (!provider) {
       return NextResponse.json(
@@ -151,7 +177,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 🧾 Create the main Menu document
+    // Create the main Menu document
     const menu = await Menu.create({
       providerId: provider._id,
       name: menuData.name,
@@ -160,19 +186,22 @@ export async function POST(request: NextRequest) {
       basePrice: menuData.basePrice,
       monthlyPlanPrice: menuData.monthlyPlanPrice,
       image: menuData.image,
-      isAvailable: menuData.isAvailable,
-      isActive: menuData.isActive,
-      isVegetarian: menuData.isVegetarian,
+      isAvailable: menuData.isAvailable !== false, // Default to true
+      isActive: menuData.isActive !== false, // Default to true
+      isVegetarian: menuData.isVegetarian !== false, // Default to true
       weekType: menuData.weekType || "whole",
+      tags: menuData.tags || [],
+      preparationTime: menuData.preparationTime || 30,
+      servingSize: menuData.servingSize || 1,
     });
 
-    // 🥣 Create MenuItem documents for each day
+    // Create MenuItem documents for each day
     const menuItemsPayload = Array.isArray(menuData.menuItems)
       ? menuData.menuItems
       : [];
 
     const createdMenuItems = await Promise.all(
-      menuItemsPayload.map(async (item:any) => {
+      menuItemsPayload.map(async (item: any) => {
         if (!item.name) return null;
 
         return await MenuItem.create({
@@ -181,14 +210,19 @@ export async function POST(request: NextRequest) {
           menuId: menu._id,
           images: item.images || [],
           day: item.day || "",
+          nutritionInfo: item.nutritionInfo || {},
+          allergens: item.allergens || [],
+          isSpicy: item.isSpicy || false,
+          spiceLevel: item.spiceLevel || "mild",
+          ingredients: item.ingredients || [],
         });
       })
     );
 
-    // 🧹 Filter out nulls (in case of invalid entries)
+    // Filter out nulls
     const validMenuItems = createdMenuItems.filter(Boolean);
 
-    // ✅ Add them to the menu object (optional for response clarity)
+    // Return populated menu
     const populatedMenu = {
       ...menu.toObject(),
       menuItems: validMenuItems,

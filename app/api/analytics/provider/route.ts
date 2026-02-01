@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
+
     if (role !== "provider") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -17,8 +18,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const range = searchParams.get("range") || "30days";
+    const timeSlot = searchParams.get("timeSlot");
+    const status = searchParams.get("status");
 
-    // Get provider ID
+    // Get provider details
     const provider = await ServiceProvider.findOne({ userId: userId });
     if (!provider) {
       return NextResponse.json(
@@ -44,56 +47,115 @@ export async function GET(request: NextRequest) {
       case "1year":
         startDate.setFullYear(now.getFullYear() - 1);
         break;
+      default:
+        startDate.setDate(now.getDate() - 30);
     }
 
-    // Orders analytics
+    // Build base match query
+    const baseMatch: any = {
+      providerId: provider._id,
+      createdAt: { $gte: startDate },
+    };
+
+    if (timeSlot && timeSlot !== "all") {
+      baseMatch.timeSlot = timeSlot;
+    }
+
+    if (status && status !== "all") {
+      baseMatch.status = status;
+    }
+
+    // Comprehensive orders analytics
     const orderStats = await Order.aggregate([
-      {
-        $match: {
-          providerId: provider._id,
-          createdAt: { $gte: startDate },
-        },
-      },
+      { $match: baseMatch },
       {
         $facet: {
-          totalOrders: [{ $count: "count" }],
-          totalRevenue: [
-            {
-              $match: { paymentStatus: "paid" },
-            },
+          overview: [
             {
               $group: {
                 _id: null,
-                total: { $sum: "$totalAmount" },
-              },
-            },
+                totalOrders: { $sum: 1 },
+                totalRevenue: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$paymentStatus", "paid"] },
+                      "$totalAmount",
+                      0
+                    ]
+                  }
+                },
+                avgOrderValue: { $avg: "$totalAmount" },
+                completedOrders: {
+                  $sum: {
+                    $cond: [{ $eq: ["$status", "delivered"] }, 1, 0]
+                  }
+                },
+                cancelledOrders: {
+                  $sum: {
+                    $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0]
+                  }
+                }
+              }
+            }
           ],
-          averageOrderValue: [
-            {
-              $match: { paymentStatus: "paid" },
-            },
-            {
-              $group: {
-                _id: null,
-                avg: { $avg: "$totalAmount" },
-              },
-            },
-          ],
-          ordersByStatus: [
+          statusBreakdown: [
             {
               $group: {
                 _id: "$status",
                 count: { $sum: 1 },
-              },
-            },
+                revenue: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$paymentStatus", "paid"] },
+                      "$totalAmount",
+                      0
+                    ]
+                  }
+                }
+              }
+            }
           ],
-          ordersByDay: [
+          timeSlotBreakdown: [
+            {
+              $group: {
+                _id: "$timeSlot",
+                count: { $sum: 1 },
+                revenue: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$paymentStatus", "paid"] },
+                      "$totalAmount",
+                      0
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          paymentMethodBreakdown: [
+            {
+              $group: {
+                _id: "$paymentMethod",
+                count: { $sum: 1 },
+                revenue: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$paymentStatus", "paid"] },
+                      "$totalAmount",
+                      0
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          dailyTrends: [
             {
               $group: {
                 _id: {
                   year: { $year: "$createdAt" },
                   month: { $month: "$createdAt" },
-                  day: { $dayOfMonth: "$createdAt" },
+                  day: { $dayOfMonth: "$createdAt" }
                 },
                 orders: { $sum: 1 },
                 revenue: {
@@ -101,14 +163,14 @@ export async function GET(request: NextRequest) {
                     $cond: [
                       { $eq: ["$paymentStatus", "paid"] },
                       "$totalAmount",
-                      0,
-                    ],
-                  },
-                },
-              },
+                      0
+                    ]
+                  }
+                }
+              }
             },
             {
-              $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 },
+              $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 }
             },
             {
               $project: {
@@ -116,59 +178,77 @@ export async function GET(request: NextRequest) {
                   $dateFromParts: {
                     year: "$_id.year",
                     month: "$_id.month",
-                    day: "$_id.day",
-                  },
+                    day: "$_id.day"
+                  }
                 },
                 orders: 1,
-                revenue: 1,
-              },
-            },
+                revenue: 1
+              }
+            }
           ],
           topItems: [
             { $unwind: "$items" },
             {
               $group: {
-                _id: "$items.name",
+                _id: {
+                  name: "$items.name",
+                  menuItemId: "$items.menuItemId"
+                },
                 quantity: { $sum: "$items.quantity" },
                 revenue: {
-                  $sum: { $multiply: ["$items.price", "$items.quantity"] },
+                  $sum: { $multiply: ["$items.price", "$items.quantity"] }
                 },
-              },
+                orders: { $sum: 1 }
+              }
             },
             { $sort: { quantity: -1 } },
-            { $limit: 10 },
-          ],
-        },
-      },
+            { $limit: 10 }
+          ]
+        }
+      }
     ]);
 
-    // Reviews analytics
+    // Reviews analytics with new schema
     const reviewStats = await Review.aggregate([
       {
         $match: {
           providerId: provider._id,
           createdAt: { $gte: startDate },
-        },
+          isHidden: false
+        }
       },
       {
         $facet: {
-          averageRating: [
+          overview: [
             {
               $group: {
                 _id: null,
-                avg: { $avg: "$rating" },
-                count: { $sum: 1 },
-              },
-            },
+                avgRating: { $avg: "$rating" },
+                totalReviews: { $sum: 1 },
+                verifiedReviews: {
+                  $sum: { $cond: ["$isVerified", 1, 0] }
+                },
+                avgHelpfulCount: { $avg: "$helpfulCount" }
+              }
+            }
           ],
           ratingDistribution: [
             {
               $group: {
                 _id: "$rating",
-                count: { $sum: 1 },
-              },
+                count: { $sum: 1 }
+              }
             },
-            { $sort: { _id: 1 } },
+            { $sort: { _id: 1 } }
+          ],
+          reviewTypeBreakdown: [
+            {
+              $group: {
+                _id: "$reviewType",
+                count: { $sum: 1 },
+                avgRating: { $avg: "$rating" }
+              }
+            }
           ],
           recentReviews: [
             { $sort: { createdAt: -1 } },
@@ -178,50 +258,49 @@ export async function GET(request: NextRequest) {
                 from: "users",
                 localField: "consumerId",
                 foreignField: "_id",
-                as: "consumer",
-              },
+                as: "consumer"
+              }
             },
             { $unwind: "$consumer" },
             {
               $project: {
                 rating: 1,
                 comment: 1,
+                reviewType: 1,
+                isVerified: 1,
+                helpfulCount: 1,
                 createdAt: 1,
-                "consumer.name": 1,
-              },
-            },
-          ],
-        },
-      },
+                "consumer.name": 1
+              }
+            }
+          ]
+        }
+      }
     ]);
 
     // Customer analytics
     const customerStats = await Order.aggregate([
-      {
-        $match: {
-          providerId: provider._id,
-          createdAt: { $gte: startDate },
-        },
-      },
+      { $match: baseMatch },
       {
         $group: {
           _id: "$consumerId",
           orderCount: { $sum: 1 },
           totalSpent: {
             $sum: {
-              $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0],
-            },
+              $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0]
+            }
           },
           lastOrder: { $max: "$createdAt" },
-        },
+          avgOrderValue: { $avg: "$totalAmount" }
+        }
       },
       {
         $lookup: {
           from: "users",
           localField: "_id",
           foreignField: "_id",
-          as: "customer",
-        },
+          as: "customer"
+        }
       },
       { $unwind: "$customer" },
       { $sort: { totalSpent: -1 } },
@@ -232,28 +311,48 @@ export async function GET(request: NextRequest) {
           "customer.email": 1,
           orderCount: 1,
           totalSpent: 1,
-          lastOrder: 1,
-        },
-      },
+          avgOrderValue: 1,
+          lastOrder: 1
+        }
+      }
     ]);
 
+    // Compile comprehensive analytics
     const analytics = {
       overview: {
-        totalOrders: orderStats[0].totalOrders[0]?.count || 0,
-        totalRevenue: orderStats[0].totalRevenue[0]?.total || 0,
-        averageOrderValue: orderStats[0].averageOrderValue[0]?.avg || 0,
-        averageRating: reviewStats[0].averageRating[0]?.avg || 0,
-        totalReviews: reviewStats[0].averageRating[0]?.count || 0,
+        ...orderStats[0].overview[0],
+        completionRate: orderStats[0].overview[0]?.totalOrders > 0
+          ? Math.round((orderStats[0].overview[0].completedOrders / orderStats[0].overview[0].totalOrders) * 100)
+          : 0,
+        cancellationRate: orderStats[0].overview[0]?.totalOrders > 0
+          ? Math.round((orderStats[0].overview[0].cancelledOrders / orderStats[0].overview[0].totalOrders) * 100)
+          : 0,
+        ...reviewStats[0].overview[0]
       },
-      ordersByStatus: orderStats[0].ordersByStatus,
-      ordersByDay: orderStats[0].ordersByDay,
-      topItems: orderStats[0].topItems,
-      ratingDistribution: reviewStats[0].ratingDistribution,
-      recentReviews: reviewStats[0].recentReviews,
-      topCustomers: customerStats,
+      breakdowns: {
+        status: orderStats[0].statusBreakdown,
+        timeSlot: orderStats[0].timeSlotBreakdown,
+        paymentMethod: orderStats[0].paymentMethodBreakdown,
+        reviewType: reviewStats[0].reviewTypeBreakdown
+      },
+      trends: {
+        daily: orderStats[0].dailyTrends,
+        ratingDistribution: reviewStats[0].ratingDistribution
+      },
+      topPerformers: {
+        items: orderStats[0].topItems,
+        customers: customerStats
+      },
+      recentActivity: {
+        reviews: reviewStats[0].recentReviews
+      }
     };
 
-    return NextResponse.json({ analytics });
+    return NextResponse.json({
+      analytics,
+      dateRange: { startDate, endDate: now },
+      filters: { range, timeSlot, status }
+    });
   } catch (error) {
     console.error("Get provider analytics error:", error);
     return NextResponse.json(

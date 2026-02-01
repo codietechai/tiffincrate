@@ -1,4 +1,3 @@
-// Real-time notification service for order updates
 
 interface NotificationData {
     type: 'order_status_update' | 'driver_location_update' | 'eta_update';
@@ -48,7 +47,7 @@ class RealtimeNotificationService {
 
             userConnections.forEach((response) => {
                 try {
-                    const writer = response.body?.getWriter();
+                    const writer = (response as any).body?.getWriter();
                     writer?.write(encoder.encode(message));
                     writer?.releaseLock();
                 } catch (error) {

@@ -17,7 +17,10 @@ interface TodayOrdersAccordionProps {
 }
 
 const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) => {
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status: string | undefined | null) => {
+        if (!status || typeof status !== 'string') {
+            return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
         switch (status) {
             case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
             case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -30,7 +33,10 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
         }
     };
 
-    const formatStatus = (status: string) => {
+    const formatStatus = (status: string | undefined | null) => {
+        if (!status || typeof status !== 'string') {
+            return 'Unknown';
+        }
         return status.split('_').map(word =>
             word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ');
@@ -38,12 +44,13 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
 
     // Realistic delivery time calculation based on order status and time slot
     const getEstimatedDeliveryTime = (deliveryOrder: any) => {
-        if (deliveryOrder.order.estimatedDeliveryTime) {
+        if (deliveryOrder.order?.estimatedDeliveryTime) {
             return format(new Date(deliveryOrder.order.estimatedDeliveryTime), "HH:mm");
         }
 
         const now = new Date();
         let estimatedMinutes = 0;
+        const status = deliveryOrder.status || deliveryOrder.deliveryStatus || 'pending';
 
         // Base time calculation considering current time and time slot
         const currentHour = now.getHours();
@@ -53,11 +60,11 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
             dinner: 20
         };
 
-        const targetHour = timeSlotHours[deliveryOrder.order.timeSlot];
+        const targetHour = timeSlotHours[deliveryOrder.order?.timeSlot || deliveryOrder.timeSlot || 'lunch'] || 13;
 
         // If it's already past the time slot, delivery is likely soon
         if (currentHour >= targetHour) {
-            switch (deliveryOrder.deliveryStatus) {
+            switch (status) {
                 case 'confirmed':
                     estimatedMinutes = 30;
                     break;
@@ -88,8 +95,9 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
         // In a real app, this would come from the address coordinates
         // For now, we'll use a more realistic approach based on status
         let baseDistance = 2.5; // Average 2.5 km base distance
+        const status = deliveryOrder.status || deliveryOrder.deliveryStatus || 'pending';
 
-        switch (deliveryOrder.deliveryStatus) {
+        switch (status) {
             case 'out_for_delivery':
                 // Driver is on the way, distance should be reasonable
                 return `${(Math.random() * 1.5 + 0.5).toFixed(1)} km`; // 0.5-2.0 km
@@ -112,6 +120,7 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
         const currentMinute = now.getMinutes();
         const deliveryDate = new Date(deliveryOrder.deliveryDate);
         const today = new Date();
+        const status = deliveryOrder.status || deliveryOrder.deliveryStatus || 'pending';
 
         // Check if delivery is today or future date
         const isToday = deliveryDate.toDateString() === today.toDateString();
@@ -128,10 +137,10 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
             dinner: 20
         };
 
-        const targetHour = timeSlotHours[deliveryOrder.order.timeSlot];
+        const targetHour = timeSlotHours[deliveryOrder.order?.timeSlot || deliveryOrder.timeSlot || 'lunch'] || 13;
 
         if (currentHour >= targetHour && isToday) {
-            switch (deliveryOrder.deliveryStatus) {
+            switch (status) {
                 case 'confirmed':
                     return '25-35 min';
                 case 'preparing':
@@ -156,7 +165,7 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
                 return `${minutesUntilSlot} min`;
             } else {
                 // For future dates, show time slot
-                return `${deliveryOrder.order.timeSlot} slot`;
+                return `${deliveryOrder.order?.timeSlot || deliveryOrder.timeSlot || 'lunch'} slot`;
             }
         }
     };
@@ -164,6 +173,7 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
     if (orders.length === 0) {
         return null;
     }
+    console.log('orders :>> ', orders);
 
     return (
         <div className="w-full mb-6">
@@ -184,10 +194,10 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
                                 {orders.map((deliveryOrder, index) => (
                                     <Badge
                                         key={deliveryOrder._id}
-                                        className={`${getStatusColor(deliveryOrder.deliveryStatus)} text-xs`}
+                                        className={`${getStatusColor(deliveryOrder.status || deliveryOrder.deliveryStatus)} text-xs`}
                                         variant="outline"
                                     >
-                                        {formatStatus(deliveryOrder.deliveryStatus)}
+                                        {formatStatus(deliveryOrder.status || deliveryOrder.deliveryStatus)}
                                     </Badge>
                                 ))}
                             </div>
@@ -206,8 +216,12 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
                                         <div className="flex items-center justify-between w-full mr-4">
                                             <div className="flex items-center space-x-3">
                                                 <div className="text-left">
-                                                    <h4 className="font-medium text-gray-900">{deliveryOrder.menu.name}</h4>
-                                                    <p className="text-sm text-gray-600">{deliveryOrder.provider?.businessName}</p>
+                                                    <h4 className="font-medium text-gray-900">
+                                                        {deliveryOrder.menu?.name || deliveryOrder.menuId?.name || 'Menu Item'}
+                                                    </h4>
+                                                    <p className="text-sm text-gray-600">
+                                                        {deliveryOrder.provider?.businessName || deliveryOrder.providerId?.businessName || 'Provider'}
+                                                    </p>
                                                     <p className="text-xs text-blue-600">
                                                         {format(new Date(deliveryOrder.deliveryDate), "MMM dd, yyyy")}
                                                     </p>
@@ -222,8 +236,8 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
                                                         {getEstimatedDistance(deliveryOrder)}
                                                     </p>
                                                 </div>
-                                                <Badge className={`${getStatusColor(deliveryOrder.deliveryStatus)} text-xs`}>
-                                                    {formatStatus(deliveryOrder.deliveryStatus)}
+                                                <Badge className={`${getStatusColor(deliveryOrder.status || deliveryOrder.deliveryStatus)} text-xs`}>
+                                                    {formatStatus(deliveryOrder.status || deliveryOrder.deliveryStatus)}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -235,52 +249,61 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
                                             <div className="bg-white rounded-lg p-4 space-y-3">
                                                 <div className="flex justify-between items-start">
                                                     <div className="flex-1">
-                                                        <h5 className="font-medium text-gray-900">{deliveryOrder.menu.name}</h5>
-                                                        <p className="text-sm text-gray-600 mt-1">{deliveryOrder.menu.description}</p>
+                                                        <h5 className="font-medium text-gray-900">
+                                                            {deliveryOrder.menu?.name || deliveryOrder.menuId?.name || 'Menu Item'}
+                                                        </h5>
+                                                        <p className="text-sm text-gray-600 mt-1">
+                                                            {deliveryOrder.menu?.description || deliveryOrder.menuId?.description || 'No description available'}
+                                                        </p>
                                                         <p className="text-sm font-medium text-blue-600 mt-2">
-                                                            {deliveryOrder.provider?.businessName}
+                                                            {deliveryOrder.provider?.businessName || deliveryOrder.providerId?.businessName || 'Provider'}
                                                         </p>
                                                         <p className="text-xs text-gray-500 mt-1">
                                                             Delivery Date: {format(new Date(deliveryOrder.deliveryDate), "EEEE, MMM dd, yyyy")}
                                                         </p>
                                                     </div>
                                                     <div className="text-right ml-4">
-                                                        <p className="font-bold text-lg text-gray-900">₹{deliveryOrder.order.totalAmount}</p>
-                                                        <p className="text-xs text-gray-500 capitalize">{deliveryOrder.order.timeSlot}</p>
+                                                        <p className="font-bold text-lg text-gray-900">
+                                                            ₹{deliveryOrder.order?.totalAmount || deliveryOrder.totalAmount || 0}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 capitalize">
+                                                            {deliveryOrder.order?.timeSlot || deliveryOrder.timeSlot || 'lunch'}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Delivery Information */}
-                                            {(deliveryOrder.deliveryStatus === 'out_for_delivery' || deliveryOrder.deliveryStatus === 'ready' || deliveryOrder.deliveryStatus === 'preparing') && (
-                                                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div className="flex items-center space-x-2">
-                                                            <Clock className="w-4 h-4 text-green-600" />
-                                                            <div>
-                                                                <p className="text-xs text-green-700">Estimated Time</p>
-                                                                <p className="font-semibold text-green-800">
-                                                                    {getEstimatedTimeInMinutes(deliveryOrder)}
-                                                                </p>
+                                            {(deliveryOrder.status === 'out_for_delivery' || deliveryOrder.status === 'ready' || deliveryOrder.status === 'preparing' ||
+                                                deliveryOrder.deliveryStatus === 'out_for_delivery' || deliveryOrder.deliveryStatus === 'ready' || deliveryOrder.deliveryStatus === 'preparing') && (
+                                                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="flex items-center space-x-2">
+                                                                <Clock className="w-4 h-4 text-green-600" />
+                                                                <div>
+                                                                    <p className="text-xs text-green-700">Estimated Time</p>
+                                                                    <p className="font-semibold text-green-800">
+                                                                        {getEstimatedTimeInMinutes(deliveryOrder)}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center space-x-2">
+                                                                <MapPin className="w-4 h-4 text-green-600" />
+                                                                <div>
+                                                                    <p className="text-xs text-green-700">Distance</p>
+                                                                    <p className="font-semibold text-green-800">
+                                                                        {getEstimatedDistance(deliveryOrder)}
+                                                                    </p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center space-x-2">
-                                                            <MapPin className="w-4 h-4 text-green-600" />
-                                                            <div>
-                                                                <p className="text-xs text-green-700">Distance</p>
-                                                                <p className="font-semibold text-green-800">
-                                                                    {getEstimatedDistance(deliveryOrder)}
-                                                                </p>
-                                                            </div>
+                                                        <div className="mt-3 pt-3 border-t border-green-200">
+                                                            <p className="text-xs text-green-700">
+                                                                Estimated Delivery: <span className="font-semibold">{getEstimatedDeliveryTime(deliveryOrder)}</span>
+                                                            </p>
                                                         </div>
                                                     </div>
-                                                    <div className="mt-3 pt-3 border-t border-green-200">
-                                                        <p className="text-xs text-green-700">
-                                                            Estimated Delivery: <span className="font-semibold">{getEstimatedDeliveryTime(deliveryOrder)}</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
+                                                )}
 
                                             {/* Delivery Address */}
                                             <div className="bg-white rounded-lg p-4 border">
@@ -289,21 +312,24 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm font-medium text-gray-900 mb-1">Delivery Address</p>
                                                         <p className="text-sm text-gray-600 break-words">
-                                                            {deliveryOrder.address.address_line_1}
-                                                            {deliveryOrder.address.address_line_2 && `, ${deliveryOrder.address.address_line_2}`}
+                                                            {deliveryOrder.address?.addressLine1 || deliveryOrder.address?.address_line_1}
+                                                            {(deliveryOrder.address?.addressLine2 || deliveryOrder.address?.address_line_2) &&
+                                                                `, ${deliveryOrder.address?.addressLine2 || deliveryOrder.address?.address_line_2}`}
                                                         </p>
                                                         <p className="text-sm text-gray-600">
-                                                            {deliveryOrder.address.city}, {deliveryOrder.address.region} - {deliveryOrder.address.postal_code}
+                                                            {deliveryOrder.address?.city}, {deliveryOrder.address?.state || deliveryOrder.address?.region} - {deliveryOrder.address?.pincode || deliveryOrder.address?.postal_code}
                                                         </p>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Special Instructions */}
-                                            {deliveryOrder.order.notes && (
+                                            {(deliveryOrder.order?.notes || deliveryOrder.notes) && (
                                                 <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
                                                     <p className="text-sm font-medium text-yellow-800 mb-1">Special Instructions</p>
-                                                    <p className="text-sm text-yellow-700">{deliveryOrder.order.notes}</p>
+                                                    <p className="text-sm text-yellow-700">
+                                                        {deliveryOrder.order?.notes || deliveryOrder.notes}
+                                                    </p>
                                                 </div>
                                             )}
 
@@ -318,9 +344,10 @@ const TodayOrdersAccordion: React.FC<TodayOrdersAccordionProps> = ({ orders }) =
                                                         { status: 'out_for_delivery', label: 'Out for Delivery' },
                                                         { status: 'delivered', label: 'Delivered' }
                                                     ].map((step, stepIndex) => {
+                                                        const currentStatus = deliveryOrder.status || deliveryOrder.deliveryStatus || 'pending';
                                                         const isCompleted = ['confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered']
-                                                            .indexOf(deliveryOrder.deliveryStatus) >= stepIndex;
-                                                        const isCurrent = deliveryOrder.deliveryStatus === step.status;
+                                                            .indexOf(currentStatus) >= stepIndex;
+                                                        const isCurrent = currentStatus === step.status;
 
                                                         return (
                                                             <div key={step.status} className="flex items-center space-x-3">

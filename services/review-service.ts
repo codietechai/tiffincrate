@@ -1,74 +1,211 @@
 import { TReview } from "@/types";
+import { httpClient } from "@/lib/http-client";
+import { ROUTES, buildApiUrl } from "@/constants/routes";
+import { QUERY_KEYS } from "@/constants/query-keys";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+// Review Service Class (for direct API calls)
 export class ReviewService {
-  private static baseUrl = "/api/reviews";
-
   static async fetchReviews(payload: {
-    id: string;
+    id?: string;
+    providerId?: string;
+    consumerId?: string;
     ratingFilter?: string;
+    reviewType?: string;
     sortBy?: string;
     sortOrder?: string;
     role?: string;
     limit?: string;
-    consumerId?: string;
     page?: string;
     search?: string;
+    verified?: boolean;
   }): Promise<{
     data: TReview[];
+    pagination?: any;
     message: string;
     providers?: any;
-    pagination?: any;
     stats?: any;
   }> {
-    try {
-      const params = new URLSearchParams();
-      if (payload.id) params.append("providerId", payload.id);
-      if (payload.ratingFilter) params.append("rating", payload.ratingFilter);
-      if (payload.sortBy) params.append("sortBy", payload.sortBy);
-      if (payload.sortOrder) params.append("sortOrder", payload.sortOrder);
-      if (payload.limit) params.append("limit", payload.limit);
-      if (payload.consumerId) params.append("consumerId", payload.consumerId);
-      if (payload.page) params.append("page", payload.page);
-      if (payload.search) params.append("search", payload.search);
+    const params: Record<string, string | undefined> = {};
 
-      const endpoint =
-        payload.role === "admin" ? "/api/admin/reviews" : "/api/reviews";
-      const response = await fetch(`${endpoint}?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to fetching reviews");
-      }
+    // Handle providerId (backward compatibility)
+    if (payload.id) params.providerId = payload.id;
+    if (payload.providerId) params.providerId = payload.providerId;
+    if (payload.consumerId) params.consumerId = payload.consumerId;
 
-      const setting = await response.json();
-      return setting;
-    } catch (error) {
-      throw error;
+    // Rating and review type filters
+    if (payload.ratingFilter && payload.ratingFilter !== "all") {
+      params.rating = payload.ratingFilter;
     }
+    if (payload.reviewType && payload.reviewType !== "all") {
+      params.reviewType = payload.reviewType;
+    }
+
+    // Sorting
+    if (payload.sortBy) params.sort = payload.sortBy;
+
+    // Pagination
+    if (payload.limit) params.limit = payload.limit;
+    if (payload.page) params.page = payload.page;
+
+    // Search
+    if (payload.search) params.search = payload.search;
+
+    // Verification filter
+    if (payload.verified !== undefined) {
+      params.sort = payload.verified ? "verified" : "latest";
+    }
+
+    const endpoint = payload.role === "admin" ? ROUTES.ADMIN.REVIEWS : ROUTES.REVIEW.BASE;
+    const url = buildApiUrl(endpoint, params);
+
+    return httpClient.get(url);
   }
 
-  static async deleteReview(id: string) {
-    try {
-      const response = await fetch("/api/admin/reviews", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to fetching reviews");
-      }
+  static async createReview(payload: {
+    providerId: string;
+    orderId?: string;
+    rating: number;
+    comment?: string;
+    reviewType?: string;
+  }): Promise<{
+    data: TReview;
+    message: string;
+  }> {
+    return httpClient.post(ROUTES.REVIEW.BASE, payload);
+  }
 
-      const setting = await response.json();
-      return setting;
-    } catch (error) {
-      throw error;
-    }
+  static async updateReview(id: string, payload: {
+    rating?: number;
+    comment?: string;
+    reviewType?: string;
+  }): Promise<{
+    data: TReview;
+    message: string;
+  }> {
+    return httpClient.put(`${ROUTES.REVIEW.BASE}/${id}`, payload);
+  }
+
+  static async deleteReview(id: string): Promise<{
+    message: string;
+  }> {
+    return httpClient.delete(`${ROUTES.ADMIN.REVIEWS}/${id}`);
+  }
+
+  static async fetchReviewsByProvider(providerId: string): Promise<{
+    data: TReview[];
+    message: string;
+    stats?: any;
+  }> {
+    const url = buildApiUrl(ROUTES.REVIEW.BASE, { providerId });
+    return httpClient.get(url);
+  }
+
+  static async fetchReviewsByUser(userId: string): Promise<{
+    data: TReview[];
+    message: string;
+  }> {
+    const url = buildApiUrl(ROUTES.REVIEW.BASE, { consumerId: userId });
+    return httpClient.get(url);
+  }
+
+  static async fetchReviewsByOrder(orderId: string): Promise<{
+    data: TReview[];
+    message: string;
+  }> {
+    const url = buildApiUrl(ROUTES.REVIEW.BASE, { orderId });
+    return httpClient.get(url);
   }
 }
+
+// React Query Hooks for Review
+export const useReviews = (payload: {
+  id?: string;
+  providerId?: string;
+  consumerId?: string;
+  ratingFilter?: string;
+  reviewType?: string;
+  sortBy?: string;
+  sortOrder?: string;
+  role?: string;
+  limit?: string;
+  page?: string;
+  search?: string;
+  verified?: boolean;
+}) => {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.REVIEW.ALL, payload],
+    queryFn: () => ReviewService.fetchReviews(payload),
+  });
+};
+
+export const useReviewsByProvider = (providerId: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.REVIEW.BY_PROVIDER(providerId),
+    queryFn: () => ReviewService.fetchReviewsByProvider(providerId),
+    enabled: !!providerId,
+  });
+};
+
+export const useReviewsByUser = (userId: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.REVIEW.BY_USER(userId),
+    queryFn: () => ReviewService.fetchReviewsByUser(userId),
+    enabled: !!userId,
+  });
+};
+
+export const useReviewsByOrder = (orderId: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.REVIEW.BY_ORDER(orderId),
+    queryFn: () => ReviewService.fetchReviewsByOrder(orderId),
+    enabled: !!orderId,
+  });
+};
+
+export const useCreateReview = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ReviewService.createReview,
+    onSuccess: (_, variables) => {
+      // Invalidate review-related queries
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.REVIEW.ALL });
+      if (variables.providerId) {
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.REVIEW.BY_PROVIDER(variables.providerId)
+        });
+      }
+      if (variables.orderId) {
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.REVIEW.BY_ORDER(variables.orderId)
+        });
+      }
+    },
+  });
+};
+
+export const useUpdateReview = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) =>
+      ReviewService.updateReview(id, payload),
+    onSuccess: () => {
+      // Invalidate all review queries
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.REVIEW.ALL });
+    },
+  });
+};
+
+export const useDeleteReview = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ReviewService.deleteReview,
+    onSuccess: () => {
+      // Invalidate all review queries
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.REVIEW.ALL });
+    },
+  });
+};

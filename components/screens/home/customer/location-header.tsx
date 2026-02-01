@@ -7,13 +7,12 @@ import React from "react";
 
 export default function LocationHeader({ isSticky }: { isSticky: boolean }) {
   const router = useRouter();
-  const { city, address_line_1 } = useLocation();
+  const { city, addressLine1 } = useLocation();
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isSticky ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
-      }`}
+      className={`transition-all duration-300 ${isSticky ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
+        }`}
     >
       <div className="flex justify-between items-center gap-2 md:gap-0 cursor-pointer">
         <div onClick={() => router.push("/address")}>
@@ -24,7 +23,7 @@ export default function LocationHeader({ isSticky }: { isSticky: boolean }) {
           </div>
 
           <div className="text-[#666] text-xs mt-1 max-w-xs truncate">
-            {address_line_1 || "Fetching exact address..."}
+            {addressLine1 || "Fetching exact address..."}
           </div>
         </div>
 

@@ -5,3 +5,6 @@ export * from "./review";
 export * from "./provider";
 export * from "./address";
 export * from "./help-request";
+export * from "./notification";
+export * from "./order";
+export * from "./wallet";

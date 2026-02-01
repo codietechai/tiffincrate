@@ -1,110 +1,171 @@
-import mongoose, { Schema, Model } from "mongoose";
+import mongoose, { Schema, Model, Document } from "mongoose";
 
-/**
- * Address Interface
- */
-export interface IAddress {
-  user_id?: mongoose.Types.ObjectId;
+export interface IAddress extends Document {
+  userId?: mongoose.Types.ObjectId;
   name: string;
-  address_line_1: string;
-  address_line_2?: string;
+  addressLine1: string;
+  addressLine2?: string;
   city: string;
-  region: string;
+  state: string;
   country: string;
-  latitude?: number;
-  longitude?: number;
-  country_code: string;
-  postal_code: string;
-  dial_code?: string;
-  phone_number?: string;
-  full_phone_number?: string;
-  is_default: boolean;
-  email?: string;
-  address_mutability: "mutable" | "immutable";
-  ref_address?: mongoose.Types.ObjectId;
+  pincode: string;
+  location: {
+    type: "Point";
+    coordinates: [number, number]; // [longitude, latitude]
+  };
+  phone?: string;
+  isDefault: boolean;
+  addressType: "home" | "office" | "other";
+  landmark?: string;
+  deliveryInstructions?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-/**
- * Address Schema (NO GENERICS HERE ❗)
- */
-const addressSchema = new Schema(
+const addressSchema = new Schema<IAddress>(
   {
-    user_id: {
+    userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: false,
+      required: true,
+      index: true,
     },
     name: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 100,
     },
-    address_line_1: {
+    addressLine1: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 200,
     },
-    address_line_2: {
+    addressLine2: {
       type: String,
       trim: true,
+      maxlength: 200,
     },
     city: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 100,
+      index: true,
     },
-    region: {
+    state: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 100,
     },
     country: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 100,
+      default: "India",
     },
-    latitude: Number,
-    longitude: Number,
-    country_code: {
+    pincode: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 10,
+      index: true,
     },
-    postal_code: {
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        required: true,
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true,
+        index: "2dsphere", // Geospatial index
+      },
+    },
+    phone: {
       type: String,
-      required: true,
       trim: true,
+      maxlength: 15,
     },
-    dial_code: String,
-    phone_number: String,
-    full_phone_number: String,
-    is_default: {
+    isDefault: {
       type: Boolean,
       default: false,
+      index: true,
     },
-    email: {
+    addressType: {
+      type: String,
+      enum: ["home", "office", "other"],
+      default: "home",
+      index: true,
+    },
+    landmark: {
       type: String,
       trim: true,
-      lowercase: true,
+      maxlength: 200,
     },
-    address_mutability: {
+    deliveryInstructions: {
       type: String,
-      enum: ["mutable", "immutable"],
-      default: "mutable",
+      trim: true,
+      maxlength: 500,
     },
-    ref_address: {
-      type: Schema.Types.ObjectId,
-      ref: "Address",
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
     },
   },
   {
-    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
-/**
- * Model Loader (TS + Next.js safe)
- */
+// Compound indexes for efficient queries
+addressSchema.index({ userId: 1, isActive: 1 });
+addressSchema.index({ userId: 1, isDefault: 1 });
+addressSchema.index({ pincode: 1, city: 1 });
+
+// Ensure only one default address per user
+addressSchema.index({ userId: 1, isDefault: 1 }, {
+  unique: true,
+  partialFilterExpression: { isDefault: true }
+});
+
+// Virtual for formatted address
+addressSchema.virtual('fullAddress').get(function () {
+  let address = this.addressLine1;
+  if (this.addressLine2) address += ', ' + this.addressLine2;
+  if (this.landmark) address += ', ' + this.landmark;
+  address += ', ' + this.city + ', ' + this.state + ' - ' + this.pincode;
+  return address;
+});
+
+// Virtual for coordinates in lat/lng format
+addressSchema.virtual('coordinates').get(function () {
+  return {
+    lat: this.location.coordinates[1],
+    lng: this.location.coordinates[0]
+  };
+});
+
+// Pre-save middleware to ensure only one default address per user
+addressSchema.pre('save', async function (next) {
+  if (this.isDefault && this.isModified('isDefault')) {
+    await mongoose.model('Address').updateMany(
+      { userId: this.userId, _id: { $ne: this._id } },
+      { isDefault: false }
+    );
+  }
+  next();
+});
+
 let Address: Model<IAddress>;
 
 try {

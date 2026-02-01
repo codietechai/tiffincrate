@@ -88,6 +88,8 @@ export function MenuItemDetail() {
   const [error, setError] = useState<string | null>(null);
   const [isOrdering, setIsOrdering] = useState(false);
   const [defaultAddress, setDefaultAddress] = useState<TAddress | null>(null);
+  const [addresses, setAddresses] = useState<TAddress[]>([]);
+  const [addressLoading, setAddressLoading] = useState(true);
   const [orderData, setOrderData] = useState({
     address: "",
     deliveryDate: "",
@@ -100,10 +102,20 @@ export function MenuItemDetail() {
 
   const fetchDefaultAddress = async () => {
     try {
-      const response = await AddressService.fetchDefault();
-      setDefaultAddress(response.data);
+      setAddressLoading(true);
+      // First fetch all addresses
+      const allAddressesResponse = await AddressService.fetchAll();
+      setAddresses(allAddressesResponse.data);
+
+      // Find default address or use first one
+      const defaultAddr = allAddressesResponse.data.find((addr: TAddress) => addr.isDefault) ||
+        allAddressesResponse.data[0] || null;
+
+      setDefaultAddress(defaultAddr);
     } catch (error) {
-      console.log("error", error);
+      console.log("Error fetching addresses:", error);
+    } finally {
+      setAddressLoading(false);
     }
   };
 
@@ -149,6 +161,18 @@ export function MenuItemDetail() {
     fetchMenu();
   }, [params.id]);
 
+  // Refresh addresses when user comes back from address pages
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user?.role === "consumer") {
+        fetchDefaultAddress();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user]);
+
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -163,6 +187,12 @@ export function MenuItemDetail() {
   const handlePlaceOrder = async () => {
     if (!user || user.role !== "consumer") {
       router.push("/auth/login");
+      return;
+    }
+
+    if (!defaultAddress) {
+      alert("Please add a delivery address before placing an order");
+      router.push("/address/add");
       return;
     }
 
@@ -256,6 +286,14 @@ export function MenuItemDetail() {
 
   const onEdit = (addressId: string) =>
     router.push(`/address/edit/${addressId}?choose-another=true`);
+
+  const handleChooseAnother = () => {
+    router.push("/address?choose-another=true");
+  };
+
+  const refreshAddresses = () => {
+    fetchDefaultAddress();
+  };
 
   const validDays = getValidDaysFromMenuItems(menu.menuItems);
 
@@ -364,27 +402,34 @@ export function MenuItemDetail() {
 
             {user?.role === "consumer" && (
               <div className="space-y-4 mt-4">
-                {!!defaultAddress ? (
-                  <div>
-                    <Label>Default Address</Label>
-                    <AddressCard
-                      chooseAnother={() =>
-                        router.push("/address?choose-another=true")
-                      }
-                      onEdit={onEdit}
-                      address={defaultAddress}
-                    />
-                  </div>
-                ) : (
-                  <Button
-                    variant={"outline"}
-                    className="border-dashed text-primary"
-                    size={"sm"}
-                    onClick={() => router.push("/address/add")}
-                  >
-                    <Plus /> Add Address
-                  </Button>
-                )}
+                <div>
+                  <Label className="text-sm font-medium">Delivery Address</Label>
+                  {addressLoading ? (
+                    <div className="mt-2 p-4 border rounded-lg animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ) : defaultAddress ? (
+                    <div className="mt-2">
+                      <AddressCard
+                        chooseAnother={handleChooseAnother}
+                        onEdit={onEdit}
+                        address={defaultAddress}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-2">
+                      <Button
+                        variant="outline"
+                        className="w-full border-dashed text-primary hover:bg-primary/5"
+                        onClick={() => router.push("/address/add")}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Delivery Address
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 <div>
                   <Label>Delivery Period</Label>
                   <Select
@@ -493,9 +538,15 @@ export function MenuItemDetail() {
 
                 <Button
                   onClick={handlePlaceOrder}
-                  className="w-full mt-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                  disabled={isOrdering || !defaultAddress}
+                  className="w-full mt-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isOrdering ? "Processing..." : "Place Order"}
+                  {isOrdering
+                    ? "Processing..."
+                    : !defaultAddress
+                      ? "Add Address to Continue"
+                      : "Place Order"
+                  }
                 </Button>
               </div>
             )}

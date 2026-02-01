@@ -11,47 +11,69 @@ export async function GET(request: NextRequest) {
 
     const providerId = searchParams.get("providerId");
     const consumerId = searchParams.get("consumerId");
-    const rating = searchParams.get("rating"); // number or "all"
-    const search = searchParams.get("search"); // search text
-    const sort = searchParams.get("sort") || "latest"; // default sort
+    const rating = searchParams.get("rating");
+    const reviewType = searchParams.get("reviewType");
+    const search = searchParams.get("search");
+    const sort = searchParams.get("sort") || "latest";
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
 
-    // ----------------------
-    // BUILD QUERY
-    // ----------------------
-    const query: any = {};
+    const skip = (page - 1) * limit;
+
+    // Build query with new schema fields
+    const query: any = { isHidden: false }; // Only show non-hidden reviews
 
     if (providerId && providerId !== "all") query.providerId = providerId;
     if (consumerId && consumerId !== "all") query.consumerId = consumerId;
     if (rating && rating !== "all") query.rating = Number(rating);
+    if (reviewType && reviewType !== "all") query.reviewType = reviewType;
 
-    // text search on comment + user name
+    // Use text search index for better performance
     if (search && search.trim() !== "") {
-      query.$or = [
-        { comment: { $regex: search, $options: "i" } },
-        { "consumerId.name": { $regex: search, $options: "i" } },
-      ];
+      query.$text = { $search: search };
     }
 
-    // ----------------------
-    // SORT LOGIC
-    // ----------------------
-    let sortQuery: any = { createdAt: -1 }; // default = latest
+    // Sort logic with new fields
+    let sortQuery: any = { createdAt: -1 };
 
-    if (sort === "oldest") sortQuery = { createdAt: 1 };
-    if (sort === "high") sortQuery = { rating: -1 };
-    if (sort === "low") sortQuery = { rating: 1 };
+    switch (sort) {
+      case "oldest":
+        sortQuery = { createdAt: 1 };
+        break;
+      case "high":
+        sortQuery = { rating: -1, createdAt: -1 };
+        break;
+      case "low":
+        sortQuery = { rating: 1, createdAt: -1 };
+        break;
+      case "helpful":
+        sortQuery = { helpfulCount: -1, createdAt: -1 };
+        break;
+      case "verified":
+        query.isVerified = true;
+        sortQuery = { createdAt: -1 };
+        break;
+    }
 
-    // ----------------------
-    // FETCH
-    // ----------------------
+    // Fetch reviews with pagination
     const reviews = await Review.find(query)
-      .populate("consumerId", "name avatar")
+      .populate("consumerId", "name")
       .populate("providerId", "businessName")
       .populate("orderId", "totalAmount createdAt")
-      .sort(sortQuery);
+      .sort(sortQuery)
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Review.countDocuments(query);
 
     return NextResponse.json({
       data: reviews,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        count: reviews.length,
+        totalRecords: total,
+      },
       message: "Reviews fetched successfully",
     });
   } catch (error) {
@@ -73,7 +95,31 @@ export async function POST(request: NextRequest) {
     }
 
     await connectMongoDB();
-    const { providerId, orderId, rating, comment } = await request.json();
+    const {
+      providerId,
+      orderId,
+      deliveryOrderId,
+      rating,
+      comment,
+      reviewType = "order",
+      images = []
+    } = await request.json();
+
+    // Validate required fields
+    if (!providerId || !orderId || !rating) {
+      return NextResponse.json(
+        { error: "Missing required fields: providerId, orderId, rating" },
+        { status: 400 }
+      );
+    }
+
+    // Validate rating range
+    if (rating < 1 || rating > 5) {
+      return NextResponse.json(
+        { error: "Rating must be between 1 and 5" },
+        { status: 400 }
+      );
+    }
 
     // Check if review already exists for this order
     const existingReview = await Review.findOne({
@@ -88,28 +134,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create review with new schema fields
     const review = new Review({
       consumerId: userId,
       providerId,
       orderId,
+      deliveryOrderId,
       rating,
-      comment,
+      comment: comment?.trim(),
+      reviewType,
+      images: images.slice(0, 5), // Limit to 5 images
       isVerified: true, // Mark as verified since it's from a completed order
+      helpfulCount: 0,
+      reportCount: 0,
+      isHidden: false,
     });
 
     await review.save();
 
-    // Update provider's average rating
-    const reviews = await Review.find({ providerId });
-    const averageRating =
-      reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    // Update provider's average rating and review count
+    const allReviews = await Review.find({
+      providerId,
+      isHidden: false
+    });
+
+    const averageRating = allReviews.length > 0
+      ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
+      : 0;
 
     await ServiceProvider.findByIdAndUpdate(providerId, {
       rating: Math.round(averageRating * 10) / 10,
+      // Update review count if field exists in ServiceProvider schema
     });
 
     return NextResponse.json(
-      { message: "Review added successfully", review },
+      {
+        message: "Review added successfully",
+        review: await review.populate([
+          { path: "consumerId", select: "name" },
+          { path: "providerId", select: "businessName" },
+          { path: "orderId", select: "totalAmount createdAt" }
+        ])
+      },
       { status: 201 }
     );
   } catch (error) {

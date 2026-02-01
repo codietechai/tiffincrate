@@ -3,10 +3,93 @@ import Wallet from "@/models/Wallet";
 import WalletTransaction from "@/models/WalletTransaction";
 import DeliverySettlement from "@/models/DeliverySettlement";
 import WithdrawalRequest from "@/models/WithdrawalRequest";
+import { httpClient } from "@/lib/http-client";
+import { ROUTES } from "@/constants/routes";
+import { QUERY_KEYS } from "@/constants/query-keys";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+// Wallet Service Class (for direct API calls and server-side operations)
 export class WalletService {
+    // API-based methods (for client-side use)
+    static async getWalletBalance(): Promise<{
+        data: any;
+        message: string;
+    }> {
+        return httpClient.get(ROUTES.WALLET.BASE);
+    }
 
-    // Create wallet for new user
+    static async addMoney(payload: {
+        amount: number;
+        paymentMethod: string;
+        razorpayOrderId?: string;
+        razorpayPaymentId?: string;
+        razorpaySignature?: string;
+    }): Promise<{
+        data: any;
+        message: string;
+    }> {
+        return httpClient.post(ROUTES.WALLET.ADD_MONEY, payload);
+    }
+
+    static async getTransactionHistory(params?: {
+        page?: number;
+        limit?: number;
+        category?: string;
+        type?: string;
+        startDate?: string;
+        endDate?: string;
+    }): Promise<{
+        data: any[];
+        pagination: any;
+        message: string;
+    }> {
+        const url = ROUTES.WALLET.TRANSACTIONS;
+        return httpClient.get(url);
+    }
+
+    static async freezeWallet(payload: {
+        reason: string;
+    }): Promise<{
+        data: any;
+        message: string;
+    }> {
+        return httpClient.post(ROUTES.WALLET.FREEZE, payload);
+    }
+
+    static async requestWithdrawal(payload: {
+        amount: number;
+        bankDetails: {
+            accountNumber: string;
+            ifscCode: string;
+            accountHolderName: string;
+            bankName: string;
+        };
+        reason?: string;
+    }): Promise<{
+        data: any;
+        message: string;
+    }> {
+        return httpClient.post(ROUTES.WALLET.WITHDRAWAL, payload);
+    }
+
+    static async getWithdrawalRequests(): Promise<{
+        data: any[];
+        message: string;
+    }> {
+        return httpClient.get(ROUTES.WALLET.WITHDRAWAL);
+    }
+
+    static async updateWithdrawalRequest(requestId: string, payload: {
+        status: "approved" | "rejected";
+        adminNotes?: string;
+    }): Promise<{
+        data: any;
+        message: string;
+    }> {
+        return httpClient.put(ROUTES.WALLET.WITHDRAWAL_BY_ID(requestId), payload);
+    }
+
+    // Server-side methods (for internal use in API routes)
     static async createWallet(userId: string, userType: "customer" | "provider" | "admin") {
         try {
             const existingWallet = await Wallet.findOne({ userId });
@@ -32,7 +115,6 @@ export class WalletService {
         }
     }
 
-    // Get wallet by user ID
     static async getWallet(userId: string) {
         try {
             const wallet = await Wallet.findOne({ userId });
@@ -46,7 +128,6 @@ export class WalletService {
         }
     }
 
-    // Process order payment (Customer pays, Admin receives)
     static async processOrderPayment(
         customerId: string,
         orderId: string,
@@ -57,7 +138,6 @@ export class WalletService {
         session.startTransaction();
 
         try {
-            // Get customer and admin wallets
             const customerWallet = await Wallet.findOne({ userId: customerId }).session(session);
             const adminWallet = await Wallet.findOne({ userType: "admin" }).session(session);
 
@@ -65,23 +145,19 @@ export class WalletService {
                 throw new Error("Wallet not found");
             }
 
-            // Check customer balance
             if (customerWallet.availableBalance < amount) {
                 throw new Error("Insufficient balance");
             }
 
-            // Debit customer wallet
             customerWallet.availableBalance -= amount;
             customerWallet.totalSpent += amount;
             customerWallet.lastTransactionAt = new Date();
             await customerWallet.save({ session });
 
-            // Credit admin wallet
             adminWallet.availableBalance += amount;
             adminWallet.lastTransactionAt = new Date();
             await adminWallet.save({ session });
 
-            // Create customer debit transaction
             const customerTransaction = new WalletTransaction({
                 walletId: customerWallet._id,
                 userId: customerId,
@@ -98,7 +174,6 @@ export class WalletService {
             });
             await customerTransaction.save({ session });
 
-            // Create admin credit transaction
             const adminTransaction = new WalletTransaction({
                 walletId: adminWallet._id,
                 userId: adminWallet.userId,
@@ -129,13 +204,12 @@ export class WalletService {
         } catch (error) {
             await session.abortTransaction();
             console.error("Process order payment error:", error);
-            return { success: false, error: error.message || "Payment processing failed" };
+            return { success: false, error: (error as Error).message || "Payment processing failed" };
         } finally {
             session.endSession();
         }
     }
 
-    // Process delivery settlement (Admin pays Provider)
     static async processDeliverySettlement(
         deliveryOrderId: string,
         providerId: string,
@@ -149,7 +223,6 @@ export class WalletService {
         session.startTransaction();
 
         try {
-            // Check if settlement already exists
             const existingSettlement = await DeliverySettlement.findOne({
                 deliveryOrderId
             }).session(session);
@@ -158,7 +231,6 @@ export class WalletService {
                 throw new Error("Settlement already processed for this delivery");
             }
 
-            // Get provider and admin wallets
             const providerWallet = await Wallet.findOne({ userId: providerId }).session(session);
             const adminWallet = await Wallet.findOne({ userType: "admin" }).session(session);
 
@@ -166,23 +238,19 @@ export class WalletService {
                 throw new Error("Wallet not found");
             }
 
-            // Check admin balance
             if (adminWallet.availableBalance < mealAmount) {
                 throw new Error("Insufficient admin balance for settlement");
             }
 
-            // Debit admin wallet
             adminWallet.availableBalance -= mealAmount;
             adminWallet.lastTransactionAt = new Date();
             await adminWallet.save({ session });
 
-            // Credit provider wallet
             providerWallet.availableBalance += mealAmount;
             providerWallet.totalEarned += mealAmount;
             providerWallet.lastTransactionAt = new Date();
             await providerWallet.save({ session });
 
-            // Create admin debit transaction
             const adminTransaction = new WalletTransaction({
                 walletId: adminWallet._id,
                 userId: adminWallet.userId,
@@ -199,7 +267,6 @@ export class WalletService {
             });
             await adminTransaction.save({ session });
 
-            // Create provider credit transaction
             const providerTransaction = new WalletTransaction({
                 walletId: providerWallet._id,
                 userId: providerId,
@@ -216,7 +283,6 @@ export class WalletService {
             });
             await providerTransaction.save({ session });
 
-            // Create settlement record
             const settlement = new DeliverySettlement({
                 deliveryOrderId: new mongoose.Types.ObjectId(deliveryOrderId),
                 orderId: new mongoose.Types.ObjectId(orderId),
@@ -249,13 +315,12 @@ export class WalletService {
         } catch (error) {
             await session.abortTransaction();
             console.error("Process delivery settlement error:", error);
-            return { success: false, error: error.message || "Settlement processing failed" };
+            return { success: false, error: (error as Error).message || "Settlement processing failed" };
         } finally {
             session.endSession();
         }
     }
 
-    // Process cancellation refund (Admin refunds Customer)
     static async processCancellationRefund(
         customerId: string,
         orderId: string,
@@ -267,7 +332,6 @@ export class WalletService {
         session.startTransaction();
 
         try {
-            // Get customer and admin wallets
             const customerWallet = await Wallet.findOne({ userId: customerId }).session(session);
             const adminWallet = await Wallet.findOne({ userType: "admin" }).session(session);
 
@@ -275,22 +339,18 @@ export class WalletService {
                 throw new Error("Wallet not found");
             }
 
-            // Check admin balance
             if (adminWallet.availableBalance < refundAmount) {
                 throw new Error("Insufficient admin balance for refund");
             }
 
-            // Debit admin wallet
             adminWallet.availableBalance -= refundAmount;
             adminWallet.lastTransactionAt = new Date();
             await adminWallet.save({ session });
 
-            // Credit customer wallet
             customerWallet.availableBalance += refundAmount;
             customerWallet.lastTransactionAt = new Date();
             await customerWallet.save({ session });
 
-            // Create admin debit transaction
             const adminTransaction = new WalletTransaction({
                 walletId: adminWallet._id,
                 userId: adminWallet.userId,
@@ -307,7 +367,6 @@ export class WalletService {
             });
             await adminTransaction.save({ session });
 
-            // Create customer credit transaction
             const customerTransaction = new WalletTransaction({
                 walletId: customerWallet._id,
                 userId: customerId,
@@ -338,144 +397,87 @@ export class WalletService {
         } catch (error) {
             await session.abortTransaction();
             console.error("Process cancellation refund error:", error);
-            return { success: false, error: error.message || "Refund processing failed" };
+            return { success: false, error: (error as Error).message || "Refund processing failed" };
         } finally {
             session.endSession();
-        }
-    }
-
-    // Add money to wallet (for testing or admin actions)
-    static async addMoney(
-        userId: string,
-        amount: number,
-        reason: string = "Admin credit",
-        adminId?: string
-    ) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
-        try {
-            const wallet = await Wallet.findOne({ userId }).session(session);
-            if (!wallet) {
-                throw new Error("Wallet not found");
-            }
-
-            // Credit wallet
-            wallet.availableBalance += amount;
-            wallet.lastTransactionAt = new Date();
-            await wallet.save({ session });
-
-            // Create credit transaction
-            const transaction = new WalletTransaction({
-                walletId: wallet._id,
-                userId,
-                type: "credit",
-                amount,
-                balanceAfter: wallet.availableBalance,
-                category: "admin_adjustment",
-                source: "admin",
-                status: "completed",
-                description: reason,
-                approvedBy: adminId ? new mongoose.Types.ObjectId(adminId) : undefined,
-                processedAt: new Date()
-            });
-            await transaction.save({ session });
-
-            await session.commitTransaction();
-            return {
-                success: true,
-                data: {
-                    transaction,
-                    newBalance: wallet.availableBalance
-                }
-            };
-
-        } catch (error) {
-            await session.abortTransaction();
-            console.error("Add money error:", error);
-            return { success: false, error: error.message || "Failed to add money" };
-        } finally {
-            session.endSession();
-        }
-    }
-
-    // Get wallet transaction history
-    static async getTransactionHistory(
-        userId: string,
-        page: number = 1,
-        limit: number = 20,
-        category?: string
-    ) {
-        try {
-            const skip = (page - 1) * limit;
-            const query: any = { userId };
-
-            if (category) {
-                query.category = category;
-            }
-
-            const transactions = await WalletTransaction.find(query)
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit)
-                .populate('approvedBy', 'name email')
-                .lean();
-
-            const total = await WalletTransaction.countDocuments(query);
-
-            return {
-                success: true,
-                data: {
-                    transactions,
-                    pagination: {
-                        page,
-                        limit,
-                        total,
-                        pages: Math.ceil(total / limit)
-                    }
-                }
-            };
-
-        } catch (error) {
-            console.error("Get transaction history error:", error);
-            return { success: false, error: "Failed to get transaction history" };
-        }
-    }
-
-    // Freeze/Unfreeze wallet
-    static async freezeWallet(userId: string, reason: string, adminId: string) {
-        try {
-            const wallet = await Wallet.findOne({ userId });
-            if (!wallet) {
-                return { success: false, error: "Wallet not found" };
-            }
-
-            wallet.status = "frozen";
-            wallet.freezeReason = reason;
-            await wallet.save();
-
-            return { success: true, data: wallet };
-        } catch (error) {
-            console.error("Freeze wallet error:", error);
-            return { success: false, error: "Failed to freeze wallet" };
-        }
-    }
-
-    static async unfreezeWallet(userId: string, adminId: string) {
-        try {
-            const wallet = await Wallet.findOne({ userId });
-            if (!wallet) {
-                return { success: false, error: "Wallet not found" };
-            }
-
-            wallet.status = "active";
-            wallet.freezeReason = undefined;
-            await wallet.save();
-
-            return { success: true, data: wallet };
-        } catch (error) {
-            console.error("Unfreeze wallet error:", error);
-            return { success: false, error: "Failed to unfreeze wallet" };
         }
     }
 }
+
+// React Query Hooks for Wallet
+export const useWallet = () => {
+    return useQuery({
+        queryKey: QUERY_KEYS.WALLET.BALANCE,
+        queryFn: () => WalletService.getWalletBalance(),
+    });
+};
+
+export const useWalletTransactions = (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+}) => {
+    return useQuery({
+        queryKey: QUERY_KEYS.WALLET.TRANSACTIONS(params),
+        queryFn: () => WalletService.getTransactionHistory(params),
+    });
+};
+
+export const useWithdrawalRequests = () => {
+    return useQuery({
+        queryKey: QUERY_KEYS.WALLET.WITHDRAWAL_REQUESTS,
+        queryFn: WalletService.getWithdrawalRequests,
+    });
+};
+
+export const useAddMoney = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: WalletService.addMoney,
+        onSuccess: () => {
+            // Invalidate wallet-related queries
+            queryClient.invalidateQueries({ queryKey: ['wallet'] });
+        },
+    });
+};
+
+export const useFreezeWallet = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: WalletService.freezeWallet,
+        onSuccess: () => {
+            // Invalidate wallet-related queries
+            queryClient.invalidateQueries({ queryKey: ['wallet'] });
+        },
+    });
+};
+
+export const useRequestWithdrawal = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: WalletService.requestWithdrawal,
+        onSuccess: () => {
+            // Invalidate wallet-related queries
+            queryClient.invalidateQueries({ queryKey: ['wallet'] });
+        },
+    });
+};
+
+export const useUpdateWithdrawalRequest = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ requestId, payload }: { requestId: string; payload: any }) =>
+            WalletService.updateWithdrawalRequest(requestId, payload),
+        onSuccess: () => {
+            // Invalidate wallet-related queries
+            queryClient.invalidateQueries({ queryKey: ['wallet'] });
+        },
+    });
+};

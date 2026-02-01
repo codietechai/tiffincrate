@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,12 @@ import { Switch } from "@/components/ui/switch";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
 import { Plus, Search, Edit, Trash2, Leaf } from "lucide-react";
+import { useAuthCheck } from "@/services/auth-service";
+import { useMenus } from "@/services/menu-service";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { httpClient } from "@/lib/http-client";
+import { ROUTES } from "@/constants/routes";
+import { QUERY_KEYS } from "@/constants/query-keys";
 
 interface MenuItem {
   _id: string;
@@ -60,70 +66,51 @@ interface Menu {
 }
 
 export default function ProviderMenuPage() {
-  const [menus, setMenus] = useState<Menu[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    checkAuth();
-    fetchMenus();
-  }, []);
+  // Use React Query hooks
+  const { data: authData, isLoading: authLoading } = useAuthCheck();
+  const { data: menusData, isLoading: menusLoading } = useMenus();
 
-  const checkAuth = async () => {
-    try {
-      const res = await fetch("/api/auth/me");
-      if (!res.ok) return router.push("/auth/login");
-      const data = await res.json();
-      if (data.user.role !== "provider") return router.push("/");
-      setUser(data.data);
-    } catch {
-      router.push("/auth/login");
-    }
+  // Check authentication and redirect if needed
+  if (authLoading) return <LoadingPage />;
+
+  if (!authData?.data || authData.data.role !== "provider") {
+    router.push(authData?.data ? "/" : "/auth/login");
+    return <LoadingPage />;
+  }
+
+  const user = authData.data;
+  const menus = menusData?.data || [];
+  const loading = menusLoading;
+
+  // Mutations for menu operations
+  const toggleMenuStatusMutation = useMutation({
+    mutationFn: ({ menuId, isActive }: { menuId: string; isActive: boolean }) =>
+      httpClient.patch(ROUTES.MENU.BY_ID(menuId), { isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MENU.ALL });
+    },
+  });
+
+  const deleteMenuMutation = useMutation({
+    mutationFn: (menuId: string) => httpClient.delete(ROUTES.MENU.BY_ID(menuId)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MENU.ALL });
+    },
+  });
+
+  const toggleMenuStatus = (menuId: string, isActive: boolean) => {
+    toggleMenuStatusMutation.mutate({ menuId, isActive });
   };
 
-  const fetchMenus = async () => {
-    try {
-      const res = await fetch("/api/menus");
-      if (res.ok) {
-        const data = await res.json();
-        setMenus(data.menus);
-      }
-    } catch (e) {
-      console.error("Error fetching menus:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleMenuStatus = async (menuId: string, isActive: boolean) => {
-    try {
-      const res = await fetch(`/api/menus/${menuId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive }),
-      });
-      if (res.ok) {
-        setMenus((prev) =>
-          prev.map((m) => (m._id === menuId ? { ...m, isActive } : m))
-        );
-      }
-    } catch (e) {
-      console.error("Error updating menu status:", e);
-    }
-  };
-
-  const deleteMenu = async (menuId: string) => {
+  const deleteMenu = (menuId: string) => {
     if (!confirm("Delete this menu permanently?")) return;
-    try {
-      const res = await fetch(`/api/menus/${menuId}`, { method: "DELETE" });
-      if (res.ok) setMenus((prev) => prev.filter((m) => m._id !== menuId));
-    } catch (e) {
-      console.error("Error deleting menu:", e);
-    }
+    deleteMenuMutation.mutate(menuId);
   };
 
   const getFilteredMenus = () =>
@@ -278,6 +265,7 @@ export default function ProviderMenuPage() {
                         onCheckedChange={(checked) =>
                           toggleMenuStatus(menu._id, checked)
                         }
+                        disabled={toggleMenuStatusMutation.isPending}
                       />
                       <Button variant="outline" size="sm" asChild>
                         <Link
@@ -291,6 +279,7 @@ export default function ProviderMenuPage() {
                         size="sm"
                         onClick={() => deleteMenu(menu._id)}
                         className="text-red-600"
+                        disabled={deleteMenuMutation.isPending}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

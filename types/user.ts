@@ -8,14 +8,14 @@ export interface TUser {
   _id: string;
   name: string;
   email: string;
-  password: string;
-  role: "admin" | "provider" | "consumer" | "delivery_partner";
+  password?: string; // Optional since it's excluded from queries
+  role: "admin" | "provider" | "consumer";
   phone?: string;
-  address?: string;
   isActive: boolean;
+  isVerified: boolean;
   favorites?: string[];
-  settings?: any;
   tokenVersion: number;
-  createdAt: Date;
-  updatedAt: Date;
+  lastLoginAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }

@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
                         releaseLock: () => { },
                     }),
                 },
-            } as Response;
+            } as any;
 
             // Send initial connection message
             controller.enqueue(

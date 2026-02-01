@@ -8,6 +8,7 @@ import {
   useJsApiLoader,
 } from "@react-google-maps/api";
 import type { TOrderDelivery } from "@/types/order";
+import type { TAddress } from "@/types/address";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,7 +24,7 @@ import {
 import { Menu, X, Clock, MapPin, Phone, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { TIME_SLOT_PERIODS, isTimeSlotActive, getNextTimeSlot, getTimeUntilSlot } from "@/utils/time-slots";
+import { TIME_SLOT_PERIODS, isTimeSlotActive, getNextTimeSlot, getTimeUntilSlot, parseTimeString } from "@/utils/time-slots";
 
 type Nullable<T> = T | null;
 
@@ -49,9 +50,111 @@ const driverMarkerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' width='42' height='42' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='#22c55e'/><path d='M8 14c.5-1 1-2 4-2s3.5 1 4 2' stroke='white' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>`,
 )}`;
 
-// Helper: safe parse floats
+// Helper: safe parse floats and get coordinates from address
 const toLatLng = (lat?: number, lng?: number) =>
   typeof lat === "number" && typeof lng === "number" ? { lat, lng } : null;
+
+// Helper: get coordinates from TAddress
+const getAddressCoordinates = (address: TAddress): google.maps.LatLngLiteral | null => {
+  // Try virtual coordinates field first
+  if (address.coordinates) {
+    return { lat: address.coordinates.lat, lng: address.coordinates.lng };
+  }
+
+  // Try location.coordinates (GeoJSON format: [lng, lat])
+  if (address.location?.coordinates && Array.isArray(address.location.coordinates)) {
+    const [lng, lat] = address.location.coordinates;
+    return toLatLng(lat, lng);
+  }
+
+  return null;
+};
+
+// Helper: calculate when navigation can start (30 minutes before time slot)
+const getNavigationStartTime = (timeSlot: string): Date | null => {
+  const period = TIME_SLOT_PERIODS[timeSlot];
+  if (!period) return null;
+
+  const startTime = parseTimeString(period.start);
+  const navigationStart = new Date();
+  navigationStart.setHours(startTime.hour, startTime.minute - 30, 0, 0);
+
+  return navigationStart;
+};
+
+// Helper: check if navigation can start now
+const canStartNavigation = (timeSlot: string): boolean => {
+  const now = new Date();
+  const navigationStartTime = getNavigationStartTime(timeSlot);
+
+  if (!navigationStartTime) return false;
+
+  // Get time slot end time
+  const period = TIME_SLOT_PERIODS[timeSlot];
+  const endTime = parseTimeString(period.end);
+  const slotEndTime = new Date();
+  slotEndTime.setHours(endTime.hour, endTime.minute, 0, 0);
+
+  // Navigation can only start if:
+  // 1. Current time is after navigation start time (30 min before slot)
+  // 2. Current time is before slot end time (slot hasn't expired)
+
+  // If slot end time has passed today, check for tomorrow
+  if (now > slotEndTime) {
+    // Check if we can navigate for tomorrow's slot
+    const tomorrowNavigationStart = new Date(navigationStartTime);
+    tomorrowNavigationStart.setDate(tomorrowNavigationStart.getDate() + 1);
+
+    const tomorrowSlotEnd = new Date(slotEndTime);
+    tomorrowSlotEnd.setDate(tomorrowSlotEnd.getDate() + 1);
+
+    return now >= tomorrowNavigationStart && now <= tomorrowSlotEnd;
+  }
+
+  // For today's slot
+  return now >= navigationStartTime && now <= slotEndTime;
+};
+
+// Helper: get time until navigation can start
+const getTimeUntilNavigation = (timeSlot: string): number => {
+  const now = new Date();
+  const navigationStartTime = getNavigationStartTime(timeSlot);
+
+  if (!navigationStartTime) return 0;
+
+  // Get time slot end time
+  const period = TIME_SLOT_PERIODS[timeSlot];
+  const endTime = parseTimeString(period.end);
+  const slotEndTime = new Date();
+  slotEndTime.setHours(endTime.hour, endTime.minute, 0, 0);
+
+  // If current slot hasn't expired yet
+  if (now <= slotEndTime) {
+    // If navigation window is open
+    if (now >= navigationStartTime) {
+      return 0; // Can start now
+    }
+    // If navigation window hasn't opened yet
+    return Math.max(0, Math.floor((navigationStartTime.getTime() - now.getTime()) / (1000 * 60)));
+  }
+
+  // Current slot has expired, calculate for tomorrow
+  const tomorrowNavigationStart = new Date(navigationStartTime);
+  tomorrowNavigationStart.setDate(tomorrowNavigationStart.getDate() + 1);
+
+  return Math.max(0, Math.floor((tomorrowNavigationStart.getTime() - now.getTime()) / (1000 * 60)));
+};
+
+// Helper: format time remaining for display
+const formatTimeRemaining = (minutes: number): string => {
+  if (minutes < 60) {
+    return `${minutes}m`;
+  } else {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  }
+};
 
 // Main component
 export default function RouteMap() {
@@ -82,6 +185,7 @@ export default function RouteMap() {
     totalDistance: 0,
     totalTime: 0,
   });
+  const [timeUntilNavigationStart, setTimeUntilNavigationStart] = useState(0);
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
 
   // Map refs
@@ -154,13 +258,11 @@ export default function RouteMap() {
 
   // Bulk update orders to out_for_delivery when navigation starts
   const startNavigation = async () => {
-    // Check if it's the right time for the selected time slot
-    const timeUntilSlot = getTimeUntilSlot(selectedTimeSlot);
-    const isSlotActive = isTimeSlotActive(selectedTimeSlot);
-
-    if (!isSlotActive && timeUntilSlot > 30) {
+    // Check if navigation can start based on time restrictions
+    if (!canStartNavigation(selectedTimeSlot)) {
+      const timeRemaining = getTimeUntilNavigation(selectedTimeSlot);
       const slotPeriod = TIME_SLOT_PERIODS[selectedTimeSlot];
-      toast.error(`Navigation can only start 30 minutes before ${slotPeriod.label}. Time remaining: ${Math.floor(timeUntilSlot / 60)}h ${timeUntilSlot % 60}m`);
+      toast.error(`Navigation can start 30 minutes before ${slotPeriod.label}. Time remaining: ${formatTimeRemaining(timeRemaining)}`);
       return;
     }
 
@@ -231,10 +333,11 @@ export default function RouteMap() {
 
     try {
       const service = new google.maps.DistanceMatrixService();
-      const destinations = orders.map(order => ({
-        lat: order.address.latitude as number,
-        lng: order.address.longitude as number
-      }));
+      const destinations = orders
+        .map(order => getAddressCoordinates(order.address))
+        .filter((coords): coords is google.maps.LatLngLiteral => coords !== null);
+
+      if (destinations.length === 0) return;
 
       service.getDistanceMatrix({
         origins: [providerLocation],
@@ -365,6 +468,24 @@ export default function RouteMap() {
     };
   }, [selectedTimeSlot]); // Re-fetch when time slot changes
 
+  // Update time until navigation can start
+  useEffect(() => {
+    const updateTimeRemaining = () => {
+      if (!navigationStarted) {
+        const timeRemaining = getTimeUntilNavigation(selectedTimeSlot);
+        setTimeUntilNavigationStart(timeRemaining);
+      }
+    };
+
+    // Update immediately
+    updateTimeRemaining();
+
+    // Update every minute
+    const interval = setInterval(updateTimeRemaining, 60000);
+
+    return () => clearInterval(interval);
+  }, [selectedTimeSlot, navigationStarted]);
+
   // Initialize live navigation data when navigation starts
   useEffect(() => {
     if (navigationStarted && orders.length > 0) {
@@ -446,7 +567,7 @@ export default function RouteMap() {
     const newMarkers: google.maps.Marker[] = [];
 
     orders.forEach((order, index) => {
-      const pos = toLatLng(order.address.latitude, order.address.longitude);
+      const pos = getAddressCoordinates(order.address);
       if (!pos) return;
 
       const marker = new google.maps.Marker({
@@ -809,7 +930,7 @@ export default function RouteMap() {
             if (voiceEnabled && orders.length > 0) {
               const nextOrder = orders.find(order => order.status === 'out_for_delivery');
               if (nextOrder) {
-                const nextDestination = toLatLng(nextOrder.address.latitude, nextOrder.address.longitude);
+                const nextDestination = getAddressCoordinates(nextOrder.address);
                 if (nextDestination) {
                   const distanceToNext = getDistanceInMeters(to.lat, to.lng, nextDestination.lat, nextDestination.lng);
 
@@ -920,7 +1041,7 @@ export default function RouteMap() {
     setSelectedOrder(order);
     setShowDialog(true);
 
-    const pos = toLatLng(order.address.latitude, order.address.longitude);
+    const pos = getAddressCoordinates(order.address);
     if (pos && mapRef.current) {
       mapRef.current.panTo(pos);
       mapRef.current.setZoom(15);
@@ -1048,7 +1169,7 @@ export default function RouteMap() {
 
     // Fallback to basic distance-based optimization
     return sortOrdersByDistance(driverLocation, orders)
-      .map(o => toLatLng(o.address.latitude, o.address.longitude))
+      .map(o => getAddressCoordinates(o.address))
       .filter((p): p is google.maps.LatLngLiteral => p !== null);
   };
 
@@ -1073,7 +1194,7 @@ export default function RouteMap() {
       return;
     }
 
-    const nextDestination = toLatLng(nextOrder.address.latitude, nextOrder.address.longitude);
+    const nextDestination = getAddressCoordinates(nextOrder.address);
     if (!nextDestination) return;
 
     // Calculate straight-line distance (fallback)
@@ -1241,15 +1362,18 @@ export default function RouteMap() {
     orders: TOrderDelivery[],
   ) => {
     return [...orders]
-      .map((order) => ({
-        order,
-        distance: getDistanceInMeters(
-          from.lat,
-          from.lng,
-          order.address.latitude as number,
-          order.address.longitude as number,
-        ),
-      }))
+      .map((order) => {
+        const coords = getAddressCoordinates(order.address);
+        return {
+          order,
+          distance: coords ? getDistanceInMeters(
+            from.lat,
+            from.lng,
+            coords.lat,
+            coords.lng,
+          ) : Infinity,
+        };
+      })
       .sort((a, b) => a.distance - b.distance)
       .map((x) => x.order);
   };
@@ -1305,11 +1429,14 @@ export default function RouteMap() {
     const driverPos = driverMarkerRef.current.getPosition();
     if (!driverPos) return false;
 
+    const customerCoords = getAddressCoordinates(selectedOrder.address);
+    if (!customerCoords) return false;
+
     const distance = getDistanceInMeters(
       driverPos.lat(),
       driverPos.lng(),
-      selectedOrder.address.latitude as number,
-      selectedOrder.address.longitude as number,
+      customerCoords.lat,
+      customerCoords.lng,
     );
 
     return distance <= 50;
@@ -1355,7 +1482,7 @@ export default function RouteMap() {
   // Compute coordinates array from orders (in original order)
   const pathCoords = useMemo(() => {
     return orders
-      .map((o) => toLatLng(o.address.latitude, o.address.longitude))
+      .map((o) => getAddressCoordinates(o.address))
       .filter((x): x is google.maps.LatLngLiteral => x !== null);
   }, [orders]);
 
@@ -1365,7 +1492,7 @@ export default function RouteMap() {
     const sortedOrders = sortOrdersByDistance(driverLocation, orders);
 
     return sortedOrders
-      .map((o) => toLatLng(o.address.latitude, o.address.longitude))
+      .map((o) => getAddressCoordinates(o.address))
       .filter((p): p is google.maps.LatLngLiteral => p !== null);
   }, [driverLocation, orders]);
 
@@ -1385,7 +1512,7 @@ export default function RouteMap() {
         {orders.length && !loadingOrders ? <div className="flex items-center justify-between">
           <Button
             className="flex-1 mr-2"
-            disabled={loadingOrders}
+            disabled={loadingOrders || (!navigationStarted && !canStartNavigation(selectedTimeSlot))}
             onClick={navigationStarted ? cancelNavigation : startNavigation}
             variant={navigationStarted ? "destructive" : "default"}
           >
@@ -1393,7 +1520,9 @@ export default function RouteMap() {
               ? "Cancel Navigation"
               : etaCalculating
                 ? "Calculating Routes..."
-                : "Start Delivery Route"}
+                : canStartNavigation(selectedTimeSlot)
+                  ? "Start Delivery Route"
+                  : `Available in ${formatTimeRemaining(timeUntilNavigationStart)}`}
           </Button>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-2">
@@ -1426,31 +1555,39 @@ export default function RouteMap() {
             <SelectContent>
               {Object.entries(TIME_SLOT_PERIODS).map(([key, period]) => {
                 const isActive = isTimeSlotActive(key);
-                const timeUntil = getTimeUntilSlot(key);
+                const canStart = canStartNavigation(key);
+                const timeUntil = getTimeUntilNavigation(key);
 
                 return (
                   <SelectItem key={key} value={key}>
                     <div className="flex items-center justify-between w-full">
                       <span>{period.label}</span>
-                      {isActive && (
-                        <Badge variant="default" className="ml-2 text-xs bg-green-500">
-                          Active
-                        </Badge>
-                      )}
-                      {!isActive && timeUntil > 0 && timeUntil <= 60 && (
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          {timeUntil}m
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2 ml-2">
+                        {isActive && (
+                          <Badge variant="default" className="text-xs bg-green-500">
+                            Active
+                          </Badge>
+                        )}
+                        {!isActive && canStart && (
+                          <Badge variant="default" className="text-xs bg-blue-500">
+                            Ready
+                          </Badge>
+                        )}
+                        {!canStart && timeUntil > 0 && timeUntil <= 1440 && ( // Show if within 24 hours
+                          <Badge variant="outline" className="text-xs">
+                            {formatTimeRemaining(timeUntil)}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </SelectItem>
                 );
               })}
             </SelectContent>
           </Select>
-          {!isTimeSlotActive(selectedTimeSlot) && (
+          {!canStartNavigation(selectedTimeSlot) && !navigationStarted && (
             <p className="text-xs text-gray-500">
-              Navigation available 30 minutes before slot time
+              Navigation available in {formatTimeRemaining(timeUntilNavigationStart)} (30 min before {TIME_SLOT_PERIODS[selectedTimeSlot]?.label})
             </p>
           )}
         </div>
@@ -1470,6 +1607,41 @@ export default function RouteMap() {
             </Button>
           </div>
         </div>
+
+          {/* Navigation Status Card */}
+          {!navigationStarted && (
+            <Card className="p-3 border-orange-200 bg-orange-50">
+              <h4 className="font-medium mb-2 text-orange-900">Navigation Status</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-orange-700">Selected Slot:</span>
+                  <Badge variant="outline" className="text-xs">
+                    {TIME_SLOT_PERIODS[selectedTimeSlot]?.label}
+                  </Badge>
+                </div>
+                {canStartNavigation(selectedTimeSlot) ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-sm text-green-700 font-medium">
+                      Ready to start navigation
+                    </span>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-orange-500" />
+                      <span className="text-sm text-orange-700 font-medium">
+                        Navigation available in {formatTimeRemaining(timeUntilNavigationStart)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-orange-600">
+                      Navigation starts 30 minutes before the time slot
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Advanced Navigation Controls */}
           <Card className="p-3">
@@ -1612,7 +1784,7 @@ export default function RouteMap() {
                       </div>
                       <div className="mt-2 text-sm text-gray-600 flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        {order.address.city}, {order.address.region}
+                        {order.address.city}, {order.address.state}
                       </div>
                       <div className="mt-2 flex gap-2">
                         <Button
@@ -1627,10 +1799,7 @@ export default function RouteMap() {
                           variant="outline"
                           onClick={() => {
                             // center map to this order
-                            const pos = toLatLng(
-                              order.address.latitude,
-                              order.address.longitude,
-                            );
+                            const pos = getAddressCoordinates(order.address);
                             if (pos && mapRef.current) {
                               mapRef.current.panTo(pos);
                               mapRef.current.setZoom(15);
@@ -1753,7 +1922,7 @@ export default function RouteMap() {
                         {liveNavigation.nextCustomer.consumerId.name}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {liveNavigation.nextCustomer.address.address_line_1}
+                        {liveNavigation.nextCustomer.address.addressLine1}
                       </div>
                     </div>
                   </div>
@@ -1777,10 +1946,7 @@ export default function RouteMap() {
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4"
                       onClick={() => {
-                        const pos = toLatLng(
-                          liveNavigation.nextCustomer!.address.latitude,
-                          liveNavigation.nextCustomer!.address.longitude
-                        );
+                        const pos = getAddressCoordinates(liveNavigation.nextCustomer!.address);
                         if (pos && mapRef.current) {
                           mapRef.current.panTo(pos);
                           mapRef.current.setZoom(18);
@@ -1922,16 +2088,16 @@ export default function RouteMap() {
               <div>
                 <p className="text-xs text-muted-foreground">Delivery Address</p>
                 <p className="font-medium">
-                  {selectedOrder.address.address_line_1}
+                  {selectedOrder.address.addressLine1}
                 </p>
-                {selectedOrder.address.address_line_2 && (
+                {selectedOrder.address.addressLine2 && (
                   <p className="text-sm">
-                    {selectedOrder.address.address_line_2}
+                    {selectedOrder.address.addressLine2}
                   </p>
                 )}
                 <p className="text-sm">
-                  {selectedOrder.address.city}, {selectedOrder.address.region} -{" "}
-                  {selectedOrder.address.postal_code}
+                  {selectedOrder.address.city}, {selectedOrder.address.state} -{" "}
+                  {selectedOrder.address.pincode}
                 </p>
               </div>
 
@@ -1966,10 +2132,7 @@ export default function RouteMap() {
                     variant="outline"
                     className="flex-1"
                     onClick={() => {
-                      const pos = toLatLng(
-                        selectedOrder.address.latitude,
-                        selectedOrder.address.longitude,
-                      );
+                      const pos = getAddressCoordinates(selectedOrder.address);
                       if (pos && mapRef.current) {
                         mapRef.current.panTo(pos);
                         mapRef.current.setZoom(17);

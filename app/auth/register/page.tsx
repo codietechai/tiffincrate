@@ -57,6 +57,9 @@ export default function RegisterPage() {
     description: "",
     cuisine: "",
     deliveryAreas: "",
+    address: "",
+    latitude: "",
+    longitude: "",
     vehicleType: "",
     vehicleNumber: "",
     licenseNumber: "",
@@ -116,6 +119,13 @@ export default function RegisterPage() {
       const payload: any = { ...formData, addresses };
 
       if (formData.role === "provider") {
+        // Validate required provider fields
+        if (!businessData.businessName || !businessData.address || !businessData.latitude || !businessData.longitude) {
+          setError("Business name, address, and location coordinates are required for providers");
+          setLoading(false);
+          return;
+        }
+
         payload.businessData = {
           businessName: businessData.businessName,
           description: businessData.description,
@@ -123,6 +133,13 @@ export default function RegisterPage() {
           deliveryAreas: businessData.deliveryAreas
             .split(",")
             .map((a) => a.trim()),
+          location: {
+            address: businessData.address,
+            coordinates: [
+              parseFloat(businessData.longitude), // longitude first for GeoJSON
+              parseFloat(businessData.latitude)   // latitude second
+            ]
+          }
         };
       } else if (payload.role === "delivery_partner") {
         payload.businessData = {
@@ -383,6 +400,7 @@ export default function RegisterPage() {
                       name="businessName"
                       value={businessData.businessName}
                       onChange={handleBusinessInputChange}
+                      required
                     />
                     <Label>Description</Label>
                     <Textarea
@@ -409,6 +427,79 @@ export default function RegisterPage() {
                           placeholder="e.g., Sector 15, HSR Layout"
                         />
                       </div>
+                    </div>
+
+                    {/* Location Fields */}
+                    <div className="space-y-4 mt-4">
+                      <h4 className="font-medium">Business Location</h4>
+                      <div>
+                        <Label>Business Address</Label>
+                        <Textarea
+                          name="address"
+                          value={businessData.address || ""}
+                          onChange={handleBusinessInputChange}
+                          placeholder="Enter your complete business address"
+                          required
+                        />
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Latitude</Label>
+                          <Input
+                            name="latitude"
+                            type="number"
+                            step="any"
+                            value={businessData.latitude || ""}
+                            onChange={handleBusinessInputChange}
+                            placeholder="e.g., 12.9716"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label>Longitude</Label>
+                          <Input
+                            name="longitude"
+                            type="number"
+                            step="any"
+                            value={businessData.longitude || ""}
+                            onChange={handleBusinessInputChange}
+                            placeholder="e.g., 77.5946"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        <p>You can get coordinates from Google Maps:</p>
+                        <p>1. Right-click on your location in Google Maps</p>
+                        <p>2. Click on the coordinates to copy them</p>
+                        <p>3. First number is latitude, second is longitude</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                              (position) => {
+                                setBusinessData(prev => ({
+                                  ...prev,
+                                  latitude: position.coords.latitude.toString(),
+                                  longitude: position.coords.longitude.toString()
+                                }));
+                              },
+                              (error) => {
+                                setError("Unable to get your location. Please enter coordinates manually.");
+                              }
+                            );
+                          } else {
+                            setError("Geolocation is not supported by this browser.");
+                          }
+                        }}
+                      >
+                        <MapPin className="h-4 w-4 mr-2" />
+                        Use Current Location
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -462,7 +553,7 @@ export default function RegisterPage() {
                             type="checkbox"
                             checked={
                               businessData.availableSlots[
-                                slot as keyof typeof businessData.availableSlots
+                              slot as keyof typeof businessData.availableSlots
                               ]
                             }
                             onChange={(e) =>

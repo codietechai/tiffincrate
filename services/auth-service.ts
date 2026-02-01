@@ -1,112 +1,99 @@
 import { TUser } from "@/types";
+import { httpClient } from "@/lib/http-client";
+import { ROUTES } from "@/constants/routes";
+import { QUERY_KEYS } from "@/constants/query-keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+// Auth Service Class (for direct API calls)
 export class AuthService {
-  private static baseUrl = "/api/auth";
-
   static async checkAuth(): Promise<{ data: TUser | null; message: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/me`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to register");
-      }
-
-      const user = await response.json();
-      return user;
-    } catch (error) {
-      throw error;
-    }
+    return httpClient.get(ROUTES.AUTH.ME);
   }
 
   static async signin(data: {
     email: string;
     password: string;
   }): Promise<{ user: TUser; message: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to register");
-      }
-
-      const user = await response.json();
-      return user;
-    } catch (error) {
-      throw error;
-    }
+    return httpClient.post(ROUTES.AUTH.LOGIN, data);
   }
 
-  static async signup(
-    data: unknown
-  ): Promise<{ user: TUser; message: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to register");
-      }
-
-      return response.json();
-    } catch (error) {
-      throw error;
-    }
+  static async signup(data: unknown): Promise<{ user: TUser; message: string }> {
+    return httpClient.post(ROUTES.AUTH.REGISTER, data);
   }
 
   static async logoutAllDevices(): Promise<{ message: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/logout-all`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to logout from all devices");
-      }
-
-      return response.json();
-    } catch (error) {
-      throw error;
-    }
+    return httpClient.post(ROUTES.AUTH.LOGOUT_ALL);
   }
 
   static async deleteAccount(): Promise<{ message: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/delete-account`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete account");
-      }
-
-      return response.json();
-    } catch (error) {
-      throw error;
-    }
+    return httpClient.delete(ROUTES.AUTH.DELETE_ACCOUNT);
   }
 }
+
+// React Query Hooks for Auth
+export const useAuthCheck = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.AUTH.ME,
+    queryFn: AuthService.checkAuth,
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useSignin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: AuthService.signin,
+    onSuccess: (data) => {
+      // Update the auth cache with the new user data
+      queryClient.setQueryData(QUERY_KEYS.AUTH.ME, {
+        data: data.user,
+        message: data.message,
+      });
+    },
+    onError: (error) => {
+      // Clear auth cache on login error
+      queryClient.removeQueries({ queryKey: QUERY_KEYS.AUTH.ME });
+    },
+  });
+};
+
+export const useSignup = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: AuthService.signup,
+    onSuccess: (data) => {
+      // Update the auth cache with the new user data
+      queryClient.setQueryData(QUERY_KEYS.AUTH.ME, {
+        data: data.user,
+        message: data.message,
+      });
+    },
+  });
+};
+
+export const useLogoutAllDevices = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: AuthService.logoutAllDevices,
+    onSuccess: () => {
+      // Clear all cached data on logout
+      queryClient.clear();
+    },
+  });
+};
+
+export const useDeleteAccount = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: AuthService.deleteAccount,
+    onSuccess: () => {
+      // Clear all cached data on account deletion
+      queryClient.clear();
+    },
+  });
+};

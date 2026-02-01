@@ -1,31 +1,30 @@
 export interface TAddress {
   _id: string;
-  user_id?: string;
-
+  userId: string;
   name: string;
-  address_line_1: string;
-  address_line_2?: string;
-
+  addressLine1: string;
+  addressLine2?: string;
   city: string;
-  region: string;
+  state: string;
   country: string;
+  pincode: string;
+  location: {
+    type: "Point";
+    coordinates: [number, number]; // [longitude, latitude]
+  };
+  phone?: string;
+  isDefault: boolean;
+  addressType: "home" | "office" | "other";
+  landmark?: string;
+  deliveryInstructions?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 
-  latitude?: number;
-  longitude?: number;
-
-  country_code: string;
-  postal_code: string;
-
-  dial_code?: string;
-  phone_number?: string;
-  full_phone_number?: string;
-
-  is_default: boolean;
-
-  email?: string;
-
-  address_mutability: "mutable" | "immutable";
-
-  created_at: string;
-  updated_at: string;
+  // Virtual fields
+  fullAddress?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
 }

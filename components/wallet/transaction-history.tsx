@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
     ChevronLeft,
     ChevronRight
 } from "lucide-react";
+import { useWalletTransactions } from "@/services/wallet-service";
 
 interface Transaction {
     _id: string;
@@ -45,12 +46,17 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     showFilters = true,
     maxHeight = "400px"
 }) => {
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+    const { data: transactionData, isLoading: loading, error, refetch } = useWalletTransactions({
+        page,
+        limit: 10,
+        category: selectedCategory !== "all" ? selectedCategory : undefined,
+    });
+
+    const transactions = transactionData?.data?.transactions || [];
+    const totalPages = transactionData?.data?.pagination?.pages || 1;
 
     const categories = [
         { value: "all", label: "All Transactions" },
@@ -61,39 +67,6 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
         { value: "admin_adjustment", label: "Admin Adjustments" },
         { value: "promotional_credit", label: "Promotional Credits" }
     ];
-
-    useEffect(() => {
-        fetchTransactions();
-    }, [page, selectedCategory]);
-
-    const fetchTransactions = async () => {
-        try {
-            setLoading(true);
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: "10"
-            });
-
-            if (selectedCategory !== "all") {
-                params.append("category", selectedCategory);
-            }
-
-            const response = await fetch(`/api/wallet/transactions?${params}`);
-            const data = await response.json();
-
-            if (data.success) {
-                setTransactions(data.data.transactions);
-                setTotalPages(data.data.pagination.pages);
-            } else {
-                setError(data.error || 'Failed to fetch transactions');
-            }
-        } catch (err) {
-            setError('Failed to fetch transaction history');
-            console.error('Transaction fetch error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const getTransactionIcon = (type: string, category: string) => {
         if (type === "credit") {
@@ -195,10 +168,10 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
             <CardContent className="p-0">
                 {error ? (
                     <div className="p-6 text-center text-red-600">
-                        <p>{error}</p>
+                        <p>{error?.message || 'Failed to fetch transactions'}</p>
                         <Button
                             variant="outline"
-                            onClick={fetchTransactions}
+                            onClick={() => refetch()}
                             className="mt-2"
                         >
                             Retry

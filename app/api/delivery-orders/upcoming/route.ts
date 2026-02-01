@@ -1,171 +1,118 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import DeliveryOrder from "@/models/deliveryOrders";
-import Order from "@/models/Order";
-import mongoose from "mongoose";
+import { SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(request: NextRequest) {
     try {
         const userId = request.headers.get("x-user-id");
         const role = request.headers.get("x-user-role");
 
+        if (!userId) {
+            return NextResponse.json(
+                { error: "Authentication required", success: false },
+                { status: 401 }
+            );
+        }
+
         if (role !== "consumer") {
             return NextResponse.json(
-                { error: "Forbidden" },
+                { error: "Only consumers can access delivery orders", success: false },
                 { status: 403 }
             );
         }
 
         await connectMongoDB();
 
-        // Get upcoming delivery orders (today and next 7 days)
+        const { searchParams } = new URL(request.url);
+        const days = Math.min(parseInt(searchParams.get("days") || "7"), 30); // Max 30 days
+
+        // Get upcoming delivery orders (today and next N days)
         const today = new Date();
         const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const endDate = new Date(startOfToday);
-        endDate.setDate(endDate.getDate() + 7); // Next 7 days
+        endDate.setDate(endDate.getDate() + days);
 
-        // First, get all orders for this consumer
-        const userOrders = await Order.find({
-            consumerId: new mongoose.Types.ObjectId(userId as string)
-        }).select('_id');
-
-        const orderIds = userOrders.map(order => order._id);
-
-        // Get delivery orders for these orders within the date range
-        const upcomingDeliveries = await DeliveryOrder.aggregate([
-            {
-                $match: {
-                    orderId: { $in: orderIds },
-                    deliveryDate: {
-                        $gte: startOfToday,
-                        $lt: endDate
-                    },
-                    deliveryStatus: { $ne: "cancelled" }
-                }
+        // Query using the new schema structure
+        const upcomingDeliveries = await DeliveryOrder.find({
+            consumerId: userId,
+            deliveryDate: {
+                $gte: startOfToday,
+                $lt: endDate
             },
-            {
-                $lookup: {
-                    from: "orders",
-                    localField: "orderId",
-                    foreignField: "_id",
-                    as: "order"
-                }
-            },
-            { $unwind: "$order" },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "order.consumerId",
-                    foreignField: "_id",
-                    as: "consumer"
-                }
-            },
-            { $unwind: "$consumer" },
-            {
-                $lookup: {
-                    from: "serviceproviders",
-                    localField: "order.providerId",
-                    foreignField: "_id",
-                    as: "provider"
-                }
-            },
-            { $unwind: "$provider" },
-            {
-                $lookup: {
-                    from: "menus",
-                    localField: "order.menuId",
-                    foreignField: "_id",
-                    as: "menu"
-                }
-            },
-            { $unwind: "$menu" },
-            {
-                $lookup: {
-                    from: "addresses",
-                    localField: "order.address",
-                    foreignField: "_id",
-                    as: "address"
-                }
-            },
-            { $unwind: "$address" },
-            {
-                $sort: { deliveryDate: 1 }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    deliveryDate: 1,
-                    deliveryStatus: 1,
-                    pendingAt: 1,
-                    confirmedAt: 1,
-                    readyAt: 1,
-                    assignedAt: 1,
-                    outForDeliveryAt: 1,
-                    deliveredAt: 1,
-                    notDeliveredAt: 1,
-                    cancelledAt: 1,
-                    preparationStartAt: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    order: {
-                        _id: "$order._id",
-                        orderType: "$order.orderType",
-                        deliveryInfo: "$order.deliveryInfo",
-                        totalAmount: "$order.totalAmount",
-                        status: "$order.status",
-                        timeSlot: "$order.timeSlot",
-                        paymentStatus: "$order.paymentStatus",
-                        paymentMethod: "$order.paymentMethod",
-                        notes: "$order.notes",
-                        estimatedDeliveryTime: "$order.estimatedDeliveryTime",
-                        actualDeliveryTime: "$order.actualDeliveryTime",
-                        createdAt: "$order.createdAt",
-                        updatedAt: "$order.updatedAt"
-                    },
-                    consumer: {
-                        _id: "$consumer._id",
-                        name: "$consumer.name",
-                        email: "$consumer.email",
-                        phone: "$consumer.phone"
-                    },
-                    provider: {
-                        _id: "$provider._id",
-                        businessName: "$provider.businessName",
-                        description: "$provider.description",
-                        rating: "$provider.rating",
-                        location: "$provider.location"
-                    },
-                    menu: {
-                        _id: "$menu._id",
-                        name: "$menu.name",
-                        description: "$menu.description",
-                        image: "$menu.image",
-                        price: "$menu.price"
-                    },
-                    address: {
-                        _id: "$address._id",
-                        address_line_1: "$address.address_line_1",
-                        address_line_2: "$address.address_line_2",
-                        city: "$address.city",
-                        region: "$address.region",
-                        postal_code: "$address.postal_code",
-                        latitude: "$address.latitude",
-                        longitude: "$address.longitude"
+            status: {
+                $in: ["pending", "confirmed", "preparing", "ready", "out_for_delivery"]
+            }
+        })
+            .populate({
+                path: "orderId",
+                select: "totalAmount paymentMethod paymentStatus items notes menuId orderType deliveryInfo timeSlot",
+                populate: {
+                    path: "menuId",
+                    select: "name description category basePrice image isVegetarian menuItems",
+                    populate: {
+                        path: "providerId",
+                        select: "businessName description rating location phone"
                     }
                 }
+            })
+            .populate("providerId", "businessName description rating location phone")
+            .populate("address", "addressLine1 addressLine2 city state pincode landmark deliveryInstructions location")
+            .sort({ deliveryDate: 1, timeSlot: 1 })
+            .lean();
+
+        // Transform data for better frontend consumption
+        const transformedDeliveries = upcomingDeliveries.map((delivery: any) => ({
+            ...delivery,
+            // Add convenience fields for frontend
+            menu: delivery.orderId?.menuId || null,
+            order: delivery.orderId || null,
+            provider: delivery.providerId || null,
+        }));
+
+        // Group by delivery date for better organization
+        const groupedDeliveries = transformedDeliveries.reduce((acc: Record<string, any[]>, delivery: any) => {
+            const dateKey = new Date(delivery.deliveryDate).toISOString().split('T')[0];
+            if (!acc[dateKey]) {
+                acc[dateKey] = [];
             }
-        ]);
+            acc[dateKey].push(delivery);
+            return acc;
+        }, {});
+
+        // Get summary statistics
+        const summary = {
+            totalUpcoming: transformedDeliveries.length,
+            byStatus: transformedDeliveries.reduce((acc: Record<string, number>, delivery: any) => {
+                const status = delivery.status || 'pending';
+                acc[status] = (acc[status] || 0) + 1;
+                return acc;
+            }, {}),
+            byTimeSlot: transformedDeliveries.reduce((acc: Record<string, number>, delivery: any) => {
+                const timeSlot = delivery.timeSlot || 'lunch';
+                acc[timeSlot] = (acc[timeSlot] || 0) + 1;
+                return acc;
+            }, {}),
+            totalAmount: transformedDeliveries.reduce((sum: number, delivery: any) => {
+                return sum + (delivery.order?.totalAmount || 0);
+            }, 0)
+        };
 
         return NextResponse.json({
             success: true,
-            data: upcomingDeliveries,
-            message: "Upcoming deliveries fetched successfully"
+            data: transformedDeliveries,
+            groupedData: groupedDeliveries,
+            summary,
+            message: SUCCESSMESSAGE.DELIVERY_ORDERS_FETCH
         });
 
     } catch (error) {
         console.error("Fetch upcoming deliveries error:", error);
         return NextResponse.json(
-            { error: "Internal server error" },
+            {
+                error: "Failed to fetch upcoming deliveries",
+                success: false
+            },
             { status: 500 }
         );
     }

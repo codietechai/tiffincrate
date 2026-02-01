@@ -59,7 +59,6 @@ const deliverySettlementSchema = new Schema<IDeliverySettlement>(
             type: Schema.Types.ObjectId,
             ref: "DeliveryOrder",
             required: true,
-            index: true
         },
         orderId: {
             type: Schema.Types.ObjectId,

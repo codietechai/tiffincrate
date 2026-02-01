@@ -3,7 +3,7 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import ServiceProvider from "@/models/ServiceProvider";
 import User from "@/models/User";
-import "@/models/Menu";
+import Menu from "@/models/Menu";
 import DeliveryOrder from "@/models/deliveryOrders";
 import Notification from "@/models/Notification";
 import { verifyRazorpayPayment } from "@/lib/razorpay";
@@ -11,7 +11,6 @@ import {
   getOrderConfirmationEmail,
   getOrderConfirmationSMS,
 } from "@/lib/notifications";
-import mongoose from "mongoose";
 import { createDeliveryOrders, getOrderTypeSummary } from "@/utils/orders";
 import Address from "@/models/Address";
 import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
@@ -21,150 +20,137 @@ export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
+
+    if (!userId || !role) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     await connectMongoDB();
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
 
     let query: any = {};
+
     if (role === "consumer") {
       query.consumerId = userId;
-
       if (status) query.status = status;
 
       const orders = await Order.find(query)
-        .populate("consumerId", "name email")
+        .populate("consumerId", "name email phone")
+        .populate({
+          path: "providerId",
+          select: "businessName location",
+        })
         .populate({
           path: "menuId",
-          populate: {
-            path: "providerId",
-            select: "businessName location.address",
-          },
+          select: "name description category basePrice",
         })
-        .sort({ createdAt: -1 });
+        .populate("address")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
 
-      return NextResponse.json(
-        {
-          data: orders,
-          message: SUCCESSMESSAGE.ORDERS_FETCH,
-          success: true,
+      const total = await Order.countDocuments(query);
+
+      return NextResponse.json({
+        data: orders,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
         },
-        { status: 200 },
-      );
-    } else if (role === "provider") {
-      query.providerId = userId;
+        message: SUCCESSMESSAGE.ORDERS_FETCH,
+        success: true,
+      });
 
+    } else if (role === "provider") {
+      // Get provider details
+      const provider = await ServiceProvider.findOne({ userId });
+      if (!provider) {
+        return NextResponse.json(
+          { error: "Provider not found" },
+          { status: 404 }
+        );
+      }
+
+      query.providerId = provider._id;
       if (status) query.status = status;
 
-      const today = new Date();
-      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+      const orders = await Order.find(query)
+        .populate("consumerId", "name email phone")
+        .populate("address")
+        .populate({
+          path: "menuId",
+          select: "name description category",
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
 
-      const currentDay = new Date()
-        .toLocaleString("en-US", { weekday: "long" })
-        .toLowerCase();
+      const total = await Order.countDocuments(query);
 
-      const orders = await DeliveryOrder.aggregate([
-        {
-          $match: {
-            "orderId.providerId": query.providerId.providerId,
-            deliveryDate: { $gte: startOfDay, $lte: endOfDay },
-          },
+      return NextResponse.json({
+        data: orders,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
         },
-        {
-          $lookup: {
-            from: "orders",
-            localField: "orderId",
-            foreignField: "_id",
-            as: "order",
-          },
-        },
-        { $unwind: "$order" },
+        message: SUCCESSMESSAGE.ORDERS_FETCH,
+        success: true,
+      });
 
-        {
-          $lookup: {
-            from: "users",
-            localField: "order.consumerId",
-            foreignField: "_id",
-            as: "consumer",
-          },
-        },
-        {
-          $lookup: {
-            from: "menus",
-            localField: "order.menuId",
-            foreignField: "_id",
-            as: "menu",
-          },
-        },
+    } else if (role === "admin") {
+      if (status) query.status = status;
 
-        // ✅ Lookup and filter menuitems for current day only
-        {
-          $lookup: {
-            from: "menuitems",
-            let: { menuId: "$order.menuId", today: currentDay },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ["$menuId", "$$menuId"] },
-                      { $eq: ["$day", "$$today"] },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: "menuitems",
-          },
+      const orders = await Order.find(query)
+        .populate("consumerId", "name email phone")
+        .populate({
+          path: "providerId",
+          select: "businessName location",
+        })
+        .populate({
+          path: "menuId",
+          select: "name description category",
+        })
+        .populate("address")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      const total = await Order.countDocuments(query);
+
+      return NextResponse.json({
+        data: orders,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
         },
-
-        // {
-        //   $match: {
-        //     "order.deliveryPartnerId": new mongoose.Types.ObjectId(
-        //       query.providerId
-        //     ),
-        //     deliveryDate: { $gte: startOfDay, $lte: endOfDay },
-        //   },
-        // },
-
-        { $sort: { createdAt: -1 } },
-
-        {
-          $project: {
-            _id: 1,
-            deliveryDate: 1,
-            deliveryStatus: 1,
-            "consumer.name": 1,
-            createdAt: 1,
-            updatedAt: 1,
-            order: 1,
-            menu: 1,
-            menuitems: 1,
-          },
-        },
-      ]);
-
-      return NextResponse.json(
-        {
-          data: orders,
-          message: SUCCESSMESSAGE.ORDERS_FETCH,
-          success: true,
-        },
-        { status: 200 },
-      );
+        message: SUCCESSMESSAGE.ORDERS_FETCH,
+        success: true,
+      });
     }
 
-    return NextResponse.json({
-      data: {},
-      message: "You are admin",
-      success: false,
-    });
+    return NextResponse.json(
+      { error: "Invalid role" },
+      { status: 403 }
+    );
   } catch (error) {
     console.error("Get orders error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -176,8 +162,8 @@ export async function POST(request: NextRequest) {
 
     if (role !== "consumer") {
       return NextResponse.json(
-        { error: "Forbidden", success: false },
-        { status: 403 },
+        { error: "Only consumers can place orders", success: false },
+        { status: 403 }
       );
     }
 
@@ -188,7 +174,8 @@ export async function POST(request: NextRequest) {
       providerId,
       items,
       totalAmount,
-      address,
+      address, // Frontend sends 'address', not 'addressId'
+      addressId, // Keep backward compatibility
       orderType,
       deliveryInfo,
       timeSlot,
@@ -199,142 +186,220 @@ export async function POST(request: NextRequest) {
       razorpaySignature,
     } = await request.json();
 
-    if (paymentMethod === "razorpay") {
-      const isValidPayment = verifyRazorpayPayment(
-        razorpayOrderId,
-        razorpayPaymentId,
-        razorpaySignature,
-      );
+    // Use address or addressId (for backward compatibility)
+    const finalAddressId = address || addressId;
 
-      if (!isValidPayment) {
-        return NextResponse.json(
-          { error: "Invalid payment signature" },
-          { status: 400 },
-        );
-      }
-    } else if (paymentMethod === "wallet") {
-      // Process wallet payment
-      const walletPaymentResult = await WalletService.processOrderPayment(
-        userId as string,
-        "", // Will be updated with actual order ID after creation
-        totalAmount,
-        `Order payment for ${orderType} plan`
+    // Validate required fields
+    if (!menuId || !providerId || !totalAmount || !finalAddressId || !orderType || !deliveryInfo || !timeSlot) {
+      return NextResponse.json(
+        { error: "Missing required fields", success: false },
+        { status: 400 }
       );
-
-      if (!walletPaymentResult.success) {
-        return NextResponse.json(
-          { error: walletPaymentResult.error },
-          { status: 400 }
-        );
-      }
     }
 
-    let newAddressId;
-    const existing = await Address.findOne({
-      ref_address: address,
-      address_mutability: "immutable",
-    });
-
-    if (existing) {
-      newAddressId = address;
-    } else {
-      const original = await Address.findById(address);
-
-      if (!original) {
-        throw new Error("Address not found");
-      }
-
-      const newAddress = await Address.create({
-        ...original.toObject(),
-        _id: undefined,
-        address_mutability: "immutable",
-        ref_address: address,
-      });
-      newAddressId = newAddress._id;
+    // Validate payment method
+    if (!["wallet", "razorpay", "cod"].includes(paymentMethod)) {
+      return NextResponse.json(
+        { error: "Invalid payment method", success: false },
+        { status: 400 }
+      );
     }
 
-    const order = new Order({
-      consumerId: userId,
-      providerId,
-      menuId,
-      items,
-      totalAmount,
-      address: newAddressId,
-      orderType,
-      deliveryInfo,
-      timeSlot,
-      paymentMethod,
-      notes,
-      paymentStatus: paymentMethod === "razorpay" || paymentMethod === "wallet" ? "paid" : "pending",
-      status: "confirmed",
-    });
+    // Verify provider exists
+    const provider = await ServiceProvider.findById(providerId);
+    if (!provider) {
+      return NextResponse.json(
+        { error: "Provider not found", success: false },
+        { status: 404 }
+      );
+    }
 
-    await order.save();
-    await User.updateOne(
-      { _id: new mongoose.Types.ObjectId(userId as string) },
-      { $inc: { wallet_amount: totalAmount } },
-    );
-    await createDeliveryOrders(order._id, deliveryInfo);
-    const providerDetails = await ServiceProvider.findOne({
-      _id: new mongoose.Types.ObjectId(providerId),
-    });
-    const customerDetails = await User.findById(userId);
+    // Verify menu exists and belongs to provider
+    const menu = await Menu.findOne({ _id: menuId, providerId });
+    if (!menu) {
+      return NextResponse.json(
+        { error: "Menu not found or doesn't belong to provider", success: false },
+        { status: 404 }
+      );
+    }
 
-    await Promise.all([
-      new Notification({
-        userId,
-        title: "Order Confirmed",
-        message: `Your order from ${providerDetails?.businessName} has been confirmed.`,
-        type: "order",
-        data: { orderId: order._id, providerId },
-      }).save(),
+    // Verify address belongs to user
+    const userAddress = await Address.findOne({ _id: finalAddressId, userId, isActive: true });
+    if (!userAddress) {
+      return NextResponse.json(
+        { error: "Address not found", success: false },
+        { status: 404 }
+      );
+    }
 
-      new Notification({
-        userId: customerDetails?._id,
-        title: "New Order Received",
-        message: `You have received a new order from ${customerDetails?.name}.`,
-        type: "order",
-        data: { orderId: order._id, consumerId: userId },
-      }).save(),
-    ]);
+    // Handle payment processing
+    let paymentStatus = "pending";
 
-    // Optional: send email and SMS
     try {
-      const orderTypeSummary = getOrderTypeSummary(deliveryInfo);
-      const orderNotificationData = {
-        orderId: order._id.toString().slice(-8),
-        customerName: customerDetails.name,
-        providerName: providerDetails.businessName,
-        totalAmount,
-        order_type: orderTypeSummary,
-      };
+      if (paymentMethod === "razorpay") {
+        if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+          return NextResponse.json(
+            { error: "Missing Razorpay payment details", success: false },
+            { status: 400 }
+          );
+        }
 
-      const emailData = getOrderConfirmationEmail(orderNotificationData);
-      // await sendEmail({ to: customerDetails.email, ...emailData });
+        const isValidPayment = verifyRazorpayPayment(
+          razorpayOrderId,
+          razorpayPaymentId,
+          razorpaySignature
+        );
 
-      if (customerDetails.phone) {
-        const smsMessage = getOrderConfirmationSMS(orderNotificationData);
-        // await sendSMS({ to: customerDetails.phone, message: smsMessage });
+        if (!isValidPayment) {
+          return NextResponse.json(
+            { error: "Invalid payment signature", success: false },
+            { status: 400 }
+          );
+        }
+        paymentStatus = "paid";
+      } else if (paymentMethod === "wallet") {
+        // Process wallet payment
+        const walletPaymentResult = await WalletService.processOrderPayment(
+          userId as string,
+          "", // Will be updated with actual order ID after creation
+          totalAmount,
+          `Order payment for ${orderType} plan`
+        );
+
+        if (!walletPaymentResult.success) {
+          return NextResponse.json(
+            { error: walletPaymentResult.error, success: false },
+            { status: 400 }
+          );
+        }
+        paymentStatus = "paid";
+      } else if (paymentMethod === "cod") {
+        paymentStatus = "pending";
       }
+    } catch (paymentError) {
+      console.error("Payment processing error:", paymentError);
+      return NextResponse.json(
+        { error: "Payment processing failed", success: false },
+        { status: 400 }
+      );
+    }
 
-      // If provider doesn’t handle self-delivery, auto-assign
-      if (!providerDetails.operatingHours[timeSlot]?.selfDelivery) {
-        await fetch("/api/delivery/auto-assign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: order._id }),
-        });
+    // Create order
+    let order;
+    try {
+      order = new Order({
+        consumerId: userId,
+        providerId,
+        menuId,
+        items: items || [], // Make items optional for menu-based orders
+        totalAmount,
+        address: finalAddressId,
+        orderType,
+        deliveryInfo,
+        timeSlot,
+        paymentMethod,
+        paymentStatus,
+        notes,
+        status: paymentStatus === "paid" ? "confirmed" : "pending",
+      });
+
+      await order.save();
+    } catch (orderError) {
+      console.error("Order creation error:", orderError);
+      return NextResponse.json(
+        { error: "Failed to create order", success: false },
+        { status: 500 }
+      );
+    }
+
+    // Create delivery orders
+    try {
+      await createDeliveryOrders(order._id, deliveryInfo, {
+        consumerId: userId as string,
+        providerId,
+        timeSlot,
+        items: items || [],
+        address: finalAddressId,
+      });
+    } catch (deliveryError) {
+      console.error("Delivery orders creation error:", deliveryError);
+      // Don't fail the entire order if delivery orders fail
+      // They can be created later
+    }
+
+    // Get user details for notifications
+    let customerDetails;
+    try {
+      customerDetails = await User.findById(userId);
+    } catch (userError) {
+      console.error("Error fetching user details:", userError);
+    }
+
+    // Create notifications
+    try {
+      await Promise.all([
+        new Notification({
+          userId,
+          title: "Order Confirmed",
+          message: `Your order from ${provider.businessName} has been confirmed.`,
+          type: "order",
+          priority: "medium",
+          data: { orderId: order._id, providerId },
+        }).save(),
+
+        new Notification({
+          userId: provider.userId,
+          title: "New Order Received",
+          message: `You have received a new order from ${customerDetails?.name || 'Customer'}.`,
+          type: "order",
+          priority: "high",
+          data: { orderId: order._id, consumerId: userId },
+        }).save(),
+      ]);
+    } catch (notificationError) {
+      console.error("Notification creation error:", notificationError);
+      // Don't fail the order if notifications fail
+    }
+
+    // Optional: send email and SMS notifications
+    try {
+      if (customerDetails) {
+        const orderTypeSummary = getOrderTypeSummary(deliveryInfo);
+        const orderNotificationData = {
+          orderId: order._id.toString().slice(-8),
+          customerName: customerDetails.name || "Customer",
+          providerName: provider.businessName,
+          totalAmount,
+          order_type: orderTypeSummary,
+        };
+
+        // Email and SMS notifications are commented out for now
+        // const emailData = getOrderConfirmationEmail(orderNotificationData);
+        // await sendEmail({ to: customerDetails.email, ...emailData });
+
+        // if (customerDetails.phone) {
+        //   const smsMessage = getOrderConfirmationSMS(orderNotificationData);
+        //   await sendSMS({ to: customerDetails.phone, message: smsMessage });
+        // }
       }
     } catch (notificationError) {
-      console.error("Notification error:", notificationError);
+      console.error("Email/SMS notification error:", notificationError);
+      // Don't fail the order if external notifications fail
     }
 
     return NextResponse.json(
-      { success: true, data: order, message: SUCCESSMESSAGE.ORDER_COMPLETE },
-      { status: 201 },
+      {
+        success: true,
+        data: order,
+        message: SUCCESSMESSAGE.ORDER_COMPLETE
+      },
+      { status: 201 }
     );
   } catch (error) {
     console.error("Create order error:", error);
-    return NextResponse.json({ error: ERRORMESSAGE.INTERNAL }, { status: 500 });
+    return NextResponse.json(
+      { error: ERRORMESSAGE.INTERNAL, success: false },
+      { status: 500 }
+    );
   }
 }

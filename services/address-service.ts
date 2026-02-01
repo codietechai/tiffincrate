@@ -1,69 +1,22 @@
-export class AddressService {
-  private static baseUrl = "/api/address";
+import { httpClient } from "@/lib/http-client";
+import { ROUTES } from "@/constants/routes";
+import { QUERY_KEYS, getRelatedQueryKeys } from "@/constants/query-keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+// Address Service Class (for direct API calls)
+export class AddressService {
   static async fetchAll(): Promise<{
     success: boolean;
     data: any[];
   }> {
-    try {
-      const res = await fetch(this.baseUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to fetch addresses");
-      }
-
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  static async fetchDefault(): Promise<{
-    success: boolean;
-    data: any | null;
-  }> {
-    try {
-      const res = await fetch(`${this.baseUrl}/default`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to fetch default address");
-      }
-
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
+    return httpClient.get(ROUTES.ADDRESS.BASE);
   }
 
   static async fetchById(id: string): Promise<{
     success: boolean;
     data: any;
   }> {
-    try {
-      const res = await fetch(`${this.baseUrl}/${id}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to fetch address");
-      }
-
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
+    return httpClient.get(ROUTES.ADDRESS.BY_ID(id));
   }
 
   static async create(payload: any): Promise<{
@@ -71,22 +24,7 @@ export class AddressService {
     data: any;
     message: string;
   }> {
-    try {
-      const res = await fetch(this.baseUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to create address");
-      }
-
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
+    return httpClient.post(ROUTES.ADDRESS.BASE, payload);
   }
 
   static async update(
@@ -97,63 +35,131 @@ export class AddressService {
     data: any;
     message: string;
   }> {
-    try {
-      const res = await fetch(`${this.baseUrl}/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to update address");
-      }
-
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
+    return httpClient.put(ROUTES.ADDRESS.BY_ID(id), payload);
   }
 
   static async delete(id: string): Promise<{
     success: boolean;
     message: string;
   }> {
-    try {
-      const res = await fetch(`${this.baseUrl}/${id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to delete address");
-      }
-
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
+    return httpClient.delete(ROUTES.ADDRESS.BY_ID(id));
   }
 
   static async setDefault(id: string): Promise<{
     success: boolean;
     message: string;
   }> {
-    try {
-      const res = await fetch(`${this.baseUrl}/set-default/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-      });
+    // Use the update method to set isDefault: true
+    const res = await this.update(id, { isDefault: true });
+    return {
+      success: true,
+      message: "Default address updated successfully"
+    };
+  }
 
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to set default address");
-      }
+  static async fetchDefault(): Promise<{
+    success: boolean;
+    data: any;
+  }> {
+    const res = await this.fetchAll();
+    const defaultAddress = res.data.find((address: any) => address.isDefault);
 
-      return await res.json();
-    } catch (err) {
-      throw err;
+    if (!defaultAddress) {
+      // If no default address, return the first address if any exists
+      const firstAddress = res.data[0] || null;
+      return {
+        success: true,
+        data: firstAddress
+      };
     }
+
+    return {
+      success: true,
+      data: defaultAddress
+    };
   }
 }
+
+// React Query Hooks for Address
+export const useAddresses = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.ADDRESS.ALL,
+    queryFn: AddressService.fetchAll,
+  });
+};
+
+export const useAddress = (id: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.ADDRESS.BY_ID(id),
+    queryFn: () => AddressService.fetchById(id),
+    enabled: !!id,
+  });
+};
+
+export const useDefaultAddress = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.ADDRESS.DEFAULT,
+    queryFn: AddressService.fetchDefault,
+  });
+};
+
+export const useCreateAddress = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: AddressService.create,
+    onSuccess: () => {
+      // Invalidate and refetch address-related queries
+      const relatedKeys = getRelatedQueryKeys('address');
+      relatedKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
+    },
+  });
+};
+
+export const useUpdateAddress = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) =>
+      AddressService.update(id, payload),
+    onSuccess: (_, { id }) => {
+      // Invalidate and refetch address-related queries
+      const relatedKeys = getRelatedQueryKeys('address', id);
+      relatedKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
+    },
+  });
+};
+
+export const useDeleteAddress = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: AddressService.delete,
+    onSuccess: (_, id) => {
+      // Invalidate and refetch address-related queries
+      const relatedKeys = getRelatedQueryKeys('address', id);
+      relatedKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
+    },
+  });
+};
+
+export const useSetDefaultAddress = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: AddressService.setDefault,
+    onSuccess: () => {
+      // Invalidate and refetch address-related queries
+      const relatedKeys = getRelatedQueryKeys('address');
+      relatedKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
+    },
+  });
+};

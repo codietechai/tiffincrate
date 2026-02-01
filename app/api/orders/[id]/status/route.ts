@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
-import Order from "@/models/Order";
+import DeliveryOrder from "@/models/deliveryOrders";
 import RealtimeNotificationService from "@/lib/realtime-notifications";
 
 export async function PATCH(
@@ -14,58 +14,84 @@ export async function PATCH(
     await connectMongoDB();
     const { status } = await request.json();
 
-    const order = await Order.findById(params.id)
+    const deliveryOrder = await DeliveryOrder.findById(params.id)
       .populate("consumerId", "_id name email");
 
-    if (!order) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    if (!deliveryOrder) {
+      return NextResponse.json({ error: "Delivery order not found" }, { status: 404 });
     }
 
     // Authorization check
-    if (role === "provider" && order.providerId.toString() !== userId) {
+    if (role === "provider" && deliveryOrder.providerId.toString() !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (role === "consumer" && order.consumerId._id.toString() !== userId) {
+    if (role === "consumer" && deliveryOrder.consumerId._id.toString() !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Update order status
-    const previousStatus = order.status;
-    order.status = status;
+    // Update delivery order status
+    const previousStatus = deliveryOrder.status;
+    deliveryOrder.status = status;
 
-    // Set timestamps based on status
-    if (status === "delivered") {
-      order.actualDeliveryTime = new Date();
+    // Set appropriate timestamp based on status
+    switch (status) {
+      case "confirmed":
+        deliveryOrder.confirmedAt = new Date();
+        break;
+      case "preparing":
+        deliveryOrder.preparingAt = new Date();
+        break;
+      case "ready":
+        deliveryOrder.readyAt = new Date();
+        break;
+      case "out_for_delivery":
+        deliveryOrder.outForDeliveryAt = new Date();
+        deliveryOrder.estimatedDeliveryTime = new Date(Date.now() + 30 * 60 * 1000);
+        break;
+      case "delivered":
+        deliveryOrder.deliveredAt = new Date();
+        deliveryOrder.actualDeliveryTime = new Date();
+        break;
+      case "cancelled":
+        deliveryOrder.cancelledAt = new Date();
+        break;
+      case "not_delivered":
+        deliveryOrder.notDeliveredAt = new Date();
+        break;
     }
 
-    await order.save();
+    await deliveryOrder.save();
 
     // Send real-time notification
     const notificationService = RealtimeNotificationService.getInstance();
     notificationService.broadcastOrderUpdate(
-      order._id.toString(),
-      order.consumerId._id.toString(),
-      order.providerId.toString(),
+      deliveryOrder._id.toString(),
+      deliveryOrder.consumerId._id.toString(),
+      deliveryOrder.providerId.toString(),
       status,
       {
         previousStatus,
-        updatedAt: order.updatedAt,
-        actualDeliveryTime: order.actualDeliveryTime,
+        updatedAt: deliveryOrder.updatedAt,
+        actualDeliveryTime: deliveryOrder.actualDeliveryTime,
+        deliveryDate: deliveryOrder.deliveryDate,
+        timeSlot: deliveryOrder.timeSlot,
       }
     );
 
     return NextResponse.json({
-      message: "Order status updated",
-      order: {
-        _id: order._id,
-        status: order.status,
-        actualDeliveryTime: order.actualDeliveryTime,
-        updatedAt: order.updatedAt,
+      message: "Delivery order status updated",
+      deliveryOrder: {
+        _id: deliveryOrder._id,
+        status: deliveryOrder.status,
+        actualDeliveryTime: deliveryOrder.actualDeliveryTime,
+        deliveryDate: deliveryOrder.deliveryDate,
+        timeSlot: deliveryOrder.timeSlot,
+        updatedAt: deliveryOrder.updatedAt,
       }
     });
   } catch (error) {
-    console.error("Update order status error:", error);
+    console.error("Update delivery order status error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

@@ -1,85 +1,178 @@
-export class NotificationService {
-  private static baseUrl = "/api/notifications";
+import { httpClient } from "@/lib/http-client";
+import { ROUTES, buildApiUrl } from "@/constants/routes";
+import { QUERY_KEYS, getRelatedQueryKeys } from "@/constants/query-keys";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-  static async fetchNotifications(): Promise<{
+// Define TNotification type if not already defined
+interface TNotification {
+  _id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: "order" | "payment" | "system" | "promotion" | "delivery";
+  priority: "low" | "medium" | "high" | "urgent";
+  isRead: boolean;
+  actionUrl?: string;
+  data?: any;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt?: string;
+}
+
+// Notification Service Class (for direct API calls)
+export class NotificationService {
+  static async fetchNotifications(params?: {
+    page?: number;
+    limit?: number;
+    unreadOnly?: boolean;
+    type?: string;
+    priority?: string;
+  }): Promise<{
     data: TNotification[];
     pagination: any;
     unreadCount: number;
+    filters?: any;
     message: string;
   }> {
-    try {
-      const response = await fetch(this.baseUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error);
-      }
+    const url = buildApiUrl(ROUTES.NOTIFICATION.BASE, {
+      page: params?.page?.toString(),
+      limit: params?.limit?.toString(),
+      unreadOnly: params?.unreadOnly ? "true" : undefined,
+      type: params?.type !== "all" ? params?.type : undefined,
+      priority: params?.priority !== "all" ? params?.priority : undefined,
+    });
 
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      throw error;
-    }
-  }
-  static async createNotification(payload: any): Promise<{
-    data: TNotification;
-    message: string;
-  }> {
-    try {
-      if (
-        payload.type === "admin_support" ||
-        payload.type === "provider_support"
-      ) {
-        delete (payload as any).toUserId;
-      }
-      const response = await fetch("/api/help-requests", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      throw error;
-    }
+    return httpClient.get(url);
   }
 
-  static async markAsRead(payload: { id?: string[] }): Promise<{
+  static async createNotification(payload: {
+    userId: string;
+    title: string;
+    message: string;
+    type?: "order" | "payment" | "system" | "promotion" | "delivery";
+    priority?: "low" | "medium" | "high" | "urgent";
+    actionUrl?: string;
+    data?: any;
+    expiresAt?: string;
+  }): Promise<{
+    notification: TNotification;
     message: string;
   }> {
-    try {
-      let object: any = { markAsRead: true };
-      if (payload.id) {
-        object = {
-          ...object,
-          notificationIds: payload.id,
-        };
-      }
-      const response = await fetch(this.baseUrl, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(object),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error);
-      }
+    return httpClient.post(ROUTES.NOTIFICATION.BASE, payload);
+  }
 
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      throw error;
+  static async markAsRead(payload: {
+    notificationIds?: string[];
+    markAllAsRead?: boolean;
+  }): Promise<{
+    message: string;
+    updatedCount?: number;
+  }> {
+    const requestBody: any = { markAsRead: true };
+
+    if (payload.markAllAsRead) {
+      requestBody.markAllAsRead = true;
+    } else if (payload.notificationIds && payload.notificationIds.length > 0) {
+      requestBody.notificationIds = payload.notificationIds;
     }
+
+    return httpClient.patch(ROUTES.NOTIFICATION.BASE, requestBody);
+  }
+
+  static async fetchLiveNotifications(): Promise<{
+    data: TNotification[];
+    message: string;
+  }> {
+    return httpClient.get(ROUTES.NOTIFICATION.LIVE);
+  }
+
+  static async deleteNotification(id: string): Promise<{
+    message: string;
+  }> {
+    return httpClient.delete(`${ROUTES.NOTIFICATION.BASE}/${id}`);
   }
 }
+
+// React Query Hooks for Notification
+export const useNotifications = (params?: {
+  page?: number;
+  limit?: number;
+  unreadOnly?: boolean;
+  type?: string;
+  priority?: string;
+}) => {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.NOTIFICATION.ALL, params],
+    queryFn: () => NotificationService.fetchNotifications(params),
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+};
+
+export const useUnreadNotifications = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.NOTIFICATION.UNREAD,
+    queryFn: () => NotificationService.fetchNotifications({ unreadOnly: true }),
+    refetchInterval: 15000, // Refetch every 15 seconds for unread notifications
+  });
+};
+
+export const useLiveNotifications = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.NOTIFICATION.LIVE,
+    queryFn: NotificationService.fetchLiveNotifications,
+    refetchInterval: 5000, // Refetch every 5 seconds for live notifications
+  });
+};
+
+export const useUserNotifications = (userId: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.NOTIFICATION.BY_USER(userId),
+    queryFn: () => NotificationService.fetchNotifications(),
+    enabled: !!userId,
+  });
+};
+
+export const useCreateNotification = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: NotificationService.createNotification,
+    onSuccess: () => {
+      // Invalidate and refetch notification-related queries
+      const relatedKeys = getRelatedQueryKeys('notification');
+      relatedKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
+    },
+  });
+};
+
+export const useMarkNotificationsAsRead = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: NotificationService.markAsRead,
+    onSuccess: () => {
+      // Invalidate and refetch notification-related queries
+      const relatedKeys = getRelatedQueryKeys('notification');
+      relatedKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
+    },
+  });
+};
+
+export const useDeleteNotification = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: NotificationService.deleteNotification,
+    onSuccess: () => {
+      // Invalidate and refetch notification-related queries
+      const relatedKeys = getRelatedQueryKeys('notification');
+      relatedKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
+    },
+  });
+};

@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Wallet, Eye, EyeOff, Plus, Minus, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { Wallet, Eye, EyeOff, Plus, Minus, ArrowUpRight } from "lucide-react";
+import { useWallet } from "@/services/wallet-service";
+import { useState } from "react";
 
 interface WalletData {
     _id: string;
@@ -33,33 +35,10 @@ const WalletBalance: React.FC<WalletBalanceProps> = ({
     onWithdraw,
     onViewTransactions
 }) => {
-    const [wallet, setWallet] = useState<WalletData | null>(null);
-    const [loading, setLoading] = useState(true);
     const [showBalance, setShowBalance] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data: walletData, isLoading: loading, error, refetch } = useWallet();
 
-    useEffect(() => {
-        fetchWallet();
-    }, []);
-
-    const fetchWallet = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch('/api/wallet');
-            const data = await response.json();
-
-            if (data.success) {
-                setWallet(data.data);
-            } else {
-                setError(data.error || 'Failed to fetch wallet');
-            }
-        } catch (err) {
-            setError('Failed to fetch wallet data');
-            console.error('Wallet fetch error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const wallet = walletData?.data;
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -101,10 +80,10 @@ const WalletBalance: React.FC<WalletBalanceProps> = ({
             <Card className="w-full">
                 <CardContent className="p-6">
                     <div className="text-center text-red-600">
-                        <p>{error || 'Wallet not found'}</p>
+                        <p>{error?.message || 'Wallet not found'}</p>
                         <Button
                             variant="outline"
-                            onClick={fetchWallet}
+                            onClick={() => refetch()}
                             className="mt-2"
                         >
                             Retry

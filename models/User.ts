@@ -5,13 +5,13 @@ export interface IUser extends mongoose.Document {
   name: string;
   email: string;
   password: string;
-  role: "admin" | "provider" | "consumer" | "delivery_partner";
+  role: "admin" | "provider" | "consumer";
   phone?: string;
-  address?: string;
   isActive: boolean;
-  favorites?: string[];
-  settings?: any;
+  isVerified: boolean;
+  favorites?: mongoose.Types.ObjectId[];
   tokenVersion: number;
+  lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,40 +22,42 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Name is required"],
       trim: true,
+      maxlength: 100,
     },
     email: {
       type: String,
       required: [true, "Email is required"],
-      unique: true,
       lowercase: true,
       trim: true,
+      maxlength: 255,
     },
     password: {
       type: String,
       required: [true, "Password is required"],
       minlength: 6,
+      select: false,
     },
     role: {
       type: String,
-      enum: ["admin", "provider", "consumer", "delivery_partner"],
+      enum: ["admin", "provider", "consumer"],
       default: "consumer",
       required: true,
+      index: true,
     },
     phone: {
       type: String,
       trim: true,
-    },
-    wallet_amount: {
-      type: Number,
-      default:0,
-    },
-    address: {
-      type: String,
-      trim: true,
+      maxlength: 15,
     },
     isActive: {
       type: Boolean,
       default: true,
+      index: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     favorites: [
       {
@@ -67,11 +69,34 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    lastLoginAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        if (ret.password) {
+          delete (ret as any).password;
+        }
+        return ret;
+      }
+    },
+    toObject: { virtuals: true },
   }
 );
+
+// Indexes for performance
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ phone: 1 }, { sparse: true, unique: true });
+userSchema.index({ role: 1, isActive: 1 });
+userSchema.index({ isVerified: 1, role: 1 });
+userSchema.index({ createdAt: -1 });
+
+// Compound index for admin queries
+userSchema.index({ role: 1, createdAt: -1 });
 
 export default mongoose.models.User ||
   mongoose.model<IUser>("User", userSchema);

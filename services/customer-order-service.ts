@@ -1,63 +1,17 @@
 import { TOrderDelivery } from "@/types/order";
+import { httpClient } from "@/lib/http-client";
+import { ROUTES } from "@/constants/routes";
+import { QUERY_KEYS } from "@/constants/query-keys";
+import { useQuery } from "@tanstack/react-query";
 
 export class CustomerOrderService {
-    static async fetchTodayOrders(): Promise<{ data: TOrderDelivery[]; success: boolean; message: string }> {
-        try {
-            const response = await fetch('/api/orders', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch orders');
-            }
-
-            const result = await response.json();
-            return {
-                data: result.data || [],
-                success: true,
-                message: result.message
-            };
-        } catch (error) {
-            console.error('Error fetching orders:', error);
-            return {
-                data: [],
-                success: false,
-                message: 'Failed to fetch orders'
-            };
-        }
+    static async fetchTodayOrders(): Promise<{ data: TOrderDelivery[]; message: string }> {
+        return httpClient.get(ROUTES.ORDER.BASE);
     }
 
     // Fetch upcoming delivery orders (today and next few days)
-    static async fetchUpcomingDeliveries(): Promise<{ data: any[]; success: boolean; message: string }> {
-        try {
-            const response = await fetch('/api/delivery-orders/upcoming', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch upcoming deliveries');
-            }
-
-            const result = await response.json();
-            return {
-                data: result.data || [],
-                success: true,
-                message: result.message
-            };
-        } catch (error) {
-            console.error('Error fetching upcoming deliveries:', error);
-            return {
-                data: [],
-                success: false,
-                message: 'Failed to fetch upcoming deliveries'
-            };
-        }
+    static async fetchUpcomingDeliveries(): Promise<{ data: any[]; message: string }> {
+        return httpClient.get(ROUTES.DELIVERY_ORDER.UPCOMING);
     }
 
     // Get real-time ETA from provider to customer
@@ -98,3 +52,18 @@ export class CustomerOrderService {
         }
     }
 }
+
+// React Query Hooks for Customer Orders
+export const useTodayOrders = () => {
+    return useQuery({
+        queryKey: QUERY_KEYS.ORDER.TODAY,
+        queryFn: CustomerOrderService.fetchTodayOrders,
+    });
+};
+
+export const useUpcomingDeliveries = () => {
+    return useQuery({
+        queryKey: QUERY_KEYS.DELIVERY_ORDER.UPCOMING,
+        queryFn: CustomerOrderService.fetchUpcomingDeliveries,
+    });
+};

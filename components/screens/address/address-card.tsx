@@ -35,15 +35,26 @@ export function AddressCard({
             <div>
               <p className="font-semibold text-base">{address.name}</p>
               <p className="text-sm text-gray-600 mt-0.5">
-                {address.address_line_1}
+                {address.addressLine1}
+                {address.addressLine2 && `, ${address.addressLine2}`}
               </p>
-              <p className="text-xs text-gray-500">{address.city}</p>
-
-              {address.is_default && (
-                <span className="text-xs inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-md">
-                  Default Address
-                </span>
+              <p className="text-xs text-gray-500">
+                {address.city}, {address.state} - {address.pincode}
+              </p>
+              {address.landmark && (
+                <p className="text-xs text-gray-500">Near: {address.landmark}</p>
               )}
+
+              <div className="flex gap-2 mt-2">
+                {address.isDefault && (
+                  <span className="text-xs inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded-md">
+                    Default Address
+                  </span>
+                )}
+                <span className="text-xs inline-block px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md capitalize">
+                  {address.addressType}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -52,13 +63,12 @@ export function AddressCard({
             {!!onSetDefault && (
               <IconSquare
                 onClick={() => onSetDefault(address._id)}
-                active={address.is_default}
+                active={address.isDefault}
                 activeColor="text-yellow-600 bg-yellow-100"
               >
                 <Star
-                  className={`h-4 w-4 ${
-                    address.is_default ? "fill-yellow-600" : ""
-                  }`}
+                  className={`h-4 w-4 ${address.isDefault ? "fill-yellow-600" : ""
+                    }`}
                 />
               </IconSquare>
             )}

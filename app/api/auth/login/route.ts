@@ -9,7 +9,7 @@ async function handler(request: NextRequest) {
     await connectMongoDB();
     const { email, password } = await request.json();
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
     if (!user) {
       return NextResponse.json(
         { error: "Invalid credentials" },
@@ -31,6 +31,9 @@ async function handler(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Update last login time
+    await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
 
     const token = await generateToken({
       userId: user._id,

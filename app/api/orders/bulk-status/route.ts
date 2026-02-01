@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
-import Order from "@/models/Order";
+import DeliveryOrder from "@/models/deliveryOrders";
 import ServiceProvider from "@/models/ServiceProvider";
 
 export async function PATCH(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function PATCH(request: NextRequest) {
 
         if (role !== "provider") {
             return NextResponse.json(
-                { error: "Only providers can update order status" },
+                { error: "Only providers can update delivery order status" },
                 { status: 403 },
             );
         }
@@ -28,39 +28,61 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        // Update multiple orders at once
-        const result = await Order.updateMany(
+        // Prepare update object with status timestamps
+        const updateObj: any = {
+            status: status,
+        };
+
+        // Add appropriate timestamp based on status
+        switch (status) {
+            case "confirmed":
+                updateObj.confirmedAt = new Date();
+                break;
+            case "preparing":
+                updateObj.preparingAt = new Date();
+                break;
+            case "ready":
+                updateObj.readyAt = new Date();
+                break;
+            case "out_for_delivery":
+                updateObj.outForDeliveryAt = new Date();
+                updateObj.estimatedDeliveryTime = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+                break;
+            case "delivered":
+                updateObj.deliveredAt = new Date();
+                updateObj.actualDeliveryTime = new Date();
+                break;
+            case "cancelled":
+                updateObj.cancelledAt = new Date();
+                break;
+            case "not_delivered":
+                updateObj.notDeliveredAt = new Date();
+                break;
+        }
+
+        // Update multiple delivery orders at once
+        const result = await DeliveryOrder.updateMany(
             {
                 _id: { $in: orderIds },
                 providerId: provider._id,
             },
-            {
-                $set: {
-                    status: status,
-                    ...(status === "out_for_delivery" && {
-                        estimatedDeliveryTime: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
-                    }),
-                    ...(status === "delivered" && {
-                        actualDeliveryTime: new Date(),
-                    }),
-                },
-            }
+            { $set: updateObj }
         );
 
         if (result.matchedCount === 0) {
             return NextResponse.json(
-                { error: "No orders found or unauthorized" },
+                { error: "No delivery orders found or unauthorized" },
                 { status: 404 },
             );
         }
 
         return NextResponse.json({
-            message: `${result.modifiedCount} orders updated to ${status}`,
+            message: `${result.modifiedCount} delivery orders updated to ${status}`,
             updatedCount: result.modifiedCount,
             success: true,
         });
     } catch (error) {
-        console.error("Bulk update order status error:", error);
+        console.error("Bulk update delivery order status error:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 },

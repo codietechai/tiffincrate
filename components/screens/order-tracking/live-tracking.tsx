@@ -204,7 +204,7 @@ export default function LiveTracking({ orderId }: LiveTrackingProps) {
                 <div className="space-y-3">
                     <div className="flex justify-between">
                         <span className="text-gray-600">Menu:</span>
-                        <span className="font-medium">{trackingData.menu.name}</span>
+                        <span className="font-medium">{trackingData.menu?.name || trackingData.menuId?.name || 'Menu Item'}</span>
                     </div>
                     <div className="flex justify-between">
                         <span className="text-gray-600">Time Slot:</span>
@@ -216,7 +216,7 @@ export default function LiveTracking({ orderId }: LiveTrackingProps) {
                     </div>
                     <div className="flex justify-between">
                         <span className="text-gray-600">Provider:</span>
-                        <span className="font-medium">{trackingData.provider.name}</span>
+                        <span className="font-medium">{trackingData.provider?.name || trackingData.provider?.businessName || trackingData.providerId?.businessName || 'Provider'}</span>
                     </div>
                 </div>
             </Card>

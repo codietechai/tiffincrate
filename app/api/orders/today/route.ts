@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
+import DeliveryOrder from "@/models/deliveryOrders";
 import ServiceProvider from "@/models/ServiceProvider";
 import "@/models/Menu";
+import "@/models/Address";
 import { SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(request: NextRequest) {
@@ -32,78 +34,109 @@ export async function GET(request: NextRequest) {
     }
 
     const today = new Date();
-    const todayDate = today.toISOString().split("T")[0]; // "2025-12-07"
-    const todayDay = today
-      .toLocaleString("en-IN", { weekday: "long" })
-      .toLowerCase(); // tuesday
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
-    // BASE QUERY - now using direct providerId reference
-    let query: any = {
-      providerId: provider._id, // Direct provider reference
+    // Build query for delivery orders
+    let deliveryQuery: any = {
+      providerId: provider._id,
+      deliveryDate: {
+        $gte: todayStart,
+        $lt: todayEnd
+      }
     };
 
     // timeSlot filter
-    if (timeSlot) query.timeSlot = timeSlot;
+    if (timeSlot) deliveryQuery.timeSlot = timeSlot;
 
-    // Search in menu name/description if provided
-    let menuFilter = {};
-    if (search) {
-      menuFilter = {
-        $or: [
-          { name: { $regex: search, $options: "i" } },
-          { description: { $regex: search, $options: "i" } },
-        ],
-      };
-    }
-
-    const orders = await Order.find(query)
+    // Get today's delivery orders
+    const deliveryOrders = await DeliveryOrder.find(deliveryQuery)
       .populate({
-        path: "providerId",
-        select: "businessName location",
+        path: "orderId",
+        populate: [
+          {
+            path: "providerId",
+            select: "businessName location",
+          },
+          {
+            path: "menuId",
+            select: "name description providerId",
+          },
+          {
+            path: "consumerId",
+            select: "name email phone",
+          }
+        ]
       })
-      .populate({
-        path: "menuId",
-        match: menuFilter,
-        select: "name description providerId",
-      })
-      .populate("consumerId", "name email phone")
       .populate("address")
       .sort({ createdAt: -1 });
 
-    let validOrders = orders.filter((o) => o.menuId !== null);
+    // Filter by search if provided
+    let filteredDeliveryOrders = deliveryOrders;
+    if (search) {
+      filteredDeliveryOrders = deliveryOrders.filter(deliveryOrder => {
+        const order = deliveryOrder.orderId as any;
+        if (!order || !order.menuId) return false;
 
-    validOrders = validOrders.filter((order) => {
-      const info = order.deliveryInfo;
+        const menuName = order.menuId.name || "";
+        const menuDescription = order.menuId.description || "";
 
-      if (order.orderType === "month") {
-        const start = new Date(info.startDate!);
-        const end = new Date(start);
-        end.setDate(start.getDate() + 30);
+        return menuName.toLowerCase().includes(search.toLowerCase()) ||
+          menuDescription.toLowerCase().includes(search.toLowerCase());
+      });
+    }
 
-        return today >= start && today <= end;
-      }
+    // Transform to match expected format
+    const transformedOrders = filteredDeliveryOrders.map(deliveryOrder => {
+      const order = deliveryOrder.orderId as any;
 
-      if (order.orderType === "specific_days") {
-        return info.days?.map((d: any) => d.toLowerCase()).includes(todayDay);
-      }
+      return {
+        _id: deliveryOrder._id,
+        orderId: order._id,
+        consumerId: order.consumerId,
+        providerId: order.providerId,
+        menuId: order.menuId,
+        orderType: order.orderType,
+        deliveryInfo: order.deliveryInfo,
+        totalAmount: deliveryOrder.totalAmount || order.totalAmount,
+        status: deliveryOrder.status, // Use delivery order status, not order status
+        address: deliveryOrder.address,
+        timeSlot: deliveryOrder.timeSlot,
+        paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
+        notes: order.notes,
+        estimatedDeliveryTime: deliveryOrder.estimatedDeliveryTime,
+        actualDeliveryTime: deliveryOrder.actualDeliveryTime,
+        createdAt: deliveryOrder.createdAt,
+        updatedAt: deliveryOrder.updatedAt,
 
-      if (order.orderType === "custom_dates") {
-        return info.dates?.includes(todayDate);
-      }
+        // Additional delivery-specific fields
+        deliveryDate: deliveryOrder.deliveryDate,
+        deliveryNotes: deliveryOrder.deliveryNotes,
+        cancelReason: deliveryOrder.cancelReason,
 
-      return false;
+        // Status timestamps
+        pendingAt: deliveryOrder.pendingAt,
+        confirmedAt: deliveryOrder.confirmedAt,
+        preparingAt: deliveryOrder.preparingAt,
+        readyAt: deliveryOrder.readyAt,
+        outForDeliveryAt: deliveryOrder.outForDeliveryAt,
+        deliveredAt: deliveryOrder.deliveredAt,
+        cancelledAt: deliveryOrder.cancelledAt,
+        notDeliveredAt: deliveryOrder.notDeliveredAt,
+      };
     });
 
     return NextResponse.json(
       {
-        data: validOrders,
+        data: transformedOrders,
         message: SUCCESSMESSAGE.ORDERS_FETCH,
         success: true,
       },
       { status: 200 },
     );
   } catch (error) {
-    console.error("Get orders error:", error);
+    console.error("Get delivery orders error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
