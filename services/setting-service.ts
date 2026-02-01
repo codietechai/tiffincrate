@@ -19,7 +19,6 @@ export class SettingsService {
       const setting = await response.json();
       return setting;
     } catch (error) {
-      console.log("Error fetching settings:", error);
       throw error;
     }
   }

@@ -22,7 +22,6 @@ export class OrderService {
       const user = await response.json();
       return user;
     } catch (error) {
-      console.log("Error placing order:", error);
       throw error;
     }
   }

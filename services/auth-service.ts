@@ -19,7 +19,6 @@ export class AuthService {
       const user = await response.json();
       return user;
     } catch (error) {
-      console.log("Error creating customer:", error);
       throw error;
     }
   }
@@ -44,7 +43,6 @@ export class AuthService {
       const user = await response.json();
       return user;
     } catch (error) {
-      console.log("Error creating customer:", error);
       throw error;
     }
   }
@@ -68,7 +66,6 @@ export class AuthService {
 
       return response.json();
     } catch (error) {
-      console.error("Error creating customer:", error);
       throw error;
     }
   }
@@ -89,7 +86,6 @@ export class AuthService {
 
       return response.json();
     } catch (error) {
-      console.error("Error while logout from all devices:", error);
       throw error;
     }
   }
@@ -110,7 +106,6 @@ export class AuthService {
 
       return response.json();
     } catch (error) {
-      console.error("Error deleting account customer:", error);
       throw error;
     }
   }

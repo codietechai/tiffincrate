@@ -47,7 +47,6 @@ export class ReviewService {
       const setting = await response.json();
       return setting;
     } catch (error) {
-      console.log("Error fetching reviews:", error);
       throw error;
     }
   }
@@ -69,7 +68,6 @@ export class ReviewService {
       const setting = await response.json();
       return setting;
     } catch (error) {
-      console.log("Error fetching reviews:", error);
       throw error;
     }
   }

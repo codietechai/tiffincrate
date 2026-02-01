@@ -112,7 +112,6 @@ const PlaceAutocomplete = ({
     });
   }, [places]);
 
-  console.log("placeholder", placeholder);
   return (
     <>
       <Input

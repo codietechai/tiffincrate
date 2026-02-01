@@ -43,13 +43,13 @@ async function handler(request: NextRequest) {
     if (sorting === "rating") sortOption = { rating: -1 };
     else if (sorting === "orders") sortOption = { totalOrders: -1 };
     else if (sorting === "name") sortOption = { businessName: 1 };
-    console.log(query);
+
     const providers = await ServiceProvider.find(query)
       .populate("userId", "name email phone")
       .skip(skip)
       .limit(limit)
       .sort(sortOption);
-    console.log(providers);
+
     const total = await ServiceProvider.countDocuments(query);
 
     return NextResponse.json({

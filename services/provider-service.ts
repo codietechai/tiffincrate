@@ -33,7 +33,6 @@ export class ProviderService {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.log(ERRORMESSAGE.PROVIDERS_FETCH, error);
       throw error;
     }
   }
@@ -57,7 +56,6 @@ export class ProviderService {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.log(ERRORMESSAGE.PROVIDER_NOT_FOUND, error);
       throw error;
     }
   }
@@ -81,7 +79,6 @@ export class ProviderService {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.log("Error fetching settings:", error);
       throw error;
     }
   }

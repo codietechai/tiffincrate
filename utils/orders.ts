@@ -83,11 +83,6 @@ export const createDeliveryOrders = async (
 
   if (deliveryOrders.length > 0) {
     await DeliveryOrder.insertMany(deliveryOrders);
-    console.log(
-      `✅ Created ${deliveryOrders.length} delivery orders for order ${orderId}`
-    );
-  } else {
-    console.log("⚠️ No delivery orders generated for:", deliveryInfo);
   }
 
   return deliveryOrders;

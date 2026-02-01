@@ -5,19 +5,17 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET! || "",
 });
 
-console.log(process.env.RAZORPAY_KEY_ID,process.env.RAZORPAY_KEY_SECRET)
 export default razorpay;
 
 export const createRazorpayOrder = async (amount: number, currency = "INR") => {
   const options = {
-    amount: amount * 100, 
+    amount: amount * 100,
     currency,
     receipt: `receipt_${Date.now()}`,
   };
 
   try {
     const order = await razorpay.orders.create(options);
-    console.log(order)
     return order;
   } catch (error) {
     console.error("Error creating Razorpay order:", error);

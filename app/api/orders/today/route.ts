@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     // timeSlot filter
     if (timeSlot) query.timeSlot = timeSlot;
-    console.log('query :>> ', query);
+
     // Search in menu name/description if provided
     let menuFilter = {};
     if (search) {
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       .populate("consumerId", "name email phone")
       .populate("address")
       .sort({ createdAt: -1 });
-    console.log('orders :>> ', orders);
+
     let validOrders = orders.filter((o) => o.menuId !== null);
 
     validOrders = validOrders.filter((order) => {
