@@ -1,362 +1,312 @@
-export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
-import Review from "@/models/Review";
 import ServiceProvider from "@/models/ServiceProvider";
+import Menu from "@/models/Menu";
+import DeliveryOrder from "@/models/deliveryOrders";
+import mongoose from "mongoose";
+import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
 
-    if (role !== "provider") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!userId || (role !== "provider" && role !== "admin")) {
+      return NextResponse.json(
+        { error: "Provider or admin access required" },
+        { status: 403 }
+      );
     }
 
     await connectMongoDB();
 
     const { searchParams } = new URL(request.url);
-    const range = searchParams.get("range") || "30days";
-    const timeSlot = searchParams.get("timeSlot");
-    const status = searchParams.get("status");
+    const period = searchParams.get("period") || "week"; // week, month, year
+    const providerId = searchParams.get("providerId");
 
-    // Get provider details
-    const provider = await ServiceProvider.findOne({ userId: userId });
-    if (!provider) {
+    // Find provider
+    let provider;
+    if (role === "provider") {
+      provider = await ServiceProvider.findOne({ userId });
+      if (!provider) {
+        return NextResponse.json(
+          { error: "Provider not found" },
+          { status: 404 }
+        );
+      }
+    } else if (providerId) {
+      provider = await ServiceProvider.findById(providerId);
+      if (!provider) {
+        return NextResponse.json(
+          { error: "Provider not found" },
+          { status: 404 }
+        );
+      }
+    } else {
       return NextResponse.json(
-        { error: "Provider not found" },
-        { status: 404 }
+        { error: "Provider ID required for admin access" },
+        { status: 400 }
       );
     }
 
-    // Calculate date range
+    // Calculate date range based on period
     const now = new Date();
-    let startDate = new Date();
+    let startDate: Date;
+    let groupBy: string;
 
-    switch (range) {
-      case "7days":
-        startDate.setDate(now.getDate() - 7);
+    switch (period) {
+      case "week":
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        groupBy = "%Y-%m-%d";
         break;
-      case "30days":
-        startDate.setDate(now.getDate() - 30);
+      case "month":
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        groupBy = "%Y-%m-%d";
         break;
-      case "90days":
-        startDate.setDate(now.getDate() - 90);
-        break;
-      case "1year":
-        startDate.setFullYear(now.getFullYear() - 1);
+      case "year":
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        groupBy = "%Y-%m";
         break;
       default:
-        startDate.setDate(now.getDate() - 30);
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        groupBy = "%Y-%m-%d";
     }
 
-    // Build base match query
-    const baseMatch: any = {
+    // Get basic stats
+    const totalOrders = await Order.countDocuments({
       providerId: provider._id,
-      createdAt: { $gte: startDate },
-    };
+      status: { $ne: "cancelled" },
+    });
 
-    if (timeSlot && timeSlot !== "all") {
-      baseMatch.timeSlot = timeSlot;
-    }
-
-    if (status && status !== "all") {
-      baseMatch.status = status;
-    }
-
-    // Comprehensive orders analytics
-    const orderStats = await Order.aggregate([
-      { $match: baseMatch },
-      {
-        $facet: {
-          overview: [
-            {
-              $group: {
-                _id: null,
-                totalOrders: { $sum: 1 },
-                totalRevenue: {
-                  $sum: {
-                    $cond: [
-                      { $eq: ["$paymentStatus", "paid"] },
-                      "$totalAmount",
-                      0
-                    ]
-                  }
-                },
-                avgOrderValue: { $avg: "$totalAmount" },
-                completedOrders: {
-                  $sum: {
-                    $cond: [{ $eq: ["$status", "delivered"] }, 1, 0]
-                  }
-                },
-                cancelledOrders: {
-                  $sum: {
-                    $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0]
-                  }
-                }
-              }
-            }
-          ],
-          statusBreakdown: [
-            {
-              $group: {
-                _id: "$status",
-                count: { $sum: 1 },
-                revenue: {
-                  $sum: {
-                    $cond: [
-                      { $eq: ["$paymentStatus", "paid"] },
-                      "$totalAmount",
-                      0
-                    ]
-                  }
-                }
-              }
-            }
-          ],
-          timeSlotBreakdown: [
-            {
-              $group: {
-                _id: "$timeSlot",
-                count: { $sum: 1 },
-                revenue: {
-                  $sum: {
-                    $cond: [
-                      { $eq: ["$paymentStatus", "paid"] },
-                      "$totalAmount",
-                      0
-                    ]
-                  }
-                }
-              }
-            }
-          ],
-          paymentMethodBreakdown: [
-            {
-              $group: {
-                _id: "$paymentMethod",
-                count: { $sum: 1 },
-                revenue: {
-                  $sum: {
-                    $cond: [
-                      { $eq: ["$paymentStatus", "paid"] },
-                      "$totalAmount",
-                      0
-                    ]
-                  }
-                }
-              }
-            }
-          ],
-          dailyTrends: [
-            {
-              $group: {
-                _id: {
-                  year: { $year: "$createdAt" },
-                  month: { $month: "$createdAt" },
-                  day: { $dayOfMonth: "$createdAt" }
-                },
-                orders: { $sum: 1 },
-                revenue: {
-                  $sum: {
-                    $cond: [
-                      { $eq: ["$paymentStatus", "paid"] },
-                      "$totalAmount",
-                      0
-                    ]
-                  }
-                }
-              }
-            },
-            {
-              $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 }
-            },
-            {
-              $project: {
-                date: {
-                  $dateFromParts: {
-                    year: "$_id.year",
-                    month: "$_id.month",
-                    day: "$_id.day"
-                  }
-                },
-                orders: 1,
-                revenue: 1
-              }
-            }
-          ],
-          topItems: [
-            { $unwind: "$items" },
-            {
-              $group: {
-                _id: {
-                  name: "$items.name",
-                  menuItemId: "$items.menuItemId"
-                },
-                quantity: { $sum: "$items.quantity" },
-                revenue: {
-                  $sum: { $multiply: ["$items.price", "$items.quantity"] }
-                },
-                orders: { $sum: 1 }
-              }
-            },
-            { $sort: { quantity: -1 } },
-            { $limit: 10 }
-          ]
-        }
-      }
-    ]);
-
-    // Reviews analytics with new schema
-    const reviewStats = await Review.aggregate([
+    const totalRevenue = await Order.aggregate([
       {
         $match: {
-          providerId: provider._id,
-          createdAt: { $gte: startDate },
-          isHidden: false
-        }
+          providerId: new mongoose.Types.ObjectId(provider._id.toString()),
+          status: { $ne: "cancelled" },
+          paymentStatus: "paid",
+        },
       },
       {
-        $facet: {
-          overview: [
-            {
-              $group: {
-                _id: null,
-                avgRating: { $avg: "$rating" },
-                totalReviews: { $sum: 1 },
-                verifiedReviews: {
-                  $sum: { $cond: ["$isVerified", 1, 0] }
-                },
-                avgHelpfulCount: { $avg: "$helpfulCount" }
-              }
-            }
-          ],
-          ratingDistribution: [
-            {
-              $group: {
-                _id: "$rating",
-                count: { $sum: 1 }
-              }
-            },
-            { $sort: { _id: 1 } }
-          ],
-          reviewTypeBreakdown: [
-            {
-              $group: {
-                _id: "$reviewType",
-                count: { $sum: 1 },
-                avgRating: { $avg: "$rating" }
-              }
-            }
-          ],
-          recentReviews: [
-            { $sort: { createdAt: -1 } },
-            { $limit: 5 },
-            {
-              $lookup: {
-                from: "users",
-                localField: "consumerId",
-                foreignField: "_id",
-                as: "consumer"
-              }
-            },
-            { $unwind: "$consumer" },
-            {
-              $project: {
-                rating: 1,
-                comment: 1,
-                reviewType: 1,
-                isVerified: 1,
-                helpfulCount: 1,
-                createdAt: 1,
-                "consumer.name": 1
-              }
-            }
-          ]
-        }
-      }
+        $group: {
+          _id: null,
+          total: { $sum: "$totalAmount" },
+        },
+      },
     ]);
 
-    // Customer analytics
-    const customerStats = await Order.aggregate([
-      { $match: baseMatch },
+    const totalCustomers = await Order.distinct("consumerId", {
+      providerId: provider._id,
+      status: { $ne: "cancelled" },
+    });
+
+    const avgOrderValue = totalRevenue[0]?.total && totalOrders > 0
+      ? Math.round(totalRevenue[0].total / totalOrders)
+      : 0;
+
+    // Get period-based revenue data
+    const revenueData = await Order.aggregate([
+      {
+        $match: {
+          providerId: new mongoose.Types.ObjectId(provider._id.toString()),
+          status: { $ne: "cancelled" },
+          paymentStatus: "paid",
+          createdAt: { $gte: startDate },
+        },
+      },
       {
         $group: {
-          _id: "$consumerId",
-          orderCount: { $sum: 1 },
-          totalSpent: {
-            $sum: {
-              $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0]
-            }
-          },
-          lastOrder: { $max: "$createdAt" },
-          avgOrderValue: { $avg: "$totalAmount" }
-        }
+          _id: { $dateToString: { format: groupBy, date: "$createdAt" } },
+          revenue: { $sum: "$totalAmount" },
+          orders: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ]);
+
+    // Get category distribution
+    const categoryData = await Order.aggregate([
+      {
+        $match: {
+          providerId: new mongoose.Types.ObjectId(provider._id.toString()),
+          status: { $ne: "cancelled" },
+        },
       },
       {
         $lookup: {
-          from: "users",
-          localField: "_id",
+          from: "menus",
+          localField: "menuId",
           foreignField: "_id",
-          as: "customer"
-        }
+          as: "menu",
+        },
       },
-      { $unwind: "$customer" },
-      { $sort: { totalSpent: -1 } },
-      { $limit: 10 },
       {
-        $project: {
-          "customer.name": 1,
-          "customer.email": 1,
-          orderCount: 1,
-          totalSpent: 1,
-          avgOrderValue: 1,
-          lastOrder: 1
-        }
-      }
+        $unwind: "$menu",
+      },
+      {
+        $group: {
+          _id: "$menu.category",
+          count: { $sum: 1 },
+          revenue: { $sum: "$totalAmount" },
+        },
+      },
+      {
+        $sort: { count: -1 },
+      },
     ]);
 
-    // Compile comprehensive analytics
-    const analytics = {
-      overview: {
-        ...orderStats[0].overview[0],
-        completionRate: orderStats[0].overview[0]?.totalOrders > 0
-          ? Math.round((orderStats[0].overview[0].completedOrders / orderStats[0].overview[0].totalOrders) * 100)
-          : 0,
-        cancellationRate: orderStats[0].overview[0]?.totalOrders > 0
-          ? Math.round((orderStats[0].overview[0].cancelledOrders / orderStats[0].overview[0].totalOrders) * 100)
-          : 0,
-        ...reviewStats[0].overview[0]
+    // Get top selling menus
+    const topMenus = await Order.aggregate([
+      {
+        $match: {
+          providerId: new mongoose.Types.ObjectId(provider._id.toString()),
+          status: { $ne: "cancelled" },
+        },
       },
-      breakdowns: {
-        status: orderStats[0].statusBreakdown,
-        timeSlot: orderStats[0].timeSlotBreakdown,
-        paymentMethod: orderStats[0].paymentMethodBreakdown,
-        reviewType: reviewStats[0].reviewTypeBreakdown
+      {
+        $lookup: {
+          from: "menus",
+          localField: "menuId",
+          foreignField: "_id",
+          as: "menu",
+        },
       },
-      trends: {
-        daily: orderStats[0].dailyTrends,
-        ratingDistribution: reviewStats[0].ratingDistribution
+      {
+        $unwind: "$menu",
       },
-      topPerformers: {
-        items: orderStats[0].topItems,
-        customers: customerStats
+      {
+        $group: {
+          _id: "$menuId",
+          name: { $first: "$menu.name" },
+          orders: { $sum: 1 },
+          revenue: { $sum: "$totalAmount" },
+        },
       },
-      recentActivity: {
-        reviews: reviewStats[0].recentReviews
-      }
+      {
+        $sort: { orders: -1 },
+      },
+      {
+        $limit: 10,
+      },
+    ]);
+
+    // Get recent orders trend (last 7 days vs previous 7 days)
+    const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const previous7Days = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    const [currentPeriodStats, previousPeriodStats] = await Promise.all([
+      Order.aggregate([
+        {
+          $match: {
+            providerId: new mongoose.Types.ObjectId(provider._id.toString()),
+            status: { $ne: "cancelled" },
+            createdAt: { $gte: last7Days },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            orders: { $sum: 1 },
+            revenue: {
+              $sum: {
+                $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0],
+              },
+            },
+            customers: { $addToSet: "$consumerId" },
+          },
+        },
+      ]),
+      Order.aggregate([
+        {
+          $match: {
+            providerId: new mongoose.Types.ObjectId(provider._id.toString()),
+            status: { $ne: "cancelled" },
+            createdAt: { $gte: previous7Days, $lt: last7Days },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            orders: { $sum: 1 },
+            revenue: {
+              $sum: {
+                $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0],
+              },
+            },
+            customers: { $addToSet: "$consumerId" },
+          },
+        },
+      ]),
+    ]);
+
+    const current = currentPeriodStats[0] || { orders: 0, revenue: 0, customers: [] };
+    const previous = previousPeriodStats[0] || { orders: 0, revenue: 0, customers: [] };
+
+    // Calculate percentage changes
+    const calculateChange = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100 * 10) / 10;
     };
 
+    const revenueChange = calculateChange(current.revenue, previous.revenue);
+    const ordersChange = calculateChange(current.orders, previous.orders);
+    const customersChange = calculateChange(current.customers.length, previous.customers.length);
+    const avgOrderChange = calculateChange(
+      current.orders > 0 ? current.revenue / current.orders : 0,
+      previous.orders > 0 ? previous.revenue / previous.orders : 0
+    );
+
+    // Get delivery performance
+    const deliveryStats = await DeliveryOrder.aggregate([
+      {
+        $match: {
+          providerId: new mongoose.Types.ObjectId(provider._id.toString()),
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
     return NextResponse.json({
-      analytics,
-      dateRange: { startDate, endDate: now },
-      filters: { range, timeSlot, status }
+      success: true,
+      data: {
+        overview: {
+          totalRevenue: totalRevenue[0]?.total || 0,
+          totalOrders,
+          totalCustomers: totalCustomers.length,
+          avgOrderValue,
+          changes: {
+            revenue: revenueChange,
+            orders: ordersChange,
+            customers: customersChange,
+            avgOrder: avgOrderChange,
+          },
+        },
+        charts: {
+          revenue: revenueData,
+          categories: categoryData,
+          topMenus,
+          deliveryStats,
+        },
+        period,
+        provider: {
+          id: provider._id,
+          name: provider.businessName,
+        },
+      },
+      message: "Analytics data fetched successfully",
     });
   } catch (error) {
-    console.error("Get provider analytics error:", error);
+    console.error("Analytics error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: ERRORMESSAGE.INTERNAL },
       { status: 500 }
     );
   }

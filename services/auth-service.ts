@@ -1,32 +1,32 @@
 import { TUser } from "@/types";
 import { httpClient } from "@/lib/http-client";
-import { ROUTES } from "@/constants/routes";
+import { API_ROUTES } from "@/constants/api-routes";
 import { QUERY_KEYS } from "@/constants/query-keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Auth Service Class (for direct API calls)
 export class AuthService {
   static async checkAuth(): Promise<{ data: TUser | null; message: string }> {
-    return httpClient.get(ROUTES.AUTH.ME);
+    return httpClient.get(API_ROUTES.AUTH.ME);
   }
 
   static async signin(data: {
     email: string;
     password: string;
   }): Promise<{ user: TUser; message: string }> {
-    return httpClient.post(ROUTES.AUTH.LOGIN, data);
+    return httpClient.post(API_ROUTES.AUTH.LOGIN, data);
   }
 
   static async signup(data: unknown): Promise<{ user: TUser; message: string }> {
-    return httpClient.post(ROUTES.AUTH.REGISTER, data);
+    return httpClient.post(API_ROUTES.AUTH.REGISTER, data);
   }
 
   static async logoutAllDevices(): Promise<{ message: string }> {
-    return httpClient.post(ROUTES.AUTH.LOGOUT_ALL);
+    return httpClient.post(API_ROUTES.AUTH.LOGOUT_ALL);
   }
 
   static async deleteAccount(): Promise<{ message: string }> {
-    return httpClient.delete(ROUTES.AUTH.DELETE_ACCOUNT);
+    return httpClient.delete(API_ROUTES.AUTH.DELETE_ACCOUNT);
   }
 }
 

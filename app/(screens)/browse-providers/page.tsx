@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/Navbar";
 import { LoadingPage } from "@/components/ui/loading";
+import { PAGE_LINKS } from "@/constants/page-links";
 import { Search, MapPin, Star, ChefHat, Heart, TrendingUp } from "lucide-react";
 import { CheifHatIcon } from "@/components/common/icons";
 import FilterDrawer from "@/components/screens/home/provider/filter-drawer";
@@ -150,105 +151,104 @@ export default function BrowseProvidersPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {loading
             ? Array(5)
-                .fill(0)
-                .map((_, i) => <Skeleton className="h-[420px]" />)
+              .fill(0)
+              .map((_, i) => <Skeleton className="h-[420px]" />)
             : providers?.data.map((provider) => (
-                <Card
-                  key={provider._id}
-                  className="hover:shadow-lg transition-shadow"
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="flex items-center gap-2">
-                          {provider.businessName}
-                          {provider.isVerified && (
-                            <Badge variant="default" className="text-xs">
-                              Verified
-                            </Badge>
-                          )}
-                        </CardTitle>
-                        <CardDescription>
-                          by {provider?.userId?.name}
-                        </CardDescription>
+              <Card
+                key={provider._id}
+                className="hover:shadow-lg transition-shadow"
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="flex items-center gap-2">
+                        {provider.businessName}
+                        {provider.isVerified && (
+                          <Badge variant="default" className="text-xs">
+                            Verified
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription>
+                        by {provider?.userId?.name}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium">
+                          {provider.rating.toFixed(1)}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-medium">
-                            {provider.rating.toFixed(1)}
-                          </span>
-                        </div>
-                        {user?.role === "consumer" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleFavorite(provider._id)}
-                            className="p-1"
-                          >
-                            <Heart
-                              className={`h-4 w-4 ${
-                                favorites.includes(provider._id)
-                                  ? "fill-red-500 text-red-500"
-                                  : "text-gray-400"
+                      {user?.role === "consumer" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleFavorite(provider._id)}
+                          className="p-1"
+                        >
+                          <Heart
+                            className={`h-4 w-4 ${favorites.includes(provider._id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-gray-400"
                               }`}
-                            />
-                          </Button>
+                          />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                    {provider.description}
+                  </p>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <ChefHat className="h-4 w-4 text-gray-500" />
+                      <div className="flex flex-wrap gap-1">
+                        {provider.cuisine.slice(0, 3).map((c, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {c}
+                          </Badge>
+                        ))}
+                        {provider.cuisine.length > 3 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{provider.cuisine.length - 3}
+                          </Badge>
                         )}
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {provider.description}
-                    </p>
 
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <ChefHat className="h-4 w-4 text-gray-500" />
-                        <div className="flex flex-wrap gap-1">
-                          {provider.cuisine.slice(0, 3).map((c, i) => (
-                            <Badge
-                              key={i}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {c}
-                            </Badge>
-                          ))}
-                          {provider.cuisine.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{provider.cuisine.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {provider.deliveryAreas.slice(0, 2).join(", ")}
-                          {provider.deliveryAreas.length > 2 &&
-                            ` +${provider.deliveryAreas.length - 2} more`}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {provider.totalOrders} orders completed
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">
+                        {provider.deliveryAreas.slice(0, 2).join(", ")}
+                        {provider.deliveryAreas.length > 2 &&
+                          ` +${provider.deliveryAreas.length - 2} more`}
+                      </span>
                     </div>
 
-                    <div className="mt-4">
-                      <Link href={`/new-provider/${provider._id}`}>
-                        <Button className="w-full">View Tiffins</Button>
-                      </Link>
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">
+                        {provider.totalOrders} orders completed
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+
+                  <div className="mt-4">
+                    <Link href={PAGE_LINKS.PROVIDER.DETAIL(provider._id)}>
+                      <Button className="w-full">View Tiffins</Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
         </div>
 
         {providers?.data?.length === 0 && (

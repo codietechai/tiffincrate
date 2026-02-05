@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { usePathname, useRouter } from "next/navigation";
 import { TMenu } from "@/types";
+import { PAGE_LINKS } from "@/constants/page-links";
 
 const MenuItemHome = ({ menu }: { menu: TMenu }) => {
   const pathname = usePathname();
@@ -15,7 +16,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
     <Card
       key={menu._id}
       className="rounded-xl cursor-pointer"
-      onClick={() => router.push(`/new-menu-item/${menu._id}`)}
+      onClick={() => router.push(PAGE_LINKS.MENU_ITEM.DETAIL(menu._id))}
     >
       <CardContent className="flex flex-col sm:flex-row gap-4 p-4">
         <div className="flex gap-3">
@@ -87,7 +88,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
             <Button
               size="sm"
               className="bg-primary text-primary-foreground"
-              onClick={() => router.push(`/new-menu-item/${menu._id}`)}
+              onClick={() => router.push(PAGE_LINKS.MENU_ITEM.DETAIL(menu._id))}
             >
               View Details
             </Button>

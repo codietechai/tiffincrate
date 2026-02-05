@@ -123,7 +123,7 @@ export default function OrderHistoryPage() {
                         className="text-red-500 text-xs font-medium cursor-pointer hover:underline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/new-menu-item/${order.menuId._id}`);
+                          router.push(`/menu-item/${order.menuId._id}`);
                         }}
                       >
                         View menu
@@ -159,11 +159,10 @@ export default function OrderHistoryPage() {
                           return (
                             <Star
                               key={i}
-                              className={`h-5 w-5 cursor-pointer transition-colors ${
-                                starValue <= (currentHover || currentRating)
+                              className={`h-5 w-5 cursor-pointer transition-colors ${starValue <= (currentHover || currentRating)
                                   ? "text-yellow-400 fill-yellow-400"
                                   : "text-gray-300"
-                              }`}
+                                }`}
                               onMouseEnter={(e) => {
                                 e.stopPropagation();
                                 setHoverRatings((prev) => ({

@@ -12,11 +12,15 @@ export async function GET(request: NextRequest) {
     const defaultSettings = {
       notifications: {
         email: true,
-        sms: false,
+        web: true,
+        app: true,
         push: true,
         orderUpdates: true,
         promotions: false,
         weeklyDigest: true,
+        monthlyDigest: false, // Only for providers
+        accountUpdates: true,
+        securityAlerts: true,
       },
       privacy: {
         profileVisibility: "public",

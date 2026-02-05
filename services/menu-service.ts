@@ -2,7 +2,7 @@ import { TMenu } from "@/types";
 import { httpClient } from "@/lib/http-client";
 import { ROUTES, buildApiUrl } from "@/constants/routes";
 import { QUERY_KEYS } from "@/constants/query-keys";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 
 // Menu Service Class (for direct API calls)
 export class MenuService {
@@ -12,6 +12,10 @@ export class MenuService {
     limit?: number;
     category?: string;
     search?: string;
+    isVegetarian?: boolean;
+    weekType?: string;
+    isAvailable?: boolean;
+    isActive?: boolean;
   }): Promise<{
     data: TMenu[];
     stats?: {
@@ -27,7 +31,12 @@ export class MenuService {
     };
     message: string;
   }> {
-    const url = buildApiUrl(ROUTES.MENU.BASE, params);
+    const url = buildApiUrl(ROUTES.MENU.BASE, {
+      ...params,
+      isVegetarian: params?.isVegetarian !== undefined ? params.isVegetarian.toString() : undefined,
+      isAvailable: params?.isAvailable !== undefined ? params.isAvailable.toString() : undefined,
+      isActive: params?.isActive !== undefined ? params.isActive.toString() : undefined,
+    });
     return httpClient.get(url);
   }
 
@@ -59,6 +68,10 @@ export const useMenus = (params?: {
   limit?: number;
   category?: string;
   search?: string;
+  isVegetarian?: boolean;
+  weekType?: string;
+  isAvailable?: boolean;
+  isActive?: boolean;
 }) => {
   return useQuery({
     queryKey: [
@@ -68,6 +81,10 @@ export const useMenus = (params?: {
       params?.limit,
       params?.category,
       params?.search,
+      params?.isVegetarian,
+      params?.weekType,
+      params?.isAvailable,
+      params?.isActive,
     ],
     queryFn: () => MenuService.fetchMenus(params),
   });
@@ -94,5 +111,45 @@ export const useMenuItem = (menuId: string, itemId: string) => {
     queryKey: QUERY_KEYS.MENU.ITEM_BY_ID(menuId, itemId),
     queryFn: () => MenuService.fetchMenuItem(menuId, itemId),
     enabled: !!menuId && !!itemId,
+  });
+};
+
+// Infinite Query Hook for Menus (for pagination/infinite scroll)
+export const useInfiniteMenus = (params?: {
+  providerId?: string;
+  category?: string;
+  search?: string;
+  isVegetarian?: boolean;
+  weekType?: string;
+  isAvailable?: boolean;
+  isActive?: boolean;
+  limit?: number;
+}) => {
+  return useInfiniteQuery({
+    queryKey: [
+      ...QUERY_KEYS.MENU.INFINITE,
+      params?.providerId,
+      params?.category,
+      params?.search,
+      params?.isVegetarian,
+      params?.weekType,
+      params?.isAvailable,
+      params?.isActive,
+      params?.limit,
+    ],
+    queryFn: ({ pageParam = 1 }) =>
+      MenuService.fetchMenus({
+        ...params,
+        page: pageParam,
+        limit: params?.limit || 10,
+      }),
+    getNextPageParam: (lastPage) => {
+      const { pagination } = lastPage;
+      if (pagination && pagination.page < pagination.totalPages) {
+        return pagination.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
   });
 };

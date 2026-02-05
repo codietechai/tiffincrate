@@ -40,7 +40,6 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Calendar } from "@/components/ui/calendar";
-import { CartItem } from "@/app/(screens)/providers/[id]/page";
 import BackHeader from "@/components/common/back-header";
 import GoogleMapAutoComplete from "@/components/common/googlePlace";
 import { MenuItemDetailSkeleton } from "./menu-detail-skeleton";

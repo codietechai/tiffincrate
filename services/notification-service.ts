@@ -1,5 +1,5 @@
 import { httpClient } from "@/lib/http-client";
-import { ROUTES, buildApiUrl } from "@/constants/routes";
+import { API_ROUTES, buildApiUrl } from "@/constants/api-routes";
 import { QUERY_KEYS, getRelatedQueryKeys } from "@/constants/query-keys";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -34,7 +34,7 @@ export class NotificationService {
     filters?: any;
     message: string;
   }> {
-    const url = buildApiUrl(ROUTES.NOTIFICATION.BASE, {
+    const url = buildApiUrl(API_ROUTES.NOTIFICATION.BASE, {
       page: params?.page?.toString(),
       limit: params?.limit?.toString(),
       unreadOnly: params?.unreadOnly ? "true" : undefined,
@@ -58,10 +58,11 @@ export class NotificationService {
     notification: TNotification;
     message: string;
   }> {
-    return httpClient.post(ROUTES.NOTIFICATION.BASE, payload);
+    return httpClient.post(API_ROUTES.NOTIFICATION.BASE, payload);
   }
 
   static async markAsRead(payload: {
+    id?: string[];
     notificationIds?: string[];
     markAllAsRead?: boolean;
   }): Promise<{
@@ -72,24 +73,26 @@ export class NotificationService {
 
     if (payload.markAllAsRead) {
       requestBody.markAllAsRead = true;
+    } else if (payload.id && payload.id.length > 0) {
+      requestBody.notificationIds = payload.id;
     } else if (payload.notificationIds && payload.notificationIds.length > 0) {
       requestBody.notificationIds = payload.notificationIds;
     }
 
-    return httpClient.patch(ROUTES.NOTIFICATION.BASE, requestBody);
+    return httpClient.patch(API_ROUTES.NOTIFICATION.BASE, requestBody);
   }
 
   static async fetchLiveNotifications(): Promise<{
     data: TNotification[];
     message: string;
   }> {
-    return httpClient.get(ROUTES.NOTIFICATION.LIVE);
+    return httpClient.get(API_ROUTES.NOTIFICATION.LIVE);
   }
 
   static async deleteNotification(id: string): Promise<{
     message: string;
   }> {
-    return httpClient.delete(`${ROUTES.NOTIFICATION.BASE}/${id}`);
+    return httpClient.delete(`${API_ROUTES.NOTIFICATION.BASE}/${id}`);
   }
 }
 

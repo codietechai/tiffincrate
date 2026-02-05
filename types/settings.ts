@@ -1,11 +1,15 @@
 export type TSettings = {
   notifications: {
     email: boolean;
-    sms: boolean;
+    web: boolean;
+    app: boolean;
     push: boolean;
     orderUpdates: boolean;
     promotions: boolean;
     weeklyDigest: boolean;
+    monthlyDigest?: boolean; // Only for providers
+    accountUpdates: boolean;
+    securityAlerts: boolean;
   };
   privacy: {
     dataCollection: boolean;

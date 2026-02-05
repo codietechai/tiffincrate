@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import ConsumerHome from "./customer/customer-home";
-import ProviderHome from "./provider/provider-home";
 import AdminHome from "./admin/admin-home";
+import { ProviderHome } from "./provider/provider-home";
 import { AuthService } from "@/services/auth-service";
 import { TUser } from "@/types";
 

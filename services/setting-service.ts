@@ -1,46 +1,46 @@
 import { TSettings } from "@/types";
 import { httpClient } from "@/lib/http-client";
-import { ROUTES } from "@/constants/routes";
+import { API_ROUTES } from "@/constants/api-routes";
 import { QUERY_KEYS } from "@/constants/query-keys";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Settings Service Class (for direct API calls)
 export class SettingsService {
   static async fetchSettings(): Promise<{ data: TSettings; message: string }> {
-    return httpClient.get(ROUTES.SETTINGS.BASE);
+    return httpClient.get(API_ROUTES.SETTINGS.BASE);
   }
 
   static async updateSettings(
     payload: TSettings
   ): Promise<{ data: TSettings; message: string }> {
-    return httpClient.put(ROUTES.SETTINGS.BASE, payload);
+    return httpClient.put(API_ROUTES.SETTINGS.BASE, payload);
   }
 
   static async fetchUserSettings(userId: string): Promise<{ data: any; message: string }> {
     // This would be a custom endpoint for user-specific settings
-    return httpClient.get(`${ROUTES.SETTINGS.BASE}/user/${userId}`);
+    return httpClient.get(API_ROUTES.SETTINGS.USER(userId));
   }
 
   static async updateUserSettings(userId: string, payload: any): Promise<{ data: any; message: string }> {
-    return httpClient.put(`${ROUTES.SETTINGS.BASE}/user/${userId}`, payload);
+    return httpClient.put(API_ROUTES.SETTINGS.USER(userId), payload);
   }
 
   static async fetchProviderSettings(providerId: string): Promise<{ data: any; message: string }> {
     // This would be a custom endpoint for provider-specific settings
-    return httpClient.get(`${ROUTES.SETTINGS.BASE}/provider/${providerId}`);
+    return httpClient.get(API_ROUTES.SETTINGS.PROVIDER(providerId));
   }
 
   static async updateProviderSettings(providerId: string, payload: any): Promise<{ data: any; message: string }> {
-    return httpClient.put(`${ROUTES.SETTINGS.BASE}/provider/${providerId}`, payload);
+    return httpClient.put(API_ROUTES.SETTINGS.PROVIDER(providerId), payload);
   }
 
   static async fetchSystemSettings(): Promise<{ data: any; message: string }> {
     // This would be a custom endpoint for system-wide settings
-    return httpClient.get(`${ROUTES.SETTINGS.BASE}/system`);
+    return httpClient.get(API_ROUTES.SETTINGS.SYSTEM);
   }
 
   static async updateSystemSettings(payload: any): Promise<{ data: any; message: string }> {
-    return httpClient.put(`${ROUTES.SETTINGS.BASE}/system`, payload);
+    return httpClient.put(API_ROUTES.SETTINGS.SYSTEM, payload);
   }
 }
 

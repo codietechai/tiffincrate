@@ -8,262 +8,164 @@ import {
   Clock,
   CheckCircle2,
   Package,
-  Bike,
+  Truck,
   MapPin,
   User,
-  Phone,
-  Utensils,
-  Receipt,
+  IndianRupee,
+  Navigation,
+  Eye,
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import StatsGrid from "@/components/common/stats-grid";
 import { LoadingPage } from "@/components/ui/loading";
-
-interface MenuItem {
-  _id: string;
-  name: string;
-  description: string;
-  day?: string;
-  images?: string[];
-}
-
-interface APIOrder {
-  _id: string;
-  deliveryStatus: string;
-  deliveryDate: string;
-
-
-  createdAt: string;
-  updatedAt: string;
-  order: {
-    _id: string;
-    consumerId: string;
-    totalAmount: number;
-    status: string;
-    paymentMethod: string;
-    paymentStatus: string;
-    timeSlot: string;
-    notes: string;
-    deliveryAddress?: { address: string };
-    items?: Array<{ name: string; quantity: number }>;
-  };
-  consumer?: Array<{ name: string }>;
-  menu?: any[];
-  menuitems?: MenuItem[];
-}
+import { useRouter } from "next/navigation";
+import { PAGE_LINKS } from "@/constants/page-links";
+import { API_ROUTES } from "@/constants/api-routes";
 
 interface Order {
-  id: string;
-  orderNumber: string;
-  customer: string;
-  items: any[];
-  menu?: any[];
-  menuitems?: MenuItem[];
-  deliverySlot: string;
-  status: "confirmed" | "ready" | "assigned" | "out_for_delivery" | "delivered";
-  time: string;
+  _id: string;
+  consumerId: {
+    _id: string;
+    name: string;
+    email: string;
+    phone?: string;
+  };
+  menuId: {
+    _id: string;
+    name: string;
+    description?: string;
+    category: string;
+  };
+  address: {
+    _id: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    pincode: string;
+  };
+  totalAmount: number;
+  status: string;
+  paymentStatus: string;
   paymentMethod: string;
-  address: string;
-  phone: string;
-  totalAmount?: number;
+  timeSlot: string;
+  orderType: string;
   notes?: string;
-  timeSlot?: string;
-  deliveryPartner?: string;
-  deliveryType: "self" | "partner";
+  createdAt: string;
+  updatedAt: string;
 }
 
-export function OrdersPage() {
+export function ProviderOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const deliveryPartners = [
-    "Suresh (Partner)",
-    "Rajesh (Partner)",
-    "Amit (Partner)",
-    "Self Delivery",
-  ];
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    fetchOrders();
+    checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+    }
+  }, [user]);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch(API_ROUTES.AUTH.ME);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data.role !== "provider") {
+          router.push(PAGE_LINKS.HOME);
+          return;
+        }
+        setUser(data.data);
+      } else {
+        router.push(PAGE_LINKS.AUTH.LOGIN);
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
+      router.push(PAGE_LINKS.AUTH.LOGIN);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/orders");
-      if (!res.ok) throw new Error("Failed to fetch orders");
-      const data = await res.json();
+      const response = await fetch(API_ROUTES.ORDER.BASE, {
+        headers: {
+          "x-user-id": user.id,
+          "x-user-role": user.role,
+        },
+      });
 
-      const transformedOrders: Order[] = data.orders.map((o: APIOrder) => ({
-        id: o._id,
-        orderNumber: `#ORD-${o._id.slice(-5)}`,
-        customer:
-          o.consumer?.[0]?.name || o.order.consumerId || "Unknown Customer",
-        items: o.order.items || [],
-        menu: o.menu || [],
-        menuitems: o.menuitems || [],
-        totalAmount: o.order.totalAmount || 0,
-        notes: o.order.notes || "",
-        timeSlot: o.order.timeSlot || "N/A",
-        deliverySlot: new Date(o.deliveryDate).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        status: mapDeliveryStatus(o.deliveryStatus),
-        time: new Date(o.createdAt).toLocaleDateString(),
-        paymentMethod: o.order.paymentMethod || "N/A",
-        address: o.order.deliveryAddress?.address || "N/A",
-        phone: "N/A",
-        deliveryType: "partner",
-      }));
-
-      setOrders(transformedOrders);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const mapDeliveryStatus = (status: string) => {
-    const map: Record<string, Order["status"]> = {
-      pending: "confirmed",
-      confirmed: "ready",
-      ready: "ready",
-      assigned: "assigned",
-      out_for_delivery: "out_for_delivery",
-      delivered: "delivered",
-    };
-    return map[status] || "confirmed";
-  };
-
-  const getStatusColor = (status: Order["status"]) => {
+  const getStatusColor = (status: string) => {
     const colors = {
-      confirmed: "bg-blue-100 text-blue-700",
-      ready: "bg-green-100 text-green-700",
-      assigned: "bg-purple-100 text-purple-700",
-      out_for_delivery: "bg-orange-100 text-orange-700",
-      delivered: "bg-gray-100 text-gray-700",
+      pending: "bg-yellow-100 text-yellow-800",
+      confirmed: "bg-blue-100 text-blue-800",
+      preparing: "bg-purple-100 text-purple-800",
+      ready: "bg-green-100 text-green-800",
+      delivered: "bg-emerald-100 text-emerald-800",
+      cancelled: "bg-red-100 text-red-800",
     };
-    return colors[status];
+    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
 
-  const getStatusIcon = (status: Order["status"]) => {
+  const getStatusIcon = (status: string) => {
     const icons = {
-      confirmed: Clock,
+      pending: Clock,
+      confirmed: CheckCircle2,
+      preparing: Package,
       ready: Package,
-      assigned: User,
-      out_for_delivery: Bike,
       delivered: CheckCircle2,
+      cancelled: Clock,
     };
-    const Icon = icons[status];
+    const Icon = icons[status as keyof typeof icons] || Clock;
     return <Icon className="w-4 h-4" />;
-  };
-
-  const getStatusLabel = (status: Order["status"]) => {
-    const labels = {
-      confirmed: "Confirmed",
-      ready: "Ready for Pickup",
-      assigned: "Assigned",
-      out_for_delivery: "Out for Delivery",
-      delivered: "Delivered",
-    };
-    return labels[status];
-  };
-
-  const updateDeliveryOrderStatus = async (
-    orderDeliveryId: string,
-    status: string
-  ) => {
-    try {
-      const res = await fetch(
-        `/api/delivery-orders?orderDeliveryId=${orderDeliveryId}&status=${status}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-role": "provider",
-          },
-        }
-      );
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to update status");
-
-      await fetchOrders();
-    } catch (error) {
-      console.error("❌ Error updating delivery order:", error);
-    }
-  };
-
-  const handleStatusUpdate = async (
-    orderId: string,
-    newStatus: Order["status"]
-  ) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-
-    await updateDeliveryOrderStatus(orderId, newStatus);
-  };
-
-  const handleAssignPartner = (orderId: string, partner: string) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId
-          ? {
-            ...order,
-            deliveryPartner: partner,
-            deliveryType: partner === "Self Delivery" ? "self" : "partner",
-            status: "assigned",
-          }
-          : order
-      )
-    );
   };
 
   const stats = [
     {
-      label: "New Orders",
-      value: orders.filter((o) => o.status === "confirmed").length,
-      icon: Clock,
+      label: "Total Orders",
+      value: orders.length,
+      icon: Package,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
     {
-      label: "Ready for Pickup",
-      value: orders.filter((o) => o.status === "ready").length,
-      icon: Package,
+      label: "Confirmed",
+      value: orders.filter((o) => o.status === "confirmed").length,
+      icon: CheckCircle2,
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
-      label: "Out for Delivery",
-      value: orders.filter(
-        (o) => o.status === "out_for_delivery"
-      ).length,
-      icon: Bike,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
+      label: "Delivered",
+      value: orders.filter((o) => o.status === "delivered").length,
+      icon: CheckCircle2,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50",
     },
     {
-      label: "Total Today",
-      value: orders.length,
-      icon: CheckCircle2,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
+      label: "Cancelled",
+      value: orders.filter((o) => o.status === "cancelled").length,
+      icon: Clock,
+      color: "text-red-600",
+      bgColor: "bg-red-50",
     },
   ];
 
-  const filterOrdersByStatus = (status?: Order["status"]) =>
+  const filterOrdersByStatus = (status?: string) =>
     !status ? orders : orders.filter((order) => order.status === status);
 
   const OrderCard = ({ order }: { order: Order }) => (
@@ -272,130 +174,100 @@ export function OrdersPage() {
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-base md:text-lg">
-              {order.orderNumber}
+              Order #{order._id.slice(-8)}
             </CardTitle>
-            <p className="text-gray-500 text-sm">{order.customer}</p>
+            <p className="text-gray-500 text-sm">{order.consumerId.name}</p>
+            <p className="text-gray-400 text-xs">{order.consumerId.email}</p>
           </div>
           <Badge className={`${getStatusColor(order.status)} text-xs`}>
             <span className="flex items-center gap-1">
               {getStatusIcon(order.status)}
-              {getStatusLabel(order.status)}
+              <span className="capitalize">{order.status}</span>
             </span>
           </Badge>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {order.menu && order.menu.length > 0 && (
-          <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-lg p-3">
-            {order.menu[0].image && (
-              <img
-                src={order.menu[0].image}
-                alt={order.menu[0].name}
-                className="w-14 h-14 rounded-md object-cover"
-              />
+        {/* Menu Information */}
+        <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-lg p-3">
+          <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+            <Package className="w-6 h-6 text-orange-600" />
+          </div>
+          <div>
+            <p className="font-medium text-gray-800">{order.menuId.name}</p>
+            <p className="text-xs text-gray-500 capitalize">{order.menuId.category}</p>
+            {order.menuId.description && (
+              <p className="text-xs text-gray-400 truncate">{order.menuId.description}</p>
             )}
-            <div>
-              <p className="font-medium text-gray-800">
-                🍱 {order.menu[0].name}
-              </p>
-              <p className="text-xs text-gray-500 capitalize">
-                {order.menu[0].category}
-              </p>
-            </div>
           </div>
-        )}
-
-        {order.menuitems && order.menuitems.length > 0 && (
-          <div className="space-y-2 bg-gray-50 border border-gray-100 rounded-lg p-3">
-            <p className="font-medium text-gray-700">🍽 Menu Items:</p>
-            {order.menuitems.map((item) => (
-              <div key={item._id} className="flex items-center gap-3">
-                {item.images?.[0] && (
-                  <img
-                    src={item.images[0]}
-                    alt={item.name}
-                    className="w-12 h-12 rounded-md object-cover"
-                  />
-                )}
-                <div>
-                  <p className="text-sm font-medium text-gray-800">
-                    {item.name}
-                  </p>
-                  {item.day && (
-                    <p className="text-xs text-gray-500 capitalize">
-                      {item.day}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between bg-orange-50 border border-orange-100 rounded-lg p-3 text-sm text-orange-700">
-          <span className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Delivery: {order.deliverySlot}
-          </span>
-          <span className="font-medium">₹{order.totalAmount}</span>
         </div>
 
-        {/* Buttons */}
-        <div className="space-y-2 pt-2">
-          {order.status === "confirmed" && (
-            <Button
-              className="w-full bg-green-600 hover:bg-green-700"
-              onClick={() => handleStatusUpdate(order.id, "ready")}
-            >
-              <Package className="w-4 h-4 mr-2" /> Mark Ready
-            </Button>
-          )}
-
-          {order.status === "ready" && (
-            <div className="space-y-2">
-              <Select
-                onValueChange={(partner) =>
-                  handleAssignPartner(order.id, partner)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Assign Partner..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {deliveryPartners.map((partner) => (
-                    <SelectItem key={partner} value={partner}>
-                      {partner}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => handleStatusUpdate(order.id, "out_for_delivery")}
-              >
-                <Bike className="w-4 h-4 mr-2" /> Start Self Delivery
-              </Button>
+        {/* Order Details */}
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-gray-400" />
+            <div>
+              <p className="font-medium capitalize">{order.timeSlot}</p>
+              <p className="text-gray-500 text-xs capitalize">{order.orderType}</p>
             </div>
-          )}
-
-          {order.status === "out_for_delivery" && (
-            <Button
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={() => handleStatusUpdate(order.id, "delivered")}
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2" /> Mark as Delivered
-            </Button>
-          )}
-
-          {order.status === "delivered" && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-              <p className="text-sm text-green-700 font-medium">
-                ✓ Delivered Successfully
-              </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <IndianRupee className="w-4 h-4 text-gray-400" />
+            <div>
+              <p className="font-medium">₹{order.totalAmount}</p>
+              <p className="text-gray-500 text-xs capitalize">{order.paymentMethod}</p>
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* Address */}
+        <div className="flex items-start gap-2">
+          <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+          <div className="text-sm">
+            <p className="text-gray-700">
+              {order.address.addressLine1}
+              {order.address.addressLine2 && `, ${order.address.addressLine2}`}
+            </p>
+            <p className="text-gray-500 text-xs">
+              {order.address.city} - {order.address.pincode}
+            </p>
+          </div>
+        </div>
+
+        {/* Notes */}
+        {order.notes && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-sm text-yellow-800">
+              <strong>Notes:</strong> {order.notes}
+            </p>
+          </div>
+        )}
+
+        {/* Order Date */}
+        <div className="text-xs text-gray-500 border-t pt-3">
+          Ordered on {new Date(order.createdAt).toLocaleDateString()} at{" "}
+          {new Date(order.createdAt).toLocaleTimeString()}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => router.push(PAGE_LINKS.PROVIDER_ORDER_DETAIL(order._id))}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            View Details
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(PAGE_LINKS.DASHBOARD.DELIVERY)}
+          >
+            <Navigation className="w-4 h-4" />
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -404,38 +276,72 @@ export function OrdersPage() {
   if (loading) return <LoadingPage />;
 
   return (
-    <div className="p-4 md:p-8 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Recent Orders</h2>
+          <p className="text-gray-500 text-sm">Manage your recent orders</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(PAGE_LINKS.PROVIDER_ORDERS)}
+          >
+            View All Orders
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(PAGE_LINKS.PROVIDER_DELIVERY_ORDERS)}
+          >
+            Today's Deliveries
+          </Button>
+        </div>
+      </div>
+
       <StatsGrid stats={stats} isLoading={loading} />
 
-      <Tabs defaultValue="all">
-        <TabsList className="mb-4 flex flex-wrap gap-2">
+      <Tabs defaultValue="all" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="all">All ({orders.length})</TabsTrigger>
           <TabsTrigger value="confirmed">
-            New ({filterOrdersByStatus("confirmed").length})
+            Confirmed ({filterOrdersByStatus("confirmed").length})
           </TabsTrigger>
-          <TabsTrigger value="ready">
-            Ready ({filterOrdersByStatus("ready").length})
+          <TabsTrigger value="delivered">
+            Delivered ({filterOrdersByStatus("delivered").length})
           </TabsTrigger>
-          <TabsTrigger value="assigned">
-            Assigned ({filterOrdersByStatus("assigned").length})
-          </TabsTrigger>
-          <TabsTrigger value="out_for_delivery">
-            Delivering ({filterOrdersByStatus("out_for_delivery").length})
+          <TabsTrigger value="cancelled">
+            Cancelled ({filterOrdersByStatus("cancelled").length})
           </TabsTrigger>
         </TabsList>
 
-        {["all", "confirmed", "ready", "assigned", "out_for_delivery"].map(
-          (tab) => (
-            <TabsContent key={tab} value={tab} className="space-y-3">
-              {filterOrdersByStatus(
-                tab === "all" ? undefined : (tab as Order["status"])
-              ).map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-            </TabsContent>
-          )
-        )}
+        {["all", "confirmed", "delivered", "cancelled"].map((tab) => (
+          <TabsContent key={tab} value={tab} className="space-y-3">
+            {filterOrdersByStatus(tab === "all" ? undefined : tab).length > 0 ? (
+              filterOrdersByStatus(tab === "all" ? undefined : tab)
+                .slice(0, 5) // Show only recent 5 orders
+                .map((order) => <OrderCard key={order._id} order={order} />)
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>No {tab === "all" ? "" : tab} orders found</p>
+              </div>
+            )}
+          </TabsContent>
+        ))}
       </Tabs>
+
+      {orders.length > 5 && (
+        <div className="text-center pt-4">
+          <Button
+            variant="outline"
+            onClick={() => router.push(PAGE_LINKS.PROVIDER_ORDERS)}
+          >
+            View All {orders.length} Orders
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

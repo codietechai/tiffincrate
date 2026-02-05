@@ -8,6 +8,7 @@ import { ERRORMESSAGE, SUCCESSMESSAGE } from "@/constants/response-messages";
 
 export async function GET(request: NextRequest) {
   try {
+    const userId = request.headers.get("x-user-id");
     const role = request.headers.get("x-user-role");
     await connectMongoDB();
 
@@ -17,6 +18,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search");
     const isVegetarian = searchParams.get("isVegetarian");
     const weekType = searchParams.get("weekType");
+    const isAvailable = searchParams.get("isAvailable");
+    const isActive = searchParams.get("isActive");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
@@ -34,8 +37,19 @@ export async function GET(request: NextRequest) {
       query.isAvailable = true;
     }
 
-    // Provider filtering
-    if (providerId) {
+    // Provider filtering - Auto-filter by logged-in provider for provider role
+    if (role === "provider" && userId) {
+      // Find the provider by userId to get their providerId
+      const serviceProvider = await ServiceProvider.findOne({ userId });
+      if (!serviceProvider) {
+        return NextResponse.json(
+          { error: "Provider not found for this user" },
+          { status: 404 }
+        );
+      }
+      query.providerId = new Types.ObjectId(serviceProvider._id.toString());
+    } else if (providerId) {
+      // Explicit provider filtering (for consumers browsing specific provider)
       const serviceProvider = await ServiceProvider.findById(providerId);
       if (!serviceProvider) {
         return NextResponse.json(
@@ -43,7 +57,7 @@ export async function GET(request: NextRequest) {
           { status: 404 }
         );
       }
-      query.providerId = new Types.ObjectId(serviceProvider._id);
+      query.providerId = new Types.ObjectId(serviceProvider._id.toString());
     }
 
     // Category filtering
@@ -56,13 +70,21 @@ export async function GET(request: NextRequest) {
     // Week type filtering
     if (weekType && weekType !== "all") query.weekType = weekType;
 
+    // Availability filtering
+    if (isAvailable === "true") query.isAvailable = true;
+    else if (isAvailable === "false") query.isAvailable = false;
+
+    // Active status filtering
+    if (isActive === "true") query.isActive = true;
+    else if (isActive === "false") query.isActive = false;
+
     // Get counts for stats
     const total = await Menu.countDocuments(query);
-    const isAvailable = await Menu.countDocuments({ ...query, isAvailable: true });
-    const isActive = await Menu.countDocuments({ ...query, isActive: true });
+    const availableCount = await Menu.countDocuments({ ...query, isAvailable: true });
+    const activeCount = await Menu.countDocuments({ ...query, isActive: true });
 
     // Build aggregation pipeline
-    const pipeline = [
+    const pipeline: any[] = [
       { $match: query },
       {
         $lookup: {
@@ -128,8 +150,8 @@ export async function GET(request: NextRequest) {
       data: menus,
       stats: {
         total,
-        available: isAvailable,
-        active: isActive,
+        available: availableCount,
+        active: activeCount,
       },
       pagination: {
         total,

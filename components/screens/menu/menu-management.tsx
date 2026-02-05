@@ -25,6 +25,9 @@ export function MenuManagement() {
     limit: 10,
     category: "all",
     search: "",
+    isAvailable: undefined as boolean | undefined,
+    isActive: undefined as boolean | undefined,
+    isVegetarian: undefined as boolean | undefined,
   });
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -37,6 +40,9 @@ export function MenuManagement() {
     limit: queryData.limit,
     category: queryData.category !== "all" ? queryData.category : undefined,
     search: queryData.search || undefined,
+    isAvailable: queryData.isAvailable,
+    isActive: queryData.isActive,
+    isVegetarian: queryData.isVegetarian,
   });
 
   const menus = menusResponse?.data || [];
@@ -162,6 +168,58 @@ export function MenuManagement() {
               {category === "all" ? "All Items" : toTitleCase(category)}
             </Button>
           ))}
+        </div>
+
+        {/* Additional Filters */}
+        <div className="flex flex-wrap gap-2 pb-2">
+          <Button
+            size="sm"
+            variant={queryData.isAvailable === undefined ? "default" : "outline"}
+            onClick={() =>
+              setQueryData((prev) => ({
+                ...prev,
+                isAvailable: undefined,
+              }))
+            }
+          >
+            All Status
+          </Button>
+          <Button
+            size="sm"
+            variant={queryData.isAvailable === true ? "default" : "outline"}
+            onClick={() =>
+              setQueryData((prev) => ({
+                ...prev,
+                isAvailable: true,
+              }))
+            }
+          >
+            Available
+          </Button>
+          <Button
+            size="sm"
+            variant={queryData.isAvailable === false ? "default" : "outline"}
+            onClick={() =>
+              setQueryData((prev) => ({
+                ...prev,
+                isAvailable: false,
+              }))
+            }
+          >
+            Unavailable
+          </Button>
+          <Button
+            size="sm"
+            variant={queryData.isVegetarian === undefined ? "outline" : "default"}
+            onClick={() =>
+              setQueryData((prev) => ({
+                ...prev,
+                isVegetarian: prev.isVegetarian === undefined ? true : undefined,
+              }))
+            }
+          >
+            🥬 Veg Only
+          </Button>
         </div>
       </div>
 

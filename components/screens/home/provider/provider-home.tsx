@@ -7,31 +7,50 @@ import {
   Settings as SettingsIcon,
   Bell,
   Menu,
-  Bike,
-  X,
+  HelpCircle,
+  MapPin,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DeliveryInfo } from "../../delivery/provider/delivery-info";
-import { OrdersPage } from "./orders";
+import { ProviderOrders } from "./orders";
+import { useRouter } from "next/navigation";
+import { PROVIDER_HOME_NAVIGATION, PAGE_LINKS } from "@/constants/page-links";
 
 const ProviderHome = () => {
   const [notificationCount] = useState(5);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navItems = [
-    { id: "orders", label: "Orders", icon: ShoppingBag },
-    { id: "partners", label: "Delivery", icon: Bike },
-    { id: "menu", label: "Menu", icon: UtensilsCrossed },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "settings", label: "Settings", icon: SettingsIcon },
-  ];
-  const handleNavClick = (id: string) => {
+  const router = useRouter();
+
+  const getIconForNavItem = (id: string) => {
+    const iconMap: Record<string, React.ComponentType<any>> = {
+      orders: ShoppingBag,
+      menu: UtensilsCrossed,
+      delivery: MapPin,
+      analytics: BarChart3,
+      settings: SettingsIcon,
+      help: HelpCircle,
+    };
+    return iconMap[id] || ShoppingBag;
+  };
+
+  const navItems = PROVIDER_HOME_NAVIGATION.map(item => ({
+    ...item,
+    icon: getIconForNavItem(item.id),
+  }));
+
+  const handleNavClick = (href: string) => {
+    router.push(href);
     setIsMenuOpen(false);
   };
+
+  const handleNotificationClick = () => {
+    router.push(PAGE_LINKS.NOTIFICATIONS);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {" "}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
@@ -44,7 +63,7 @@ const ProviderHome = () => {
               <SheetContent side="left" className="w-64 p-0">
                 <div className="flex flex-col h-full">
                   <div className="p-6 border-b border-gray-200">
-                    <h1 className="text-orange-500">Tiffin Service</h1>
+                    <h1 className="text-orange-500 font-semibold">Tiffin Service</h1>
                   </div>
 
                   <nav className="flex-1 p-4 space-y-1">
@@ -53,12 +72,8 @@ const ProviderHome = () => {
                       return (
                         <button
                           key={item.id}
-                          onClick={() => handleNavClick(item.id)}
-                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                            "orders" === item.id
-                              ? "bg-orange-50 text-orange-600"
-                              : "text-gray-700 hover:bg-gray-50"
-                          }`}
+                          onClick={() => handleNavClick(item.href || PAGE_LINKS.HOME)}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-gray-50"
                         >
                           <Icon className="w-5 h-5" />
                           <span>{item.label}</span>
@@ -69,30 +84,46 @@ const ProviderHome = () => {
 
                   <div className="p-4 border-t border-gray-200">
                     <div className="px-4 py-3">
-                      <p className="text-gray-900">HomeMade Tiffins</p>
-                      <p className="text-gray-500">homemade@tiffin.com</p>
+                      <p className="text-gray-900 font-medium">HomeMade Tiffins</p>
+                      <p className="text-gray-500 text-sm">homemade@tiffin.com</p>
                     </div>
                   </div>
                 </div>
               </SheetContent>
             </Sheet>
 
-            <h1 className="text-orange-500">Tiffincrate Partner</h1>
+            <h1 className="text-orange-500 font-semibold">Tiffincrate Partner</h1>
           </div>
 
-          <Button variant="ghost" size="icon" className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            onClick={handleNotificationClick}
+          >
             <Bell className="w-5 h-5" />
             {notificationCount > 0 && (
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500">
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
                 {notificationCount}
               </Badge>
             )}
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            onClick={() => router.push(PAGE_LINKS.SETTINGS)}
+          >
+            <SettingsIcon className="w-5 h-5" />
+
+          </Button>
         </div>
       </header>
-      <OrdersPage />
+
+      {/* Main Content - Just show the orders component */}
+      <ProviderOrders />
     </div>
   );
 };
 
-export default ProviderHome;
+export { ProviderHome };

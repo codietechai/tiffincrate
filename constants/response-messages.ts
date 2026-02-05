@@ -92,6 +92,10 @@ export const SUCCESSMESSAGE = {
   TOKEN_REFRESH: "Token refreshed successfully",
   LOGOUT: "Logged out successfully",
 
+  // Profile
+  PROFILE_FETCH: "Profile fetched successfully",
+  PROFILE_UPDATE: "Profile updated successfully",
+
   ADDRESS_CREATED: "Address created successfully",
   ADDRESS_FETCHED: "Address fetched successfully",
   ADDRESS_UPDATED: "Address updated successfully",
@@ -208,6 +212,10 @@ export const ERRORMESSAGE = {
   // Permissions / Actions
   ACTION_NOT_ALLOWED: "This action is not allowed",
   RESOURCE_LOCKED: "Resource is locked or in use",
+
+  // Profile
+  PROFILE_FETCH_FAILED: "Error while fetching profile",
+  PROFILE_UPDATE_FAILED: "Failed to update profile",
 
   // Fallback
   UNKNOWN_ERROR: "An unknown error occurred",

@@ -16,6 +16,7 @@ export const QUERY_KEYS = {
     // Menu
     MENU: {
         ALL: ['menu', 'all'] as const,
+        INFINITE: ['menu', 'infinite'] as const,
         BY_PROVIDER: (providerId: string) => ['menu', 'by-provider', providerId] as const,
         BY_ID: (id: string) => ['menu', 'by-id', id] as const,
         ITEMS: (menuId: string) => ['menu', 'items', menuId] as const,

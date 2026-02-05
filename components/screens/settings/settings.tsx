@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SETTINGS_NAVIGATION } from "@/constants/page-links";
 import {
   Drawer,
   DrawerContent,
@@ -57,32 +58,21 @@ export default function Settings() {
 
   const options = [];
 
-  const navigations = [
-    {
-      key: "profile",
-      icon: <User className="w-5 h-5 text-primary" />,
-      label: "Profile",
-      path: "/profile",
-    },
-    {
-      key: "help",
-      icon: <HelpCircle className="w-5 h-5 text-primary" />,
-      label: "Help Requests",
-      path: "/help-requests",
-    },
-    {
-      key: "reviews",
-      icon: <Star className="w-5 h-5 text-primary" />,
-      label: "Reviews",
-      path: "/reviews",
-    },
-    {
-      key: "notifications",
-      icon: <AlertTriangle className="w-5 h-5 text-primary" />,
-      label: "Alerts & Updates",
-      path: "/notifications",
-    },
-  ];
+  const getIconForNavItem = (key: string) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      profile: <User className="w-5 h-5 text-primary" />,
+      help: <HelpCircle className="w-5 h-5 text-primary" />,
+      reviews: <Star className="w-5 h-5 text-primary" />,
+      notifications: <AlertTriangle className="w-5 h-5 text-primary" />,
+    };
+    return iconMap[key] || <User className="w-5 h-5 text-primary" />;
+  };
+  const navigations = SETTINGS_NAVIGATION.map(nav => ({
+    ...nav,
+    icon: getIconForNavItem(nav.key),
+  }));
+
+
 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -134,10 +124,14 @@ export default function Settings() {
 
   const [preferences, setPreferences] = useState({
     email: false,
-    sms: false,
+    web: false,
+    app: false,
     orderUpdates: false,
     promotions: false,
     weeklyDigest: false,
+    monthlyDigest: false,
+    accountUpdates: false,
+    securityAlerts: false,
   });
 
   const [provider, setProvider] = useState({
@@ -219,17 +213,20 @@ export default function Settings() {
     setMessage("");
 
     try {
-      const { email, sms, orderUpdates, promotions, weeklyDigest } =
+      const { email, web, app, orderUpdates, promotions, weeklyDigest, monthlyDigest, accountUpdates, securityAlerts } =
         preferences;
 
       let payload: TSettings = {
         notifications: {
           email,
-          sms,
+          web,
+          app,
           orderUpdates,
           promotions,
           weeklyDigest,
-
+          monthlyDigest,
+          accountUpdates,
+          securityAlerts,
           push: true,
         },
 
@@ -427,6 +424,7 @@ export default function Settings() {
           <NotificationSettings
             preferences={preferences}
             handlePreferenceChange={handlePreferenceChange}
+            userRole={user?.role}
           />
           <FormButtons
             onCancel={onCancel}
