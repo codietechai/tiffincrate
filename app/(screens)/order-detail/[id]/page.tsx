@@ -277,11 +277,11 @@ export default function OrderDetailPage() {
     }
   };
 
-  const formatStatus = (status: string) => {
-    return status.split('_').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
-  };
+  // const formatStatus = (status: string) => {
+  //   return status.split('_').map(word =>
+  //     word.charAt(0).toUpperCase() + word.slice(1)
+  //   ).join(' ');
+  // };
 
   const getOrderTypeSummary = (orderType: string, deliveryInfo: any) => {
     switch (orderType) {
@@ -385,9 +385,9 @@ export default function OrderDetailPage() {
                 <h2 className="text-lg font-semibold text-gray-900">
                   Order #{order._id?.slice(-6)}
                 </h2>
-                <Badge className={`${getStatusBadgeColor(order.status)} border`}>
+                {/* <Badge className={`${getStatusBadgeColor(order.status)} border`}>
                   {formatStatus(order.status)}
-                </Badge>
+                </Badge> */}
               </div>
               <p className="text-sm text-gray-500 mt-1">
                 Ordered on {formatISTDate(order.createdAt)}
@@ -505,9 +505,7 @@ export default function OrderDetailPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <Badge className={`${getDeliveryStatusBadgeColor(delivery.deliveryStatus)} border text-xs`}>
-                            {formatStatus(delivery.deliveryStatus)}
-                          </Badge>
+
 
                           {canCancel && (
                             <Button
