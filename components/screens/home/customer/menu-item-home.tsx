@@ -43,7 +43,7 @@ const MenuItemHome = ({ menu }: { menu: TMenu }) => {
           <div className="hidden lg:block">
             <h3 className="font-semibold mb-1">
               {menu.name}{" "}
-              {pathname.includes("home") && `by ${menu?.providerName}`}
+              {pathname.includes("home") && menu?.providerId && typeof menu.providerId === 'object' && `by ${(menu.providerId as any)?.businessName}`}
             </h3>
             <p className="text-sm text-muted-foreground mb-2">
               {menu.description}

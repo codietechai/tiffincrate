@@ -20,6 +20,7 @@ import {
   Shield,
   Filter,
   X,
+  Truck,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,16 +33,7 @@ import { NotificationService } from "@/services/notification-service";
 import TitleHeader from "@/components/common/title-header";
 import { EmptyDataComponent } from "@/components/common/empty-data-component";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface TNotification {
-  _id: string;
-  title: string;
-  message: string;
-  type: "order" | "payment" | "system" | "promotion";
-  isRead: boolean;
-  data?: any;
-  createdAt: string;
-}
+import { TNotification } from "@/types/notification";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<TNotification[]>([]);
@@ -114,6 +106,8 @@ export default function NotificationsPage() {
         return <AlertCircle className="h-5 w-5 text-white" />;
       case "promotion":
         return <Gift className="h-5 w-5 text-white" />;
+      case "delivery":
+        return <Truck className="h-5 w-5 text-white" />;
       case "review":
         return <Star className="h-5 w-5 text-white" />;
       case "help":
@@ -135,6 +129,8 @@ export default function NotificationsPage() {
         return "bg-gradient-to-r from-orange-500 to-red-500";
       case "promotion":
         return "bg-gradient-to-r from-purple-500 to-pink-500";
+      case "delivery":
+        return "bg-gradient-to-r from-cyan-500 to-blue-500";
       case "review":
         return "bg-gradient-to-r from-yellow-500 to-orange-500";
       case "help":
@@ -162,8 +158,8 @@ export default function NotificationsPage() {
         activeTab === "read"
           ? n.isRead
           : activeTab === "unread"
-          ? !n.isRead
-          : true;
+            ? !n.isRead
+            : true;
       const matchesFilter = filters.length ? filters.includes(n.type) : true;
       return matchesRead && matchesFilter;
     });
@@ -185,7 +181,7 @@ export default function NotificationsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {["order", "payment", "system", "promotion"].map((type) => (
+                  {["order", "payment", "system", "promotion", "delivery"].map((type) => (
                     <DropdownMenuCheckboxItem
                       key={type}
                       checked={filters.includes(type)}
@@ -244,9 +240,8 @@ export default function NotificationsPage() {
               getFilteredNotifications().map((notification) => (
                 <Card
                   key={notification._id}
-                  className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
-                    !notification.isRead ? "bg-blue-50 border-blue-200" : ""
-                  }`}
+                  className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${!notification.isRead ? "bg-blue-50 border-blue-200" : ""
+                    }`}
                   onClick={() =>
                     !notification.isRead && markAsRead([notification._id])
                   }
@@ -265,20 +260,18 @@ export default function NotificationsPage() {
                         <div className="flex items-start justify-between">
                           <div>
                             <h3
-                              className={`font-medium ${
-                                !notification.isRead
-                                  ? "text-gray-900"
-                                  : "text-gray-700"
-                              }`}
+                              className={`font-medium ${!notification.isRead
+                                ? "text-gray-900"
+                                : "text-gray-700"
+                                }`}
                             >
                               {notification.title}
                             </h3>
                             <p
-                              className={`text-sm mt-1 ${
-                                !notification.isRead
-                                  ? "text-gray-700"
-                                  : "text-gray-500"
-                              }`}
+                              className={`text-sm mt-1 ${!notification.isRead
+                                ? "text-gray-700"
+                                : "text-gray-500"
+                                }`}
                             >
                               {notification.message}
                             </p>

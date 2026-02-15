@@ -23,7 +23,7 @@ const SingleProvider = ({ id }: { id: string }) => {
 
   const fetchMenus = async () => {
     try {
-      const res = await MenuService.fetchMenus(id);
+      const res = await MenuService.fetchMenus({ providerId: id });
       setMenus(res?.data);
     } catch (error) {
       console.log("error", error);
@@ -32,7 +32,7 @@ const SingleProvider = ({ id }: { id: string }) => {
 
   const fetchProvider = async () => {
     try {
-      const res:any = await ProviderService.fetchProvider(id);
+      const res: any = await ProviderService.fetchProvider(id);
       setProvider(res.data);
     } catch (error) {
       console.log("error", error);

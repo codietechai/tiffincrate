@@ -90,7 +90,7 @@ export class WithdrawalService {
         } catch (error) {
             await session.abortTransaction();
             console.error("Create withdrawal request error:", error);
-            return { success: false, error: error.message || "Failed to create withdrawal request" };
+            return { success: false, error: (error as Error).message || "Failed to create withdrawal request" };
         } finally {
             session.endSession();
         }
@@ -175,7 +175,7 @@ export class WithdrawalService {
         } catch (error) {
             await session.abortTransaction();
             console.error("Approve withdrawal request error:", error);
-            return { success: false, error: error.message || "Failed to approve withdrawal" };
+            return { success: false, error: (error as Error).message || "Failed to approve withdrawal" };
         } finally {
             session.endSession();
         }
@@ -239,7 +239,7 @@ export class WithdrawalService {
         } catch (error) {
             await session.abortTransaction();
             console.error("Reject withdrawal request error:", error);
-            return { success: false, error: error.message || "Failed to reject withdrawal" };
+            return { success: false, error: (error as Error).message || "Failed to reject withdrawal" };
         } finally {
             session.endSession();
         }
@@ -376,7 +376,7 @@ export class WithdrawalService {
         } catch (error) {
             await session.abortTransaction();
             console.error("Cancel withdrawal request error:", error);
-            return { success: false, error: error.message || "Failed to cancel withdrawal" };
+            return { success: false, error: (error as Error).message || "Failed to cancel withdrawal" };
         } finally {
             session.endSession();
         }

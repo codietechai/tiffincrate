@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
-import { WalletService } from "@/services/wallet-service";
+import Wallet from "@/models/Wallet";
 
 // Freeze wallet (Admin only)
 export async function POST(request: NextRequest) {
@@ -26,18 +26,23 @@ export async function POST(request: NextRequest) {
 
         await connectMongoDB();
 
-        const result = await WalletService.freezeWallet(userId, reason, adminId);
-
-        if (!result.success) {
+        const wallet = await Wallet.findOne({ userId });
+        if (!wallet) {
             return NextResponse.json(
-                { error: result.error },
-                { status: 400 }
+                { error: "Wallet not found" },
+                { status: 404 }
             );
         }
 
+        wallet.isFrozen = true;
+        wallet.frozenReason = reason;
+        wallet.frozenBy = adminId;
+        wallet.frozenAt = new Date();
+        await wallet.save();
+
         return NextResponse.json({
             success: true,
-            data: result.data,
+            data: wallet,
             message: "Wallet frozen successfully"
         });
 
@@ -74,18 +79,23 @@ export async function DELETE(request: NextRequest) {
 
         await connectMongoDB();
 
-        const result = await WalletService.unfreezeWallet(userId, adminId);
-
-        if (!result.success) {
+        const wallet = await Wallet.findOne({ userId });
+        if (!wallet) {
             return NextResponse.json(
-                { error: result.error },
-                { status: 400 }
+                { error: "Wallet not found" },
+                { status: 404 }
             );
         }
 
+        wallet.isFrozen = false;
+        wallet.frozenReason = undefined;
+        wallet.frozenBy = undefined;
+        wallet.frozenAt = undefined;
+        await wallet.save();
+
         return NextResponse.json({
             success: true,
-            data: result.data,
+            data: wallet,
             message: "Wallet unfrozen successfully"
         });
 

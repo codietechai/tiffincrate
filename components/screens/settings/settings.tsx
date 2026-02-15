@@ -176,6 +176,7 @@ export default function Settings() {
       const response = await SettingsService.fetchSettings();
       setPreferences({
         ...response.data.notifications,
+        monthlyDigest: response.data.notifications.monthlyDigest ?? false,
         // ...(response.data.preferences as any),
       });
       if (user?.role === "provider") {

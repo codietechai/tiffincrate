@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Sort by priority and creation date
-    const sortQuery = search
+    const sortQuery: any = search
       ? { score: { $meta: "textScore" }, priority: -1, createdAt: -1 }
       : { priority: -1, createdAt: -1 };
 
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     const total = await HelpRequest.countDocuments(query);
 
     // Get statistics for admin dashboard
-    let stats = {};
+    let stats: any = {};
     if (role === "admin") {
       stats = await HelpRequest.aggregate([
         {

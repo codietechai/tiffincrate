@@ -127,7 +127,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
   };
 
   const fetchMenus = async () => {
-    const res = await MenuService.fetchMenus(params.id);
+    const res = await MenuService.fetchMenus({ providerId: params.id });
     setMenus(res?.data);
     setLoading(false);
   };
@@ -211,7 +211,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
     return menus.filter((m) => m.category === selectedCategory);
   };
 
-  const handlePlaceOrder = () => {};
+  const handlePlaceOrder = () => { };
 
   //  const handlePlaceOrder = async () => {
   //   if (!user || user.role !== "consumer") {
@@ -495,11 +495,10 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`h-4 w-4 ${
-                                i < r.rating
+                              className={`h-4 w-4 ${i < r.rating
                                   ? "text-yellow-400 fill-yellow-400"
                                   : "text-gray-300"
-                              }`}
+                                }`}
                             />
                           ))}
                         </div>
@@ -677,7 +676,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                                     className={clsx(
                                       "text-sm",
                                       selectedDays.includes(day.value) &&
-                                        "bg-primary text-white"
+                                      "bg-primary text-white"
                                     )}
                                     onClick={() => toggleDay(day.value)}
                                   >

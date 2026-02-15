@@ -50,7 +50,14 @@ export default function HelpRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<THelpRequest | null>(
     null
   );
-  const [newRequest, setNewRequest] = useState({
+  const [newRequest, setNewRequest] = useState<{
+    type: "admin_support" | "provider_support" | "consumer_to_provider";
+    subject: string;
+    message: string;
+    priority: "low" | "medium" | "high" | "urgent";
+    category: "technical" | "billing" | "order" | "account" | "general" | "delivery" | "payment";
+    toUserId: string;
+  }>({
     type: "admin_support",
     subject: "",
     message: "",
@@ -177,7 +184,7 @@ export default function HelpRequestsPage() {
     }
   };
 
-  const updateStatus = async (requestId: string, newStatus: string) => {
+  const updateStatus = async (requestId: string, newStatus: "open" | "in_progress" | "resolved" | "closed") => {
     try {
       const response = await HelpRequestService.updateHelpRequest(requestId, {
         status: newStatus,
@@ -280,7 +287,7 @@ export default function HelpRequestsPage() {
                       <Select
                         value={newRequest.type}
                         onValueChange={(value) =>
-                          setNewRequest((prev) => ({ ...prev, type: value }))
+                          setNewRequest((prev) => ({ ...prev, type: value as "admin_support" | "provider_support" | "consumer_to_provider" }))
                         }
                       >
                         <SelectTrigger className="rounded-lg border border-gray-200 mt-1">
@@ -341,7 +348,7 @@ export default function HelpRequestsPage() {
                         onValueChange={(value) =>
                           setNewRequest((prev) => ({
                             ...prev,
-                            priority: value,
+                            priority: value as "low" | "medium" | "high" | "urgent",
                           }))
                         }
                       >
@@ -363,7 +370,7 @@ export default function HelpRequestsPage() {
                     <Select
                       value={newRequest.category}
                       onValueChange={(value) =>
-                        setNewRequest((prev) => ({ ...prev, category: value }))
+                        setNewRequest((prev) => ({ ...prev, category: value as "technical" | "billing" | "order" | "account" | "general" | "delivery" | "payment" }))
                       }
                     >
                       <SelectTrigger className="rounded-lg border border-gray-200 mt-1">

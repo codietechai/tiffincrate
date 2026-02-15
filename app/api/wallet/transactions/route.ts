@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
-import { WalletService } from "@/services/wallet-service";
+import Wallet from "@/models/Wallet";
+import WalletTransaction from "@/models/WalletTransaction";
 
 // Get wallet transaction history
 export async function GET(request: NextRequest) {
@@ -21,23 +22,37 @@ export async function GET(request: NextRequest) {
 
         await connectMongoDB();
 
-        const result = await WalletService.getTransactionHistory(
-            userId,
-            page,
-            limit,
-            category
-        );
-
-        if (!result.success) {
+        const wallet = await Wallet.findOne({ userId });
+        if (!wallet) {
             return NextResponse.json(
-                { error: result.error },
-                { status: 400 }
+                { error: "Wallet not found" },
+                { status: 404 }
             );
         }
 
+        const query: any = { walletId: wallet._id };
+        if (category) {
+            query.category = category;
+        }
+
+        const skip = (page - 1) * limit;
+        const transactions = await WalletTransaction.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        const total = await WalletTransaction.countDocuments(query);
+
         return NextResponse.json({
             success: true,
-            data: result.data
+            data: transactions,
+            pagination: {
+                current: page,
+                total: Math.ceil(total / limit),
+                count: transactions.length,
+                totalRecords: total,
+            },
+            message: "Transactions fetched successfully"
         });
 
     } catch (error) {

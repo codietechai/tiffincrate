@@ -228,7 +228,7 @@ export function ProviderAllOrders() {
         setFilters((prev) => ({
             ...prev,
             [key]: value,
-            page: key === "page" ? value : 1, // Reset to page 1 when other filters change
+            page: key === "page" ? Number(value) : 1, // Reset to page 1 when other filters change
         }));
     };
 

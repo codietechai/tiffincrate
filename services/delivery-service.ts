@@ -17,7 +17,7 @@ export class DeliveryService {
         pagination?: any;
         message: string;
     }> {
-        const url = buildApiUrl(ROUTES.DELIVERY_ORDERS.BASE, {
+        const url = buildApiUrl(ROUTES.DELIVERY_ORDER.BASE, {
             page: params?.page?.toString(),
             limit: params?.limit?.toString(),
             status: params?.status,
@@ -33,14 +33,14 @@ export class DeliveryService {
         data: any[];
         message: string;
     }> {
-        return httpClient.get(ROUTES.DELIVERY_ORDERS.UPCOMING);
+        return httpClient.get(ROUTES.DELIVERY_ORDER.UPCOMING);
     }
 
     static async fetchDeliveryOrdersByProvider(providerId: string): Promise<{
         data: any[];
         message: string;
     }> {
-        const url = buildApiUrl(ROUTES.DELIVERY_ORDERS.BASE, { providerId });
+        const url = buildApiUrl(ROUTES.DELIVERY_ORDER.BASE, { providerId });
         return httpClient.get(url);
     }
 
@@ -48,7 +48,7 @@ export class DeliveryService {
         data: any[];
         message: string;
     }> {
-        const url = buildApiUrl(ROUTES.DELIVERY_ORDERS.BASE, { date });
+        const url = buildApiUrl(ROUTES.DELIVERY_ORDER.BASE, { date });
         return httpClient.get(url);
     }
 
@@ -64,21 +64,21 @@ export class DeliveryService {
         data: any;
         message: string;
     }> {
-        return httpClient.put(`${ROUTES.DELIVERY_ORDERS.BASE}/${deliveryOrderId}/status`, { status });
+        return httpClient.put(`${ROUTES.DELIVERY_ORDER.BASE}/${deliveryOrderId}/status`, { status });
     }
 
     static async assignDelivery(deliveryOrderId: string, providerId: string): Promise<{
         data: any;
         message: string;
     }> {
-        return httpClient.put(`${ROUTES.DELIVERY_ORDERS.BASE}/${deliveryOrderId}/assign`, { providerId });
+        return httpClient.put(`${ROUTES.DELIVERY_ORDER.BASE}/${deliveryOrderId}/assign`, { providerId });
     }
 
     static async startDelivery(deliveryOrderId: string): Promise<{
         data: any;
         message: string;
     }> {
-        return httpClient.put(`${ROUTES.DELIVERY_ORDERS.BASE}/${deliveryOrderId}/start`, {});
+        return httpClient.put(`${ROUTES.DELIVERY_ORDER.BASE}/${deliveryOrderId}/start`, {});
     }
 
     static async completeDelivery(deliveryOrderId: string, completionData?: {
@@ -89,7 +89,7 @@ export class DeliveryService {
         data: any;
         message: string;
     }> {
-        return httpClient.put(`${ROUTES.DELIVERY_ORDERS.BASE}/${deliveryOrderId}/complete`, completionData);
+        return httpClient.put(`${ROUTES.DELIVERY_ORDER.BASE}/${deliveryOrderId}/complete`, completionData);
     }
 }
 
@@ -103,7 +103,7 @@ export const useDeliveryOrders = (params?: {
     timeSlot?: string;
 }) => {
     return useQuery({
-        queryKey: [...QUERY_KEYS.DELIVERY_ORDERS.ALL, params],
+        queryKey: [...QUERY_KEYS.DELIVERY_ORDER.ALL, params],
         queryFn: () => DeliveryService.fetchDeliveryOrders(params),
         refetchInterval: 30000, // Refetch every 30 seconds
     });
@@ -111,7 +111,7 @@ export const useDeliveryOrders = (params?: {
 
 export const useUpcomingDeliveries = () => {
     return useQuery({
-        queryKey: QUERY_KEYS.DELIVERY_ORDERS.UPCOMING,
+        queryKey: QUERY_KEYS.DELIVERY_ORDER.UPCOMING,
         queryFn: DeliveryService.fetchUpcomingDeliveries,
         refetchInterval: 15000, // Refetch every 15 seconds for upcoming deliveries
     });
@@ -119,7 +119,7 @@ export const useUpcomingDeliveries = () => {
 
 export const useDeliveryOrdersByProvider = (providerId: string) => {
     return useQuery({
-        queryKey: QUERY_KEYS.DELIVERY_ORDERS.BY_PROVIDER(providerId),
+        queryKey: QUERY_KEYS.DELIVERY_ORDER.BY_PROVIDER(providerId),
         queryFn: () => DeliveryService.fetchDeliveryOrdersByProvider(providerId),
         enabled: !!providerId,
         refetchInterval: 30000,
@@ -128,7 +128,7 @@ export const useDeliveryOrdersByProvider = (providerId: string) => {
 
 export const useDeliveryOrdersByDate = (date: string) => {
     return useQuery({
-        queryKey: QUERY_KEYS.DELIVERY_ORDERS.BY_DATE(date),
+        queryKey: QUERY_KEYS.DELIVERY_ORDER.BY_DATE(date),
         queryFn: () => DeliveryService.fetchDeliveryOrdersByDate(date),
         enabled: !!date,
         refetchInterval: 30000,
@@ -137,7 +137,7 @@ export const useDeliveryOrdersByDate = (date: string) => {
 
 export const useTodayDeliveries = () => {
     return useQuery({
-        queryKey: QUERY_KEYS.DELIVERY_ORDERS.TODAY,
+        queryKey: QUERY_KEYS.DELIVERY_ORDER.TODAY,
         queryFn: DeliveryService.fetchTodayDeliveries,
         refetchInterval: 15000, // Refetch every 15 seconds for today's deliveries
     });
@@ -151,9 +151,9 @@ export const useUpdateDeliveryStatus = () => {
             DeliveryService.updateDeliveryStatus(deliveryOrderId, status),
         onSuccess: () => {
             // Invalidate delivery-related queries
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.ALL });
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.UPCOMING });
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.TODAY });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.ALL });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.UPCOMING });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.TODAY });
 
             // Also invalidate order-related queries since delivery status affects orders
             const relatedKeys = getRelatedQueryKeys('order');
@@ -172,8 +172,8 @@ export const useAssignDelivery = () => {
             DeliveryService.assignDelivery(deliveryOrderId, providerId),
         onSuccess: () => {
             // Invalidate delivery-related queries
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.ALL });
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.UPCOMING });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.ALL });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.UPCOMING });
         },
     });
 };
@@ -185,9 +185,9 @@ export const useStartDelivery = () => {
         mutationFn: DeliveryService.startDelivery,
         onSuccess: () => {
             // Invalidate delivery-related queries
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.ALL });
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.UPCOMING });
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.TODAY });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.ALL });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.UPCOMING });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.TODAY });
         },
     });
 };
@@ -202,9 +202,9 @@ export const useCompleteDelivery = () => {
         }) => DeliveryService.completeDelivery(deliveryOrderId, completionData),
         onSuccess: () => {
             // Invalidate delivery-related queries
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.ALL });
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.UPCOMING });
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDERS.TODAY });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.ALL });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.UPCOMING });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DELIVERY_ORDER.TODAY });
 
             // Also invalidate order-related queries
             const relatedKeys = getRelatedQueryKeys('order');

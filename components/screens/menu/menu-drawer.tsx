@@ -65,7 +65,7 @@ export default function MenuDrawerForm({
     defaultValues: {
       name: "",
       description: "",
-      category: "",
+      category: undefined,
       basePrice: 0,
       monthlyPlanPrice: 0,
       image: "",
@@ -129,7 +129,7 @@ export default function MenuDrawerForm({
         reset({
           name: "",
           description: "",
-          category: "",
+          category: undefined,
           basePrice: 0,
           monthlyPlanPrice: 0,
           image: "",
@@ -318,9 +318,8 @@ export default function MenuDrawerForm({
                 return (
                   <div
                     key={d.key}
-                    className={`border rounded-lg p-4 ${
-                      isDisabled ? "opacity-60 bg-gray-100" : "bg-white"
-                    }`}
+                    className={`border rounded-lg p-4 ${isDisabled ? "opacity-60 bg-gray-100" : "bg-white"
+                      }`}
                   >
                     <Label className="capitalize font-semibold text-sm">
                       {d.label}
@@ -401,8 +400,8 @@ export default function MenuDrawerForm({
                     ? "Updating..."
                     : "Saving..."
                   : isEdit
-                  ? "Update Menu"
-                  : "Add Menu"}
+                    ? "Update Menu"
+                    : "Add Menu"}
               </Button>
               <Button
                 variant="outline"

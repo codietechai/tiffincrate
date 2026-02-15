@@ -55,8 +55,8 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
         category: selectedCategory !== "all" ? selectedCategory : undefined,
     });
 
-    const transactions = transactionData?.data?.transactions || [];
-    const totalPages = transactionData?.data?.pagination?.pages || 1;
+    const transactions = transactionData?.data || [];
+    const totalPages = transactionData?.pagination?.pages || 1;
 
     const categories = [
         { value: "all", label: "All Transactions" },

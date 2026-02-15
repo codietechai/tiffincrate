@@ -76,7 +76,7 @@ async function handler(request: NextRequest) {
 
     // Add text search score to sort if searching
     if (search && search.trim() !== "") {
-      sortOption = { score: { $meta: "textScore" }, ...sortOption };
+      sortOption = { score: { $meta: "textScore" } as any, ...sortOption };
     }
 
     const providers = await ServiceProvider.find(query)

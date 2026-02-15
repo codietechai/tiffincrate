@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Sort by delivery date and time slot
-    const sortQuery = { deliveryDate: 1, timeSlot: 1, createdAt: -1 };
+    const sortQuery: any = { deliveryDate: 1, timeSlot: 1, createdAt: -1 };
 
     const deliveryOrders = await DeliveryOrder.find(query)
       .populate("orderId", "totalAmount paymentMethod paymentStatus")
@@ -184,7 +184,7 @@ export async function PATCH(request: NextRequest) {
     ).populate("orderId").populate("consumerId", "name").populate("providerId", "businessName");
 
     // Create notification for consumer
-    const statusMessages = {
+    const statusMessages: Record<string, string> = {
       confirmed: "confirmed",
       preparing: "being prepared",
       ready: "ready for pickup",
@@ -194,7 +194,7 @@ export async function PATCH(request: NextRequest) {
       not_delivered: "not delivered"
     };
 
-    const notificationMessage = `Your order from ${updatedDeliveryOrder.providerId.businessName} has been ${statusMessages[status]}.`;
+    const notificationMessage = `Your order from ${updatedDeliveryOrder.providerId.businessName} has been ${statusMessages[status] || status}.`;
 
     await new Notification({
       userId: deliveryOrder.consumerId._id,

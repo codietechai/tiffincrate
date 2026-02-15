@@ -25,6 +25,12 @@ export const SUCCESSMESSAGE = {
   CONSUMER_UPDATE: "Consumer updated successfully",
   CONSUMER_DELETE: "Consumer deleted successfully",
 
+  // Users (Generic)
+  USERS_FETCH: "Users fetched successfully",
+  USER_FETCH: "User fetched successfully",
+  USER_UPDATE: "User updated successfully",
+  USER_DELETE: "User deleted successfully",
+
   // Menu
   MENU_CREATE: "Menu created successfully",
   MENUS_FETCH: "Menus fetched successfully",
@@ -219,4 +225,17 @@ export const ERRORMESSAGE = {
 
   // Fallback
   UNKNOWN_ERROR: "An unknown error occurred",
+};
+
+// Combined export for convenience
+export const RESPONSE_MESSAGES = {
+  COMMON: {
+    INTERNAL_ERROR: ERRORMESSAGE.INTERNAL,
+    BAD_REQUEST: ERRORMESSAGE.BAD_REQUEST,
+    UNAUTHORIZED: ERRORMESSAGE.UNAUTHORIZED,
+    FORBIDDEN: ERRORMESSAGE.FORBIDDEN,
+    NOT_FOUND: ERRORMESSAGE.NOT_FOUND,
+  },
+  SUCCESS: SUCCESSMESSAGE,
+  ERROR: ERRORMESSAGE,
 };

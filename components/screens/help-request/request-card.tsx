@@ -28,7 +28,7 @@ import { IUser } from "@/models/User";
 interface RequestCardProps {
   request: THelpRequest;
   user: IUser;
-  updateStatus: (id: string, status: string) => void;
+  updateStatus: (id: string, status: "open" | "in_progress" | "resolved" | "closed") => void;
   addResponse: (id: string, message: string) => void;
   getStatusColor: (status: string) => string;
   getStatusIcon: (status: string) => JSX.Element;
@@ -103,7 +103,7 @@ export default function RequestCard({
               request.status !== "closed" && (
                 <Select
                   value={request.status}
-                  onValueChange={(value) => updateStatus(request._id, value)}
+                  onValueChange={(value) => updateStatus(request._id, value as "open" | "in_progress" | "resolved" | "closed")}
                 >
                   <SelectTrigger className="w-full sm:w-32 text-sm">
                     <SelectValue placeholder="Status" />

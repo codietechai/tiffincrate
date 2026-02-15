@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
-import { WalletService } from "@/services/wallet-service";
+import Wallet from "@/models/Wallet";
+import WalletTransaction from "@/models/WalletTransaction";
 
 // Add money to wallet (Admin only or for testing)
 export async function POST(request: NextRequest) {
@@ -26,23 +27,38 @@ export async function POST(request: NextRequest) {
 
         await connectMongoDB();
 
-        const result = await WalletService.addMoney(
-            userId,
-            amount,
-            reason || "Admin credit",
-            adminId
-        );
-
-        if (!result.success) {
-            return NextResponse.json(
-                { error: result.error },
-                { status: 400 }
-            );
+        // Find or create wallet
+        let wallet = await Wallet.findOne({ userId });
+        if (!wallet) {
+            wallet = await Wallet.create({
+                userId,
+                balance: 0,
+                frozenAmount: 0,
+                currency: "INR",
+            });
         }
+
+        // Update wallet balance
+        wallet.balance += amount;
+        await wallet.save();
+
+        // Create transaction record
+        await WalletTransaction.create({
+            walletId: wallet._id,
+            type: "credit",
+            amount,
+            category: "admin_credit",
+            description: reason || "Admin credit",
+            balanceAfter: wallet.balance,
+            metadata: {
+                adminId,
+                reason,
+            },
+        });
 
         return NextResponse.json({
             success: true,
-            data: result.data,
+            data: { wallet, amount },
             message: "Money added successfully"
         });
 
