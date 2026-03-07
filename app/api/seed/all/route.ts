@@ -24,7 +24,7 @@ const sampleProviders = Array.from({ length: 10 }).map((_, i) => ({
 }));
 
 // Menu templates with provider name placeholders
-export const menuTemplates = {
+const menuTemplates = {
   breakfast: [
     {
       name: "{provider} Morning Delight",
