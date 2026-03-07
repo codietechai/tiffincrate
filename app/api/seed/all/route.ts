@@ -7,7 +7,7 @@ import MenuItem from "@/models/MenuItem";
 import bcrypt from "bcryptjs";
 
 // Sample providers data
-export const sampleProviders = Array.from({ length: 10 }).map((_, i) => ({
+const sampleProviders = Array.from({ length: 10 }).map((_, i) => ({
   email: `provider${i + 1}@example.com`,
   name: `provider${i + 1}`,
   phone: `98765432${10 + i}`,

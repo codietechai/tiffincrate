@@ -13,9 +13,9 @@ beforeEach(() => {
     jest.resetModules()
     process.env = {
         ...originalEnv,
-        BREAKFAST_SLOT_PERIOD: '7am-8am',
-        LUNCH_SLOT_PERIOD: '12pm-2pm',
-        DINNER_SLOT_PERIOD: '7pm-8pm',
+        NEXT_PUBLIC_BREAKFAST_SLOT_PERIOD: '7am-8am',
+        NEXT_PUBLIC_LUNCH_SLOT_PERIOD: '12pm-2pm',
+        NEXT_PUBLIC_DINNER_SLOT_PERIOD: '7pm-8pm',
     }
 })
 
@@ -182,9 +182,9 @@ describe('Time Slots Utility', () => {
         })
 
         it('should return default values when env vars are missing', () => {
-            delete process.env.BREAKFAST_SLOT_PERIOD
-            delete process.env.LUNCH_SLOT_PERIOD
-            delete process.env.DINNER_SLOT_PERIOD
+            delete process.env.NEXT_PUBLIC_BREAKFAST_SLOT_PERIOD
+            delete process.env.NEXT_PUBLIC_LUNCH_SLOT_PERIOD
+            delete process.env.NEXT_PUBLIC_DINNER_SLOT_PERIOD
 
             const result = getTimeSlotPeriods()
 

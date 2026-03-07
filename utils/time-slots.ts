@@ -6,19 +6,19 @@ export interface TimeSlotPeriod {
 
 export const TIME_SLOT_PERIODS: Record<string, TimeSlotPeriod> = {
     breakfast: {
-        start: process.env.BREAKFAST_SLOT_PERIOD?.split('-')[0] || '7am',
-        end: process.env.BREAKFAST_SLOT_PERIOD?.split('-')[1] || '8am',
-        label: 'Breakfast (7am-8am)'
+        start: process.env.NEXT_PUBLIC_BREAKFAST_SLOT_PERIOD?.split('-')[0] || '7am',
+        end: process.env.NEXT_PUBLIC_BREAKFAST_SLOT_PERIOD?.split('-')[1] || '8am',
+        label: `Breakfast (${process.env.NEXT_PUBLIC_BREAKFAST_SLOT_PERIOD})`
     },
     lunch: {
-        start: process.env.LUNCH_SLOT_PERIOD?.split('-')[0] || '12pm',
-        end: process.env.LUNCH_SLOT_PERIOD?.split('-')[1] || '2pm',
-        label: 'Lunch (12pm-2pm)'
+        start: process.env.NEXT_PUBLIC_LUNCH_SLOT_PERIOD?.split('-')[0] || '12pm',
+        end: process.env.NEXT_PUBLIC_LUNCH_SLOT_PERIOD?.split('-')[1] || '2pm',
+        label: `Lunch (${process.env.NEXT_PUBLIC_LUNCH_SLOT_PERIOD})`
     },
     dinner: {
-        start: process.env.DINNER_SLOT_PERIOD?.split('-')[0] || '7pm',
-        end: process.env.DINNER_SLOT_PERIOD?.split('-')[1] || '8pm',
-        label: 'Dinner (7pm-8pm)'
+        start: process.env.NEXT_PUBLIC_DINNER_SLOT_PERIOD?.split('-')[0] || '7pm',
+        end: process.env.NEXT_PUBLIC_DINNER_SLOT_PERIOD?.split('-')[1] || '8pm',
+        label: `Dinner (${ process.env.NEXT_PUBLIC_DINNER_SLOT_PERIOD})`
     }
 };
 
