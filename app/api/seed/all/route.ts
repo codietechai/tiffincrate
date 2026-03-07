@@ -7,410 +7,323 @@ import MenuItem from "@/models/MenuItem";
 import bcrypt from "bcryptjs";
 
 // Sample providers data
-const sampleProviders = [
-    {
-        email: "rajesh.kitchen@example.com",
-        name: "Rajesh Kumar",
-        phone: "9876543210",
-        businessName: "Rajesh's Home Kitchen",
-        description: "Authentic North Indian home-cooked meals with love and traditional recipes",
-        cuisine: ["North Indian", "Punjabi", "Vegetarian"],
-        deliveryAreas: ["Sector 1", "Sector 2", "Sector 3"],
-        location: {
-            coordinates: [77.2090, 28.6139], // Delhi coordinates
-            address: "123 Main Street, Sector 1, Delhi"
-        },
-        businessType: "home_kitchen" as const,
-        serviceRadius: 5
-    },
-    {
-        email: "priya.spices@example.com",
-        name: "Priya Sharma",
-        phone: "9876543211",
-        businessName: "Priya's Spice Corner",
-        description: "South Indian delicacies and traditional breakfast items made fresh daily",
-        cuisine: ["South Indian", "Tamil", "Vegetarian"],
-        deliveryAreas: ["Sector 4", "Sector 5", "Sector 6"],
-        location: {
-            coordinates: [77.2190, 28.6239], // Delhi coordinates
-            address: "456 Garden Road, Sector 4, Delhi"
-        },
-        businessType: "home_kitchen" as const,
-        serviceRadius: 7
-    },
-    {
-        email: "amit.delights@example.com",
-        name: "Amit Patel",
-        phone: "9876543212",
-        businessName: "Amit's Food Delights",
-        description: "Multi-cuisine restaurant offering both vegetarian and non-vegetarian options",
-        cuisine: ["Multi-cuisine", "Chinese", "Continental", "Indian"],
-        deliveryAreas: ["Sector 7", "Sector 8", "Sector 9", "Sector 10"],
-        location: {
-            coordinates: [77.2290, 28.6339], // Delhi coordinates
-            address: "789 Commercial Complex, Sector 7, Delhi"
-        },
-        businessType: "restaurant" as const,
-        serviceRadius: 10
-    },
-    {
-        email: "meera.healthy@example.com",
-        name: "Meera Singh",
-        phone: "9876543213",
-        businessName: "Meera's Healthy Bites",
-        description: "Healthy and nutritious meals focusing on organic ingredients and balanced nutrition",
-        cuisine: ["Healthy", "Organic", "Salads", "Smoothies"],
-        deliveryAreas: ["Sector 11", "Sector 12", "Sector 13"],
-        location: {
-            coordinates: [77.2390, 28.6439], // Delhi coordinates
-            address: "321 Health Street, Sector 11, Delhi"
-        },
-        businessType: "cloud_kitchen" as const,
-        serviceRadius: 8
-    },
-    {
-        email: "ravi.traditional@example.com",
-        name: "Ravi Gupta",
-        phone: "9876543214",
-        businessName: "Ravi's Traditional Kitchen",
-        description: "Traditional Indian sweets and savory items prepared using age-old recipes",
-        cuisine: ["Traditional", "Sweets", "Snacks", "Bengali"],
-        deliveryAreas: ["Sector 14", "Sector 15", "Sector 16"],
-        location: {
-            coordinates: [77.2490, 28.6539], // Delhi coordinates
-            address: "654 Sweet Lane, Sector 14, Delhi"
-        },
-        businessType: "home_kitchen" as const,
-        serviceRadius: 6
-    }
-];
+export const sampleProviders = Array.from({ length: 10 }).map((_, i) => ({
+  email: `provider${i + 1}@example.com`,
+  name: `provider${i + 1}`,
+  phone: `98765432${10 + i}`,
+  businessName: `Provider${i + 1} Kitchen`,
+  description: "Fresh homemade meals prepared with quality ingredients",
+  cuisine: ["Indian", "Home Style"],
+  deliveryAreas: ["Sector 1", "Sector 2", "Sector 3"],
+  location: {
+    coordinates: [77.209, 28.613],
+    address: `Sector ${i + 1}, Delhi`
+  },
+  businessType: "home_kitchen" as const,
+  serviceRadius: 7
+}));
 
 // Menu templates with provider name placeholders
-const menuTemplates = {
-    breakfast: [
+export const menuTemplates = {
+  breakfast: [
+    {
+      name: "{provider} Morning Delight",
+      description: "A wholesome breakfast to start your day right with {provider}'s special touch",
+      image: "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0",
+      tags: ["healthy", "fresh", "morning", "energizing"],
+      preparationTime: 25,
+      servingSize: 1,
+      basePrice: 120,
+      monthlyPlanPrice: 3000,
+      items: [
         {
-            name: "{provider} Morning Delight",
-            description: "A wholesome breakfast to start your day right with {provider}'s special touch",
-            tags: ["healthy", "fresh", "morning", "energizing"],
-            preparationTime: 25,
-            servingSize: 1,
-            basePrice: 120,
-            monthlyPlanPrice: 3000,
-            items: [
-                {
-                    name: "{provider} Special Paratha",
-                    description: "Freshly made parathas with {provider}'s secret spice blend",
-                    ingredients: ["wheat flour", "ghee", "spices", "vegetables"],
-                    day: "monday"
-                },
-                {
-                    name: "{provider} Masala Oats",
-                    description: "Nutritious oats cooked {provider} style with vegetables",
-                    ingredients: ["oats", "vegetables", "spices", "milk"],
-                    day: "tuesday"
-                },
-                {
-                    name: "{provider} Poha Special",
-                    description: "Traditional poha with {provider}'s unique preparation",
-                    ingredients: ["flattened rice", "onions", "peanuts", "curry leaves"],
-                    day: "wednesday"
-                },
-                {
-                    name: "{provider} Upma Delight",
-                    description: "South Indian upma prepared the {provider} way",
-                    ingredients: ["semolina", "vegetables", "mustard seeds", "curry leaves"],
-                    day: "thursday"
-                },
-                {
-                    name: "{provider} Sandwich Combo",
-                    description: "Grilled sandwiches with {provider}'s special filling",
-                    ingredients: ["bread", "vegetables", "cheese", "chutney"],
-                    day: "friday"
-                },
-                {
-                    name: "{provider} Weekend Pancakes",
-                    description: "Fluffy pancakes made with {provider}'s special batter",
-                    ingredients: ["flour", "milk", "eggs", "honey", "fruits"],
-                    day: "saturday"
-                },
-                {
-                    name: "{provider} Sunday Brunch",
-                    description: "Special Sunday breakfast by {provider}",
-                    ingredients: ["mixed items", "fruits", "juice", "special treats"],
-                    day: "sunday"
-                }
-            ]
+          name: "{provider} Special Paratha",
+          description: "Freshly made parathas with {provider}'s secret spice blend",
+          ingredients: ["wheat flour", "ghee", "spices", "vegetables"],
+          day: "monday",
+          images: [
+            "https://images.unsplash.com/photo-1601050690597-df0568f70950"
+          ]
         },
         {
-            name: "{provider} Healthy Start",
-            description: "Nutritious breakfast options curated by {provider} for health-conscious customers",
-            tags: ["healthy", "organic", "low-calorie", "nutritious"],
-            preparationTime: 20,
-            servingSize: 1,
-            basePrice: 150,
-            monthlyPlanPrice: 3800,
-            items: [
-                {
-                    name: "{provider} Protein Bowl",
-                    description: "High-protein breakfast bowl designed by {provider}",
-                    ingredients: ["quinoa", "nuts", "seeds", "fruits", "yogurt"],
-                    day: "monday"
-                },
-                {
-                    name: "{provider} Green Smoothie",
-                    description: "Nutrient-packed smoothie from {provider}'s kitchen",
-                    ingredients: ["spinach", "banana", "apple", "chia seeds", "almond milk"],
-                    day: "tuesday"
-                },
-                {
-                    name: "{provider} Avocado Toast",
-                    description: "Gourmet avocado toast prepared by {provider}",
-                    ingredients: ["whole grain bread", "avocado", "tomatoes", "herbs"],
-                    day: "wednesday"
-                },
-                {
-                    name: "{provider} Muesli Mix",
-                    description: "Homemade muesli blend by {provider}",
-                    ingredients: ["oats", "dried fruits", "nuts", "seeds", "milk"],
-                    day: "thursday"
-                },
-                {
-                    name: "{provider} Fruit Salad",
-                    description: "Fresh seasonal fruit salad by {provider}",
-                    ingredients: ["seasonal fruits", "honey", "mint", "lime"],
-                    day: "friday"
-                },
-                {
-                    name: "{provider} Chia Pudding",
-                    description: "Overnight chia pudding prepared by {provider}",
-                    ingredients: ["chia seeds", "coconut milk", "vanilla", "berries"],
-                    day: "saturday"
-                },
-                {
-                    name: "{provider} Wellness Bowl",
-                    description: "Complete wellness bowl by {provider}",
-                    ingredients: ["mixed grains", "superfoods", "fresh fruits", "nuts"],
-                    day: "sunday"
-                }
-            ]
-        }
-    ],
-    lunch: [
-        {
-            name: "{provider} Traditional Thali",
-            description: "Authentic Indian thali prepared with {provider}'s traditional recipes",
-            tags: ["traditional", "complete meal", "homestyle", "authentic"],
-            preparationTime: 35,
-            servingSize: 1,
-            basePrice: 180,
-            monthlyPlanPrice: 4500,
-            items: [
-                {
-                    name: "{provider} Dal Rice Combo",
-                    description: "Classic dal rice prepared {provider} style",
-                    ingredients: ["rice", "lentils", "spices", "ghee", "vegetables"],
-                    day: "monday"
-                },
-                {
-                    name: "{provider} Rajma Chawal",
-                    description: "North Indian rajma chawal by {provider}",
-                    ingredients: ["kidney beans", "rice", "onions", "tomatoes", "spices"],
-                    day: "tuesday"
-                },
-                {
-                    name: "{provider} Chole Bhature",
-                    description: "Punjabi chole bhature from {provider}'s kitchen",
-                    ingredients: ["chickpeas", "flour", "spices", "yogurt", "pickles"],
-                    day: "wednesday"
-                },
-                {
-                    name: "{provider} Biryani Special",
-                    description: "Aromatic biryani prepared by {provider}",
-                    ingredients: ["basmati rice", "meat/vegetables", "saffron", "spices"],
-                    day: "thursday"
-                },
-                {
-                    name: "{provider} South Indian Meal",
-                    description: "Traditional South Indian meal by {provider}",
-                    ingredients: ["rice", "sambar", "rasam", "vegetables", "curd"],
-                    day: "friday"
-                },
-                {
-                    name: "{provider} Weekend Special",
-                    description: "Special weekend meal by {provider}",
-                    ingredients: ["special curry", "rice", "bread", "dessert"],
-                    day: "saturday"
-                },
-                {
-                    name: "{provider} Sunday Feast",
-                    description: "Grand Sunday feast prepared by {provider}",
-                    ingredients: ["multiple curries", "rice", "bread", "sweets"],
-                    day: "sunday"
-                }
-            ]
+          name: "{provider} Masala Oats",
+          description: "Nutritious oats cooked {provider} style with vegetables",
+          ingredients: ["oats", "vegetables", "spices", "milk"],
+          day: "tuesday",
+          images: [
+            "https://images.unsplash.com/photo-1617196038435-13d4f3c8d2c6"
+          ]
         },
         {
-            name: "{provider} Quick Bites",
-            description: "Fast and delicious lunch options by {provider} for busy professionals",
-            tags: ["quick", "office lunch", "convenient", "tasty"],
-            preparationTime: 20,
-            servingSize: 1,
-            basePrice: 140,
-            monthlyPlanPrice: 3500,
-            items: [
-                {
-                    name: "{provider} Wrap Special",
-                    description: "Healthy wraps prepared by {provider}",
-                    ingredients: ["tortilla", "vegetables", "protein", "sauce"],
-                    day: "monday"
-                },
-                {
-                    name: "{provider} Pasta Bowl",
-                    description: "Italian pasta prepared {provider} style",
-                    ingredients: ["pasta", "vegetables", "herbs", "cheese"],
-                    day: "tuesday"
-                },
-                {
-                    name: "{provider} Fried Rice",
-                    description: "Indo-Chinese fried rice by {provider}",
-                    ingredients: ["rice", "vegetables", "soy sauce", "spices"],
-                    day: "wednesday"
-                },
-                {
-                    name: "{provider} Burger Combo",
-                    description: "Gourmet burger prepared by {provider}",
-                    ingredients: ["bun", "patty", "vegetables", "sauce", "fries"],
-                    day: "thursday"
-                },
-                {
-                    name: "{provider} Salad Bowl",
-                    description: "Fresh and healthy salad by {provider}",
-                    ingredients: ["mixed greens", "vegetables", "protein", "dressing"],
-                    day: "friday"
-                },
-                {
-                    name: "{provider} Pizza Slice",
-                    description: "Artisan pizza prepared by {provider}",
-                    ingredients: ["pizza base", "sauce", "cheese", "toppings"],
-                    day: "saturday"
-                },
-                {
-                    name: "{provider} Noodle Bowl",
-                    description: "Asian noodles prepared {provider} style",
-                    ingredients: ["noodles", "vegetables", "sauce", "herbs"],
-                    day: "sunday"
-                }
-            ]
-        }
-    ],
-    dinner: [
-        {
-            name: "{provider} Evening Comfort",
-            description: "Comforting dinner meals prepared with love by {provider}",
-            tags: ["comfort food", "homestyle", "satisfying", "warm"],
-            preparationTime: 40,
-            servingSize: 1,
-            basePrice: 200,
-            monthlyPlanPrice: 5000,
-            items: [
-                {
-                    name: "{provider} Butter Chicken",
-                    description: "Creamy butter chicken prepared by {provider}",
-                    ingredients: ["chicken", "tomatoes", "cream", "spices", "rice"],
-                    day: "monday"
-                },
-                {
-                    name: "{provider} Paneer Makhani",
-                    description: "Rich paneer makhani by {provider}",
-                    ingredients: ["paneer", "tomatoes", "cream", "spices", "naan"],
-                    day: "tuesday"
-                },
-                {
-                    name: "{provider} Fish Curry",
-                    description: "Traditional fish curry prepared by {provider}",
-                    ingredients: ["fish", "coconut", "spices", "curry leaves", "rice"],
-                    day: "wednesday"
-                },
-                {
-                    name: "{provider} Mutton Curry",
-                    description: "Slow-cooked mutton curry by {provider}",
-                    ingredients: ["mutton", "onions", "spices", "yogurt", "rice"],
-                    day: "thursday"
-                },
-                {
-                    name: "{provider} Vegetable Korma",
-                    description: "Mixed vegetable korma prepared by {provider}",
-                    ingredients: ["mixed vegetables", "coconut", "spices", "rice"],
-                    day: "friday"
-                },
-                {
-                    name: "{provider} Weekend Roast",
-                    description: "Special weekend roast by {provider}",
-                    ingredients: ["roasted meat/vegetables", "gravy", "sides"],
-                    day: "saturday"
-                },
-                {
-                    name: "{provider} Sunday Special",
-                    description: "Grand Sunday dinner by {provider}",
-                    ingredients: ["special curry", "rice", "bread", "dessert"],
-                    day: "sunday"
-                }
-            ]
+          name: "{provider} Poha Special",
+          description: "Traditional poha with {provider}'s unique preparation",
+          ingredients: ["flattened rice", "onions", "peanuts", "curry leaves"],
+          day: "wednesday",
+          images: [
+            "https://images.unsplash.com/photo-1604908554025-2a33c6e6c6f1"
+          ]
         },
         {
-            name: "{provider} Light Dinner",
-            description: "Light and healthy dinner options by {provider} for a peaceful night",
-            tags: ["light", "healthy", "digestible", "peaceful"],
-            preparationTime: 25,
-            servingSize: 1,
-            basePrice: 160,
-            monthlyPlanPrice: 4000,
-            items: [
-                {
-                    name: "{provider} Soup & Salad",
-                    description: "Nutritious soup and salad combo by {provider}",
-                    ingredients: ["seasonal vegetables", "herbs", "broth", "greens"],
-                    day: "monday"
-                },
-                {
-                    name: "{provider} Grilled Chicken",
-                    description: "Herb-grilled chicken prepared by {provider}",
-                    ingredients: ["chicken breast", "herbs", "vegetables", "quinoa"],
-                    day: "tuesday"
-                },
-                {
-                    name: "{provider} Steamed Fish",
-                    description: "Delicately steamed fish by {provider}",
-                    ingredients: ["fish fillet", "ginger", "soy sauce", "vegetables"],
-                    day: "wednesday"
-                },
-                {
-                    name: "{provider} Vegetable Stir-fry",
-                    description: "Colorful vegetable stir-fry by {provider}",
-                    ingredients: ["mixed vegetables", "garlic", "ginger", "brown rice"],
-                    day: "thursday"
-                },
-                {
-                    name: "{provider} Lentil Soup",
-                    description: "Protein-rich lentil soup by {provider}",
-                    ingredients: ["mixed lentils", "vegetables", "spices", "bread"],
-                    day: "friday"
-                },
-                {
-                    name: "{provider} Quinoa Bowl",
-                    description: "Nutritious quinoa bowl prepared by {provider}",
-                    ingredients: ["quinoa", "roasted vegetables", "nuts", "dressing"],
-                    day: "saturday"
-                },
-                {
-                    name: "{provider} Comfort Porridge",
-                    description: "Soothing porridge prepared by {provider}",
-                    ingredients: ["oats/rice", "milk", "nuts", "honey", "fruits"],
-                    day: "sunday"
-                }
-            ]
+          name: "{provider} Upma Delight",
+          description: "South Indian upma prepared the {provider} way",
+          ingredients: ["semolina", "vegetables", "mustard seeds", "curry leaves"],
+          day: "thursday",
+          images: [
+            "https://images.unsplash.com/photo-1589302168068-964664d93dc0"
+          ]
+        },
+        {
+          name: "{provider} Sandwich Combo",
+          description: "Grilled sandwiches with {provider}'s special filling",
+          ingredients: ["bread", "vegetables", "cheese", "chutney"],
+          day: "friday",
+          images: [
+            "https://images.unsplash.com/photo-1554433607-66b5efe9d304"
+          ]
+        },
+        {
+          name: "{provider} Weekend Pancakes",
+          description: "Fluffy pancakes made with {provider}'s special batter",
+          ingredients: ["flour", "milk", "eggs", "honey", "fruits"],
+          day: "saturday",
+          images: [
+            "https://images.unsplash.com/photo-1550317138-10000687a72b"
+          ]
+        },
+        {
+          name: "{provider} Sunday Brunch",
+          description: "Special Sunday breakfast by {provider}",
+          ingredients: ["mixed items", "fruits", "juice", "special treats"],
+          day: "sunday",
+          images: [
+            "https://images.unsplash.com/photo-1484723091739-30a097e8f929"
+          ]
         }
-    ]
+      ]
+    },
+
+    {
+      name: "{provider} Healthy Start",
+      description: "Nutritious breakfast options curated by {provider} for health-conscious customers",
+      image: "https://images.unsplash.com/photo-1482049016688-2d3e1b311543",
+      tags: ["healthy", "organic", "low-calorie", "nutritious"],
+      preparationTime: 20,
+      servingSize: 1,
+      basePrice: 150,
+      monthlyPlanPrice: 3800,
+      items: [
+        {
+          name: "{provider} Protein Bowl",
+          description: "High-protein breakfast bowl designed by {provider}",
+          ingredients: ["quinoa", "nuts", "seeds", "fruits", "yogurt"],
+          day: "monday",
+          images: [
+            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
+          ]
+        },
+        {
+          name: "{provider} Green Smoothie",
+          description: "Nutrient-packed smoothie from {provider}'s kitchen",
+          ingredients: ["spinach", "banana", "apple", "chia seeds", "almond milk"],
+          day: "tuesday",
+          images: [
+            "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af"
+          ]
+        },
+        {
+          name: "{provider} Avocado Toast",
+          description: "Gourmet avocado toast prepared by {provider}",
+          ingredients: ["whole grain bread", "avocado", "tomatoes", "herbs"],
+          day: "wednesday",
+          images: [
+            "https://images.unsplash.com/photo-1588137378633-dea1336ce1e2"
+          ]
+        },
+        {
+          name: "{provider} Muesli Mix",
+          description: "Homemade muesli blend by {provider}",
+          ingredients: ["oats", "dried fruits", "nuts", "seeds", "milk"],
+          day: "thursday",
+          images: [
+            "https://images.unsplash.com/photo-1512621776951-a57141f2eefd"
+          ]
+        },
+        {
+          name: "{provider} Fruit Salad",
+          description: "Fresh seasonal fruit salad by {provider}",
+          ingredients: ["seasonal fruits", "honey", "mint", "lime"],
+          day: "friday",
+          images: [
+            "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce"
+          ]
+        },
+        {
+          name: "{provider} Chia Pudding",
+          description: "Overnight chia pudding prepared by {provider}",
+          ingredients: ["chia seeds", "coconut milk", "vanilla", "berries"],
+          day: "saturday",
+          images: [
+            "https://images.unsplash.com/photo-1617191519105-d07b98b10de6"
+          ]
+        },
+        {
+          name: "{provider} Wellness Bowl",
+          description: "Complete wellness bowl by {provider}",
+          ingredients: ["mixed grains", "superfoods", "fresh fruits", "nuts"],
+          day: "sunday",
+          images: [
+            "https://images.unsplash.com/photo-1490645935967-10de6ba17061"
+          ]
+        }
+      ]
+    }
+  ],
+
+  lunch: [
+    {
+      name: "{provider} Traditional Thali",
+      description: "Authentic Indian thali prepared with {provider}'s traditional recipes",
+      image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d",
+      tags: ["traditional", "complete meal", "homestyle", "authentic"],
+      preparationTime: 35,
+      servingSize: 1,
+      basePrice: 180,
+      monthlyPlanPrice: 4500,
+      items: [
+        {
+          name: "{provider} Dal Rice Combo",
+          description: "Classic dal rice prepared {provider} style",
+          ingredients: ["rice", "lentils", "spices", "ghee", "vegetables"],
+          day: "monday",
+          images: [
+            "https://images.unsplash.com/photo-1626500154747-6c8c0c5c873d"
+          ]
+        },
+        {
+          name: "{provider} Rajma Chawal",
+          description: "North Indian rajma chawal by {provider}",
+          ingredients: ["kidney beans", "rice", "onions", "tomatoes", "spices"],
+          day: "tuesday",
+          images: [
+            "https://images.unsplash.com/photo-1613145993483-6c90a1c6d7f2"
+          ]
+        },
+        {
+          name: "{provider} Chole Bhature",
+          description: "Punjabi chole bhature from {provider}'s kitchen",
+          ingredients: ["chickpeas", "flour", "spices", "yogurt", "pickles"],
+          day: "wednesday",
+          images: [
+            "https://images.unsplash.com/photo-1626074353765-517a681e40be"
+          ]
+        }
+      ]
+    },
+
+    {
+      name: "{provider} Quick Bites",
+      description: "Fast and delicious lunch options by {provider} for busy professionals",
+      image: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe",
+      tags: ["quick", "office lunch", "convenient", "tasty"],
+      preparationTime: 20,
+      servingSize: 1,
+      basePrice: 140,
+      monthlyPlanPrice: 3500,
+      items: [
+        {
+          name: "{provider} Wrap Special",
+          description: "Healthy wraps prepared by {provider}",
+          ingredients: ["tortilla", "vegetables", "protein", "sauce"],
+          day: "monday",
+          images: [
+            "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d"
+          ]
+        },
+        {
+          name: "{provider} Pasta Bowl",
+          description: "Italian pasta prepared {provider} style",
+          ingredients: ["pasta", "vegetables", "herbs", "cheese"],
+          day: "tuesday",
+          images: [
+            "https://images.unsplash.com/photo-1525755662778-989d0524087e"
+          ]
+        },
+        {
+          name: "{provider} Fried Rice",
+          description: "Indo-Chinese fried rice by {provider}",
+          ingredients: ["rice", "vegetables", "soy sauce", "spices"],
+          day: "wednesday",
+          images: [
+            "https://images.unsplash.com/photo-1603133872878-684f208fb84b"
+          ]
+        }
+      ]
+    }
+  ],
+
+  dinner: [
+    {
+      name: "{provider} Evening Comfort",
+      description: "Comforting dinner meals prepared with love by {provider}",
+      image: "https://images.unsplash.com/photo-1600891964599-f61ba0e24092",
+      tags: ["comfort food", "homestyle", "satisfying", "warm"],
+      preparationTime: 40,
+      servingSize: 1,
+      basePrice: 200,
+      monthlyPlanPrice: 5000,
+      items: [
+        {
+          name: "{provider} Butter Chicken",
+          description: "Creamy butter chicken prepared by {provider}",
+          ingredients: ["chicken", "tomatoes", "cream", "spices", "rice"],
+          day: "monday",
+          images: [
+            "https://images.unsplash.com/photo-1604908177225-d0f2d6b2b7d5"
+          ]
+        },
+        {
+          name: "{provider} Paneer Makhani",
+          description: "Rich paneer makhani by {provider}",
+          ingredients: ["paneer", "tomatoes", "cream", "spices", "naan"],
+          day: "tuesday",
+          images: [
+            "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398"
+          ]
+        }
+      ]
+    },
+
+    {
+      name: "{provider} Light Dinner",
+      description: "Light and healthy dinner options by {provider} for a peaceful night",
+      image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd",
+      tags: ["light", "healthy", "digestible", "peaceful"],
+      preparationTime: 25,
+      servingSize: 1,
+      basePrice: 160,
+      monthlyPlanPrice: 4000,
+      items: [
+        {
+          name: "{provider} Soup & Salad",
+          description: "Nutritious soup and salad combo by {provider}",
+          ingredients: ["seasonal vegetables", "herbs", "broth", "greens"],
+          day: "monday",
+          images: [
+            "https://images.unsplash.com/photo-1604908554025-2a33c6e6c6f1"
+          ]
+        },
+        {
+          name: "{provider} Grilled Chicken",
+          description: "Herb-grilled chicken prepared by {provider}",
+          ingredients: ["chicken breast", "herbs", "vegetables", "quinoa"],
+          day: "tuesday",
+          images: [
+            "https://images.unsplash.com/photo-1555939594-58d7cb561ad1"
+          ]
+        }
+      ]
+    }
+  ]
 };
 
 async function seedProviders() {
@@ -533,6 +446,7 @@ async function seedMenus() {
                     description: menuDescription,
                     tags: template.tags,
                     preparationTime: template.preparationTime,
+                    image: template.image,
                     servingSize: template.servingSize,
                     basePrice: template.basePrice,
                     monthlyPlanPrice: template.monthlyPlanPrice,
@@ -559,7 +473,7 @@ async function seedMenus() {
                         description: itemDescription,
                         ingredients: itemTemplate.ingredients,
                         day: itemTemplate.day as "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
-                        images: [],
+                        images: itemTemplate.images,
                         nutritionInfo: {
                             calories: Math.floor(Math.random() * 200) + 300, // 300-500 calories
                             protein: `${Math.floor(Math.random() * 20) + 10}g`,    // 10-30g protein
