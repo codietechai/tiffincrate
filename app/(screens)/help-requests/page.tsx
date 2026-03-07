@@ -142,7 +142,6 @@ export default function HelpRequestsPage() {
 
     try {
       HelpRequestService.createHelpRequest(newRequest);
-
       setSuccess(SUCCESSMESSAGE.HELPREQUEST_CREATE);
       setNewRequest({
         type: "admin_support",
