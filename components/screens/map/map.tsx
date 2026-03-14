@@ -12,7 +12,13 @@ import type { TAddress } from "@/types/address";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format } from "date-fns";
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import {
@@ -24,7 +30,13 @@ import {
 import { Menu, X, Clock, MapPin, Phone, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { TIME_SLOT_PERIODS, isTimeSlotActive, getNextTimeSlot, getTimeUntilSlot, parseTimeString } from "@/utils/time-slots";
+import {
+  TIME_SLOT_PERIODS,
+  isTimeSlotActive,
+  getNextTimeSlot,
+  getTimeUntilSlot,
+  parseTimeString,
+} from "@/utils/time-slots";
 
 type Nullable<T> = T | null;
 
@@ -55,14 +67,19 @@ const toLatLng = (lat?: number, lng?: number) =>
   typeof lat === "number" && typeof lng === "number" ? { lat, lng } : null;
 
 // Helper: get coordinates from TAddress
-const getAddressCoordinates = (address: TAddress): google.maps.LatLngLiteral | null => {
+const getAddressCoordinates = (
+  address: TAddress,
+): google.maps.LatLngLiteral | null => {
   // Try virtual coordinates field first
   if (address.coordinates) {
     return { lat: address.coordinates.lat, lng: address.coordinates.lng };
   }
 
   // Try location.coordinates (GeoJSON format: [lng, lat])
-  if (address.location?.coordinates && Array.isArray(address.location.coordinates)) {
+  if (
+    address.location?.coordinates &&
+    Array.isArray(address.location.coordinates)
+  ) {
     const [lng, lat] = address.location.coordinates;
     return toLatLng(lat, lng);
   }
@@ -135,14 +152,22 @@ const getTimeUntilNavigation = (timeSlot: string): number => {
       return 0; // Can start now
     }
     // If navigation window hasn't opened yet
-    return Math.max(0, Math.floor((navigationStartTime.getTime() - now.getTime()) / (1000 * 60)));
+    return Math.max(
+      0,
+      Math.floor((navigationStartTime.getTime() - now.getTime()) / (1000 * 60)),
+    );
   }
 
   // Current slot has expired, calculate for tomorrow
   const tomorrowNavigationStart = new Date(navigationStartTime);
   tomorrowNavigationStart.setDate(tomorrowNavigationStart.getDate() + 1);
 
-  return Math.max(0, Math.floor((tomorrowNavigationStart.getTime() - now.getTime()) / (1000 * 60)));
+  return Math.max(
+    0,
+    Math.floor(
+      (tomorrowNavigationStart.getTime() - now.getTime()) / (1000 * 60),
+    ),
+  );
 };
 
 // Helper: format time remaining for display
@@ -152,11 +177,12 @@ const formatTimeRemaining = (minutes: number): string => {
   } else {
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+    return remainingMinutes > 0
+      ? `${hours}h ${remainingMinutes}m`
+      : `${hours}h`;
   }
 };
 
-// Main component
 export default function RouteMap() {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -167,17 +193,22 @@ export default function RouteMap() {
     useState<google.maps.LatLngLiteral | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [navigationStarted, setNavigationStarted] = useState(false);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('dinner');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("dinner");
   const [orders, setOrders] = useState<TOrderDelivery[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Nullable<TOrderDelivery>>(null);
+  const [selectedOrder, setSelectedOrder] =
+    useState<Nullable<TOrderDelivery>>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [liveUpdatesConnected, setLiveUpdatesConnected] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [alternativeRoutes, setAlternativeRoutes] = useState<google.maps.DirectionsResult[]>([]);
+  const [alternativeRoutes, setAlternativeRoutes] = useState<
+    google.maps.DirectionsResult[]
+  >([]);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
   const [etaCalculating, setEtaCalculating] = useState(false);
-  const [customerETAs, setCustomerETAs] = useState<Record<string, { distance: number; time: number }>>({});
+  const [customerETAs, setCustomerETAs] = useState<
+    Record<string, { distance: number; time: number }>
+  >({});
   const [liveNavigation, setLiveNavigation] = useState({
     distanceToNext: 0,
     timeToNext: 0,
@@ -228,7 +259,7 @@ export default function RouteMap() {
       eventSourceRef.current.close();
     }
 
-    const eventSource = new EventSource('/api/orders/live-updates');
+    const eventSource = new EventSource("/api/orders/live-updates");
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
@@ -240,13 +271,13 @@ export default function RouteMap() {
       try {
         const data = JSON.parse(event.data);
 
-        if (data.type === 'orders_update') {
+        if (data.type === "orders_update") {
           setOrders(data.data);
-        } else if (data.type === 'error') {
-          console.error('Live update error:', data.message);
+        } else if (data.type === "error") {
+          console.error("Live update error:", data.message);
         }
       } catch (error) {
-        console.error('Error parsing live update:', error);
+        console.error("Error parsing live update:", error);
       }
     };
 
@@ -262,21 +293,23 @@ export default function RouteMap() {
     if (!canStartNavigation(selectedTimeSlot)) {
       const timeRemaining = getTimeUntilNavigation(selectedTimeSlot);
       const slotPeriod = TIME_SLOT_PERIODS[selectedTimeSlot];
-      toast.error(`Navigation can start 30 minutes before ${slotPeriod.label}. Time remaining: ${formatTimeRemaining(timeRemaining)}`);
+      toast.error(
+        `Navigation can start 30 minutes before ${slotPeriod.label}. Time remaining: ${formatTimeRemaining(timeRemaining)}`,
+      );
       return;
     }
 
     try {
-      const orderIds = orders.map(order => order._id);
+      const orderIds = orders.map((order) => order._id);
 
       // Update all orders to out_for_delivery
-      const response = await fetch('/api/orders/bulk-status', {
-        method: 'PATCH',
+      const response = await fetch("/api/orders/bulk-status", {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          status: 'out_for_delivery',
+          status: "out_for_delivery",
           orderIds,
         }),
       });
@@ -309,83 +342,93 @@ export default function RouteMap() {
                 updateLiveNavigation(currentPos);
               },
               (error) => {
-                console.error('Failed to get current position:', error);
+                console.error("Failed to get current position:", error);
               },
-              { enableHighAccuracy: true, timeout: 5000, maximumAge: 1000 }
+              { enableHighAccuracy: true, timeout: 5000, maximumAge: 1000 },
             );
           }
         }
 
         const slotPeriod = TIME_SLOT_PERIODS[selectedTimeSlot];
-        toast.success(`Navigation started for ${slotPeriod.label}! All orders marked as out for delivery`);
+        toast.success(
+          `Navigation started for ${slotPeriod.label}! All orders marked as out for delivery`,
+        );
       } else {
-        throw new Error('Failed to update order status');
+        throw new Error("Failed to update order status");
       }
     } catch (error) {
-      console.error('Error starting navigation:', error);
+      console.error("Error starting navigation:", error);
       toast.error("Failed to start navigation");
     }
   };
 
   // Calculate real-time ETAs for all customers
-  const calculateCustomerETAs = async (providerLocation: google.maps.LatLngLiteral) => {
+  const calculateCustomerETAs = async (
+    providerLocation: google.maps.LatLngLiteral,
+  ) => {
     if (!orders.length) return;
 
     try {
       const service = new google.maps.DistanceMatrixService();
       const destinations = orders
-        .map(order => getAddressCoordinates(order.address))
-        .filter((coords): coords is google.maps.LatLngLiteral => coords !== null);
+        .map((order) => getAddressCoordinates(order.address))
+        .filter(
+          (coords): coords is google.maps.LatLngLiteral => coords !== null,
+        );
 
       if (destinations.length === 0) return;
 
-      service.getDistanceMatrix({
-        origins: [providerLocation],
-        destinations: destinations,
-        travelMode: google.maps.TravelMode.DRIVING,
-        unitSystem: google.maps.UnitSystem.METRIC,
-        avoidHighways: false,
-        avoidTolls: false,
-      }, (response, status) => {
-        if (status === 'OK' && response?.rows[0]) {
-          const newETAs: Record<string, { distance: number; time: number }> = {};
+      service.getDistanceMatrix(
+        {
+          origins: [providerLocation],
+          destinations: destinations,
+          travelMode: google.maps.TravelMode.DRIVING,
+          unitSystem: google.maps.UnitSystem.METRIC,
+          avoidHighways: false,
+          avoidTolls: false,
+        },
+        (response, status) => {
+          if (status === "OK" && response?.rows[0]) {
+            const newETAs: Record<string, { distance: number; time: number }> =
+              {};
 
-          response.rows[0].elements.forEach((element, index) => {
-            if (element.status === 'OK' && orders[index]) {
-              newETAs[orders[index]._id] = {
-                distance: element.distance?.value || 0,
-                time: element.duration?.value || 0
-              };
-            }
-          });
+            response.rows[0].elements.forEach((element, index) => {
+              if (element.status === "OK" && orders[index]) {
+                newETAs[orders[index]._id] = {
+                  distance: element.distance?.value || 0,
+                  time: element.duration?.value || 0,
+                };
+              }
+            });
 
-          setCustomerETAs(newETAs);
-        }
-      });
+            setCustomerETAs(newETAs);
+          }
+        },
+      );
     } catch (error) {
-      console.error('Error calculating customer ETAs:', error);
+      console.error("Error calculating customer ETAs:", error);
     }
   };
 
   // Cancel navigation and reset orders to previous status
   const cancelNavigation = async () => {
     const confirmCancel = window.confirm(
-      "Are you sure you want to cancel navigation? This will reset all orders to 'ready' status."
+      "Are you sure you want to cancel navigation? This will reset all orders to 'ready' status.",
     );
 
     if (!confirmCancel) return;
 
     try {
-      const orderIds = orders.map(order => order._id);
+      const orderIds = orders.map((order) => order._id);
 
       // Update all orders back to ready status
-      const response = await fetch('/api/orders/bulk-status', {
-        method: 'PATCH',
+      const response = await fetch("/api/orders/bulk-status", {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          status: 'ready',
+          status: "ready",
           orderIds,
         }),
       });
@@ -441,10 +484,10 @@ export default function RouteMap() {
 
         toast.success("Navigation cancelled. Orders reset to ready status");
       } else {
-        throw new Error('Failed to cancel navigation');
+        throw new Error("Failed to cancel navigation");
       }
     } catch (error) {
-      console.error('Error cancelling navigation:', error);
+      console.error("Error cancelling navigation:", error);
       toast.error("Failed to cancel navigation");
     }
   };
@@ -490,13 +533,14 @@ export default function RouteMap() {
   useEffect(() => {
     if (navigationStarted && orders.length > 0) {
       // Find the first order that needs delivery
-      const nextOrder = orders.find(order =>
-        order.status === 'out_for_delivery' || order.status === 'ready'
+      const nextOrder = orders.find(
+        (order) =>
+          order.status === "out_for_delivery" || order.status === "ready",
       );
 
       if (nextOrder) {
         // Always update the next customer immediately
-        setLiveNavigation(prev => ({
+        setLiveNavigation((prev) => ({
           ...prev,
           nextCustomer: nextOrder,
         }));
@@ -506,7 +550,7 @@ export default function RouteMap() {
           updateLiveNavigation(driverLocation);
         } else {
           // If no GPS yet, set initial values that will be updated when GPS starts
-          setLiveNavigation(prev => ({
+          setLiveNavigation((prev) => ({
             ...prev,
             nextCustomer: nextOrder,
             distanceToNext: 0,
@@ -532,14 +576,22 @@ export default function RouteMap() {
   // Enhanced marker creation with status-based colors
   const getMarkerColor = (status: string) => {
     switch (status) {
-      case 'pending': return '#fbbf24'; // yellow
-      case 'confirmed': return '#3b82f6'; // blue
-      case 'preparing': return '#f97316'; // orange
-      case 'ready': return '#8b5cf6'; // purple
-      case 'out_for_delivery': return '#ef4444'; // red
-      case 'delivered': return '#9ca3af'; // gray
-      case 'cancelled': return '#6b7280'; // dark gray
-      default: return '#ef4444';
+      case "pending":
+        return "#fbbf24"; // yellow
+      case "confirmed":
+        return "#3b82f6"; // blue
+      case "preparing":
+        return "#f97316"; // orange
+      case "ready":
+        return "#8b5cf6"; // purple
+      case "out_for_delivery":
+        return "#ef4444"; // red
+      case "delivered":
+        return "#9ca3af"; // gray
+      case "cancelled":
+        return "#6b7280"; // dark gray
+      default:
+        return "#ef4444";
     }
   };
 
@@ -628,12 +680,18 @@ export default function RouteMap() {
       // Voice navigation announcement
       if (voiceEnabled && res.routes[selectedRouteIndex]) {
         const route = res.routes[selectedRouteIndex];
-        const totalDuration = route.legs.reduce((total, leg) => total + (leg.duration?.value || 0), 0);
-        const totalDistance = route.legs.reduce((total, leg) => total + (leg.distance?.value || 0), 0);
+        const totalDuration = route.legs.reduce(
+          (total, leg) => total + (leg.duration?.value || 0),
+          0,
+        );
+        const totalDistance = route.legs.reduce(
+          (total, leg) => total + (leg.distance?.value || 0),
+          0,
+        );
 
         speakInstruction(
           `Route calculated. Total distance: ${(totalDistance / 1000).toFixed(1)} kilometers. ` +
-          `Estimated time: ${Math.round(totalDuration / 60)} minutes. Starting navigation.`
+            `Estimated time: ${Math.round(totalDuration / 60)} minutes. Starting navigation.`,
         );
       }
     } else {
@@ -695,96 +753,95 @@ export default function RouteMap() {
   // Uber-style map styling
   const uberMapStyle = [
     {
-      "featureType": "all",
-      "elementType": "geometry",
-      "stylers": [{ "color": "#f5f5f5" }]
+      featureType: "all",
+      elementType: "geometry",
+      stylers: [{ color: "#f5f5f5" }],
     },
     {
-      "featureType": "all",
-      "elementType": "labels.text.fill",
-      "stylers": [{ "color": "#616161" }]
+      featureType: "all",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#616161" }],
     },
     {
-      "featureType": "all",
-      "elementType": "labels.text.stroke",
-      "stylers": [{ "color": "#f5f5f5" }]
+      featureType: "all",
+      elementType: "labels.text.stroke",
+      stylers: [{ color: "#f5f5f5" }],
     },
     {
-      "featureType": "administrative.land_parcel",
-      "elementType": "labels.text.fill",
-      "stylers": [{ "color": "#bdbdbd" }]
+      featureType: "administrative.land_parcel",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#bdbdbd" }],
     },
     {
-      "featureType": "poi",
-      "elementType": "geometry",
-      "stylers": [{ "color": "#eeeeee" }]
+      featureType: "poi",
+      elementType: "geometry",
+      stylers: [{ color: "#eeeeee" }],
     },
     {
-      "featureType": "poi",
-      "elementType": "labels.text.fill",
-      "stylers": [{ "color": "#757575" }]
+      featureType: "poi",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#757575" }],
     },
     {
-      "featureType": "poi.park",
-      "elementType": "geometry",
-      "stylers": [{ "color": "#e5e5e5" }]
+      featureType: "poi.park",
+      elementType: "geometry",
+      stylers: [{ color: "#e5e5e5" }],
     },
     {
-      "featureType": "poi.park",
-      "elementType": "labels.text.fill",
-      "stylers": [{ "color": "#9e9e9e" }]
+      featureType: "poi.park",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#9e9e9e" }],
     },
     {
-      "featureType": "road",
-      "elementType": "geometry",
-      "stylers": [{ "color": "#ffffff" }]
+      featureType: "road",
+      elementType: "geometry",
+      stylers: [{ color: "#ffffff" }],
     },
     {
-      "featureType": "road.arterial",
-      "elementType": "labels.text.fill",
-      "stylers": [{ "color": "#757575" }]
+      featureType: "road.arterial",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#757575" }],
     },
     {
-      "featureType": "road.highway",
-      "elementType": "geometry",
-      "stylers": [{ "color": "#dadada" }]
+      featureType: "road.highway",
+      elementType: "geometry",
+      stylers: [{ color: "#dadada" }],
     },
     {
-      "featureType": "road.highway",
-      "elementType": "labels.text.fill",
-      "stylers": [{ "color": "#616161" }]
+      featureType: "road.highway",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#616161" }],
     },
     {
-      "featureType": "road.local",
-      "elementType": "labels.text.fill",
-      "stylers": [{ "color": "#9e9e9e" }]
+      featureType: "road.local",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#9e9e9e" }],
     },
     {
-      "featureType": "transit.line",
-      "elementType": "geometry",
-      "stylers": [{ "color": "#e5e5e5" }]
+      featureType: "transit.line",
+      elementType: "geometry",
+      stylers: [{ color: "#e5e5e5" }],
     },
     {
-      "featureType": "transit.station",
-      "elementType": "geometry",
-      "stylers": [{ "color": "#eeeeee" }]
+      featureType: "transit.station",
+      elementType: "geometry",
+      stylers: [{ color: "#eeeeee" }],
     },
     {
-      "featureType": "water",
-      "elementType": "geometry",
-      "stylers": [{ "color": "#c9c9c9" }]
+      featureType: "water",
+      elementType: "geometry",
+      stylers: [{ color: "#c9c9c9" }],
     },
     {
-      "featureType": "water",
-      "elementType": "labels.text.fill",
-      "stylers": [{ "color": "#9e9e9e" }]
-    }
+      featureType: "water",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#9e9e9e" }],
+    },
   ];
-
 
   const getBearing = (
     from: google.maps.LatLngLiteral,
-    to: google.maps.LatLngLiteral
+    to: google.maps.LatLngLiteral,
   ) => {
     const toRad = (d: number) => (d * Math.PI) / 180;
     const toDeg = (r: number) => (r * 180) / Math.PI;
@@ -793,8 +850,8 @@ export default function RouteMap() {
     const x =
       Math.cos(toRad(from.lat)) * Math.sin(toRad(to.lat)) -
       Math.sin(toRad(from.lat)) *
-      Math.cos(toRad(to.lat)) *
-      Math.cos(toRad(to.lng - from.lng));
+        Math.cos(toRad(to.lat)) *
+        Math.cos(toRad(to.lng - from.lng));
 
     return (toDeg(Math.atan2(y, x)) + 360) % 360;
   };
@@ -892,7 +949,6 @@ export default function RouteMap() {
 
           // Immediately update live navigation data with first GPS position
           updateLiveNavigation(livePos);
-
         } else {
           const prevPos = driverMarkerRef.current.getPosition();
           if (prevPos) {
@@ -928,17 +984,30 @@ export default function RouteMap() {
 
             // Voice navigation instructions
             if (voiceEnabled && orders.length > 0) {
-              const nextOrder = orders.find(order => order.status === 'out_for_delivery');
+              const nextOrder = orders.find(
+                (order) => order.status === "out_for_delivery",
+              );
               if (nextOrder) {
-                const nextDestination = getAddressCoordinates(nextOrder.address);
+                const nextDestination = getAddressCoordinates(
+                  nextOrder.address,
+                );
                 if (nextDestination) {
-                  const distanceToNext = getDistanceInMeters(to.lat, to.lng, nextDestination.lat, nextDestination.lng);
+                  const distanceToNext = getDistanceInMeters(
+                    to.lat,
+                    to.lng,
+                    nextDestination.lat,
+                    nextDestination.lng,
+                  );
 
                   // Give voice instructions at specific distances
                   if (distanceToNext < 200 && distanceToNext > 150) {
-                    speakInstruction(`Approaching ${nextOrder.consumerId.name}'s location in 200 meters`);
+                    speakInstruction(
+                      `Approaching ${nextOrder.consumerId.name}'s location in 200 meters`,
+                    );
                   } else if (distanceToNext < 50) {
-                    speakInstruction(`You have arrived at ${nextOrder.consumerId.name}'s location`);
+                    speakInstruction(
+                      `You have arrived at ${nextOrder.consumerId.name}'s location`,
+                    );
                   }
                 }
               }
@@ -957,10 +1026,14 @@ export default function RouteMap() {
               const speedKmh = speed * 3.6; // Convert m/s to km/h
               let zoomLevel = 17;
 
-              if (speedKmh > 60) zoomLevel = 15; // Highway speed
-              else if (speedKmh > 40) zoomLevel = 16; // Fast city speed
-              else if (speedKmh > 20) zoomLevel = 17; // Normal city speed
-              else if (speedKmh > 5) zoomLevel = 18; // Slow speed
+              if (speedKmh > 60)
+                zoomLevel = 15; // Highway speed
+              else if (speedKmh > 40)
+                zoomLevel = 16; // Fast city speed
+              else if (speedKmh > 20)
+                zoomLevel = 17; // Normal city speed
+              else if (speedKmh > 5)
+                zoomLevel = 18; // Slow speed
               else zoomLevel = 19; // Very slow/stopped
 
               mapRef.current?.setZoom(zoomLevel);
@@ -976,12 +1049,14 @@ export default function RouteMap() {
         enableHighAccuracy: true,
         maximumAge: 500, // More frequent updates like Uber
         timeout: 3000,
-      }
+      },
     );
   };
 
   // Check if driver has deviated from the planned route
-  const checkRouteDeviation = (currentPos: google.maps.LatLngLiteral): boolean => {
+  const checkRouteDeviation = (
+    currentPos: google.maps.LatLngLiteral,
+  ): boolean => {
     if (!directionsResult || !animatedPathRef.current.length) return false;
 
     // Find the closest point on the route
@@ -993,7 +1068,7 @@ export default function RouteMap() {
         currentPos.lat,
         currentPos.lng,
         point.lat,
-        point.lng
+        point.lng,
       );
       if (distance < minDistance) {
         minDistance = distance;
@@ -1010,7 +1085,7 @@ export default function RouteMap() {
   const recalculateRoute = (currentPos: google.maps.LatLngLiteral) => {
     if (!orders.length) return;
 
-    console.log('Recalculating route due to deviation...');
+    console.log("Recalculating route due to deviation...");
 
     // Reset directions calculation flag to trigger new route
     directionsCalculatedRef.current = false;
@@ -1022,7 +1097,9 @@ export default function RouteMap() {
     toast.info("Route updated based on your current location");
 
     if (voiceEnabled) {
-      speakInstruction("Route recalculated. Continue following the updated path.");
+      speakInstruction(
+        "Route recalculated. Continue following the updated path.",
+      );
     }
   };
 
@@ -1055,7 +1132,6 @@ export default function RouteMap() {
     }
   };
 
-
   useEffect(() => {
     directionsCalculatedRef.current = false;
     setDirectionsResult(null);
@@ -1064,21 +1140,30 @@ export default function RouteMap() {
   // Enhanced order status display
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'pending': return 'secondary';
-      case 'confirmed': return 'default';
-      case 'preparing': return 'outline';
-      case 'ready': return 'secondary';
-      case 'out_for_delivery': return 'destructive';
-      case 'delivered': return 'default';
-      case 'cancelled': return 'outline';
-      default: return 'secondary';
+      case "pending":
+        return "secondary";
+      case "confirmed":
+        return "default";
+      case "preparing":
+        return "outline";
+      case "ready":
+        return "secondary";
+      case "out_for_delivery":
+        return "destructive";
+      case "delivered":
+        return "default";
+      case "cancelled":
+        return "outline";
+      default:
+        return "secondary";
     }
   };
 
   const formatStatus = (status: string) => {
-    return status.split('_').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
+    return status
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   const getDistanceInMeters = (
@@ -1101,7 +1186,9 @@ export default function RouteMap() {
   };
 
   // Enhanced route optimization with traffic and multi-stop
-  const optimizeRouteWithTraffic = async (waypoints: google.maps.LatLngLiteral[]) => {
+  const optimizeRouteWithTraffic = async (
+    waypoints: google.maps.LatLngLiteral[],
+  ) => {
     if (!driverLocation || waypoints.length === 0) return waypoints;
 
     try {
@@ -1109,43 +1196,44 @@ export default function RouteMap() {
       const response = await fetch(
         `https://routes.googleapis.com/directions/v2:computeRoutes`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'X-Goog-Api-Key': process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-            'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.optimizedIntermediateWaypointIndex'
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+            "X-Goog-FieldMask":
+              "routes.duration,routes.distanceMeters,routes.optimizedIntermediateWaypointIndex",
           },
           body: JSON.stringify({
             origin: {
               location: {
                 latLng: {
                   latitude: driverLocation.lat,
-                  longitude: driverLocation.lng
-                }
-              }
+                  longitude: driverLocation.lng,
+                },
+              },
             },
             destination: {
               location: {
                 latLng: {
                   latitude: waypoints[waypoints.length - 1].lat,
-                  longitude: waypoints[waypoints.length - 1].lng
-                }
-              }
+                  longitude: waypoints[waypoints.length - 1].lng,
+                },
+              },
             },
-            intermediates: waypoints.slice(0, -1).map(point => ({
+            intermediates: waypoints.slice(0, -1).map((point) => ({
               location: {
                 latLng: {
                   latitude: point.lat,
-                  longitude: point.lng
-                }
-              }
+                  longitude: point.lng,
+                },
+              },
             })),
-            travelMode: 'DRIVE',
-            routingPreference: 'TRAFFIC_AWARE_OPTIMAL',
+            travelMode: "DRIVE",
+            routingPreference: "TRAFFIC_AWARE_OPTIMAL",
             optimizeWaypointOrder: true,
-            computeAlternativeRoutes: true
-          })
-        }
+            computeAlternativeRoutes: true,
+          }),
+        },
       );
 
       if (response.ok) {
@@ -1155,42 +1243,53 @@ export default function RouteMap() {
         if (route.optimizedIntermediateWaypointIndex) {
           // Reorder waypoints based on optimization
           const optimizedOrder = route.optimizedIntermediateWaypointIndex;
-          const optimizedWaypoints = optimizedOrder.map((index: number) => waypoints[index]);
+          const optimizedWaypoints = optimizedOrder.map(
+            (index: number) => waypoints[index],
+          );
           optimizedWaypoints.push(waypoints[waypoints.length - 1]); // Add destination
 
-          toast.success(`Route optimized! Saved ${Math.round((route.duration?.seconds || 0) / 60)} minutes`);
+          toast.success(
+            `Route optimized! Saved ${Math.round((route.duration?.seconds || 0) / 60)} minutes`,
+          );
           return optimizedWaypoints;
         }
       }
     } catch (error) {
-      console.error('Route optimization failed:', error);
-      toast.warning('Using basic route optimization');
+      console.error("Route optimization failed:", error);
+      toast.warning("Using basic route optimization");
     }
 
     // Fallback to basic distance-based optimization
     return sortOrdersByDistance(driverLocation, orders)
-      .map(o => getAddressCoordinates(o.address))
+      .map((o) => getAddressCoordinates(o.address))
       .filter((p): p is google.maps.LatLngLiteral => p !== null);
   };
 
   // Update live navigation data
-  const updateLiveNavigation = async (currentPos: google.maps.LatLngLiteral) => {
-    console.log('updateLiveNavigation called with:', { currentPos, navigationStarted, ordersLength: orders.length });
+  const updateLiveNavigation = async (
+    currentPos: google.maps.LatLngLiteral,
+  ) => {
+    console.log("updateLiveNavigation called with:", {
+      currentPos,
+      navigationStarted,
+      ordersLength: orders.length,
+    });
 
     if (!orders.length || !navigationStarted) {
-      console.log('Early return: no orders or navigation not started');
+      console.log("Early return: no orders or navigation not started");
       return;
     }
 
     // Find next undelivered order
-    const nextOrder = orders.find(order =>
-      order.status === 'out_for_delivery' || order.status === 'ready'
+    const nextOrder = orders.find(
+      (order) =>
+        order.status === "out_for_delivery" || order.status === "ready",
     );
 
-    console.log('Next order found:', nextOrder?.consumerId?.name || 'none');
+    console.log("Next order found:", nextOrder?.consumerId?.name || "none");
 
     if (!nextOrder) {
-      setLiveNavigation(prev => ({ ...prev, nextCustomer: null }));
+      setLiveNavigation((prev) => ({ ...prev, nextCustomer: null }));
       return;
     }
 
@@ -1202,55 +1301,71 @@ export default function RouteMap() {
       currentPos.lat,
       currentPos.lng,
       nextDestination.lat,
-      nextDestination.lng
+      nextDestination.lng,
     );
 
     // Estimate time based on average city speed (25 km/h)
-    const estimatedTimeMinutes = Math.ceil((straightLineDistance / 1000) / 25 * 60);
+    const estimatedTimeMinutes = Math.ceil(
+      (straightLineDistance / 1000 / 25) * 60,
+    );
 
     // Try to get more accurate data from Google Distance Matrix API
     try {
       const service = new google.maps.DistanceMatrixService();
-      service.getDistanceMatrix({
-        origins: [currentPos],
-        destinations: [nextDestination],
-        travelMode: google.maps.TravelMode.DRIVING,
-        unitSystem: google.maps.UnitSystem.METRIC,
-        avoidHighways: false,
-        avoidTolls: false,
-      }, (response, status) => {
-        console.log('Distance Matrix API response:', { status, response });
+      service.getDistanceMatrix(
+        {
+          origins: [currentPos],
+          destinations: [nextDestination],
+          travelMode: google.maps.TravelMode.DRIVING,
+          unitSystem: google.maps.UnitSystem.METRIC,
+          avoidHighways: false,
+          avoidTolls: false,
+        },
+        (response, status) => {
+          console.log("Distance Matrix API response:", { status, response });
 
-        if (status === 'OK' && response?.rows[0]?.elements[0]?.status === 'OK') {
-          const element = response.rows[0].elements[0];
-          const distance = element.distance?.value || straightLineDistance;
-          const duration = element.duration?.value || (estimatedTimeMinutes * 60);
+          if (
+            status === "OK" &&
+            response?.rows[0]?.elements[0]?.status === "OK"
+          ) {
+            const element = response.rows[0].elements[0];
+            const distance = element.distance?.value || straightLineDistance;
+            const duration =
+              element.duration?.value || estimatedTimeMinutes * 60;
 
-          console.log('Setting live navigation with API data:', { distance, duration, customerName: nextOrder.consumerId.name });
+            console.log("Setting live navigation with API data:", {
+              distance,
+              duration,
+              customerName: nextOrder.consumerId.name,
+            });
 
-          setLiveNavigation(prev => ({
-            ...prev,
-            distanceToNext: distance,
-            timeToNext: duration,
-            nextCustomer: nextOrder,
-          }));
-        } else {
-          console.log('Using fallback calculation:', { straightLineDistance, estimatedTimeMinutes });
+            setLiveNavigation((prev) => ({
+              ...prev,
+              distanceToNext: distance,
+              timeToNext: duration,
+              nextCustomer: nextOrder,
+            }));
+          } else {
+            console.log("Using fallback calculation:", {
+              straightLineDistance,
+              estimatedTimeMinutes,
+            });
 
-          // Fallback to straight-line calculation
-          setLiveNavigation(prev => ({
-            ...prev,
-            distanceToNext: straightLineDistance,
-            timeToNext: estimatedTimeMinutes * 60,
-            nextCustomer: nextOrder,
-          }));
-        }
-      });
+            // Fallback to straight-line calculation
+            setLiveNavigation((prev) => ({
+              ...prev,
+              distanceToNext: straightLineDistance,
+              timeToNext: estimatedTimeMinutes * 60,
+              nextCustomer: nextOrder,
+            }));
+          }
+        },
+      );
     } catch (error) {
-      console.error('Distance Matrix API error:', error);
+      console.error("Distance Matrix API error:", error);
 
       // Fallback to straight-line calculation
-      setLiveNavigation(prev => ({
+      setLiveNavigation((prev) => ({
         ...prev,
         distanceToNext: straightLineDistance,
         timeToNext: estimatedTimeMinutes * 60,
@@ -1258,7 +1373,7 @@ export default function RouteMap() {
       }));
     }
   };
-  console.log('liveNavigating :>> ', liveNavigation);
+  console.log("liveNavigating :>> ", liveNavigation);
 
   const formatDistance = (meters: number) => {
     if (meters < 1000) {
@@ -1283,14 +1398,14 @@ export default function RouteMap() {
   // Get customer ETA
   const getCustomerETA = (orderId: string): string => {
     const eta = customerETAs[orderId];
-    if (!eta) return 'Calculating...';
+    if (!eta) return "Calculating...";
     return formatETA(eta.time);
   };
 
   // Get customer distance
   const getCustomerDistance = (orderId: string): string => {
     const eta = customerETAs[orderId];
-    if (!eta) return 'Calculating...';
+    if (!eta) return "Calculating...";
 
     if (eta.distance < 1000) {
       return `${Math.round(eta.distance)} m`;
@@ -1301,7 +1416,7 @@ export default function RouteMap() {
 
   // Voice Navigation Integration
   const initializeVoiceNavigation = () => {
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       speechSynthesisRef.current = window.speechSynthesis;
       setVoiceEnabled(true);
       toast.success("Voice navigation enabled");
@@ -1323,9 +1438,10 @@ export default function RouteMap() {
 
     // Use a clear voice if available
     const voices = speechSynthesisRef.current.getVoices();
-    const preferredVoice = voices.find(voice =>
-      voice.lang.startsWith('en') && voice.name.includes('Google')
-    ) || voices.find(voice => voice.lang.startsWith('en'));
+    const preferredVoice =
+      voices.find(
+        (voice) => voice.lang.startsWith("en") && voice.name.includes("Google"),
+      ) || voices.find((voice) => voice.lang.startsWith("en"));
 
     if (preferredVoice) {
       utterance.voice = preferredVoice;
@@ -1338,13 +1454,13 @@ export default function RouteMap() {
   const generateNavigationInstruction = (
     currentPos: google.maps.LatLngLiteral,
     nextDestination: google.maps.LatLngLiteral,
-    customerName: string
+    customerName: string,
   ) => {
     const distance = getDistanceInMeters(
       currentPos.lat,
       currentPos.lng,
       nextDestination.lat,
-      nextDestination.lng
+      nextDestination.lng,
     );
 
     if (distance < 100) {
@@ -1366,12 +1482,9 @@ export default function RouteMap() {
         const coords = getAddressCoordinates(order.address);
         return {
           order,
-          distance: coords ? getDistanceInMeters(
-            from.lat,
-            from.lng,
-            coords.lat,
-            coords.lng,
-          ) : Infinity,
+          distance: coords
+            ? getDistanceInMeters(from.lat, from.lng, coords.lat, coords.lng)
+            : Infinity,
         };
       })
       .sort((a, b) => a.distance - b.distance)
@@ -1379,7 +1492,10 @@ export default function RouteMap() {
   };
 
   // Alternative Routes Functionality
-  const fetchAlternativeRoutes = async (origin: google.maps.LatLngLiteral, destination: google.maps.LatLngLiteral) => {
+  const fetchAlternativeRoutes = async (
+    origin: google.maps.LatLngLiteral,
+    destination: google.maps.LatLngLiteral,
+  ) => {
     try {
       const directionsService = new google.maps.DirectionsService();
 
@@ -1394,7 +1510,7 @@ export default function RouteMap() {
       };
 
       directionsService.route(request, (result, status) => {
-        if (status === 'OK' && result) {
+        if (status === "OK" && result) {
           setAlternativeRoutes(result.routes.length > 1 ? [result] : []);
 
           if (result.routes.length > 1) {
@@ -1403,7 +1519,7 @@ export default function RouteMap() {
         }
       });
     } catch (error) {
-      console.error('Failed to fetch alternative routes:', error);
+      console.error("Failed to fetch alternative routes:", error);
     }
   };
 
@@ -1412,13 +1528,23 @@ export default function RouteMap() {
 
     if (alternativeRoutes.length > 0) {
       const selectedRoute = alternativeRoutes[0].routes[routeIndex];
-      const duration = selectedRoute.legs.reduce((total, leg) => total + (leg.duration?.value || 0), 0);
-      const distance = selectedRoute.legs.reduce((total, leg) => total + (leg.distance?.value || 0), 0);
+      const duration = selectedRoute.legs.reduce(
+        (total, leg) => total + (leg.duration?.value || 0),
+        0,
+      );
+      const distance = selectedRoute.legs.reduce(
+        (total, leg) => total + (leg.distance?.value || 0),
+        0,
+      );
 
-      toast.success(`Route selected: ${Math.round(duration / 60)} min, ${(distance / 1000).toFixed(1)} km`);
+      toast.success(
+        `Route selected: ${Math.round(duration / 60)} min, ${(distance / 1000).toFixed(1)} km`,
+      );
 
       if (voiceEnabled) {
-        speakInstruction(`Alternative route selected. Estimated time: ${Math.round(duration / 60)} minutes`);
+        speakInstruction(
+          `Alternative route selected. Estimated time: ${Math.round(duration / 60)} minutes`,
+        );
       }
     }
   };
@@ -1466,7 +1592,7 @@ export default function RouteMap() {
         // 2️⃣ update marker color based on new status
         const marker = markersRef.current[orderId];
         if (marker) {
-          const orderIndex = orders.findIndex(o => o._id === orderId);
+          const orderIndex = orders.findIndex((o) => o._id === orderId);
           marker.setIcon({
             url: uberDestinationMarkerSvg(orderIndex + 1),
             scaledSize: new google.maps.Size(40, 50),
@@ -1500,8 +1626,6 @@ export default function RouteMap() {
     return <div className="p-4">Loading map...</div>;
   }
 
-
-
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <aside
@@ -1509,41 +1633,52 @@ export default function RouteMap() {
     transition-transform duration-300 ease-in-out
     ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        {orders.length && !loadingOrders ? <div className="flex items-center justify-between">
-          <Button
-            className="flex-1 mr-2"
-            disabled={loadingOrders || (!navigationStarted && !canStartNavigation(selectedTimeSlot))}
-            onClick={navigationStarted ? cancelNavigation : startNavigation}
-            variant={navigationStarted ? "destructive" : "default"}
-          >
-            {navigationStarted
-              ? "Cancel Navigation"
-              : etaCalculating
-                ? "Calculating Routes..."
-                : canStartNavigation(selectedTimeSlot)
-                  ? "Start Delivery Route"
-                  : `Available in ${formatTimeRemaining(timeUntilNavigationStart)}`}
-          </Button>
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${liveUpdatesConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="text-xs text-muted-foreground">
-                {liveUpdatesConnected ? 'Live' : 'Offline'}
-              </span>
-            </div>
-            {navigationStarted && (
+        {orders.length && !loadingOrders ? (
+          <div className="flex items-center justify-between">
+            <Button
+              className="flex-1 mr-2"
+              disabled={
+                loadingOrders ||
+                (!navigationStarted && !canStartNavigation(selectedTimeSlot))
+              }
+              onClick={navigationStarted ? cancelNavigation : startNavigation}
+              variant={navigationStarted ? "destructive" : "default"}
+            >
+              {navigationStarted
+                ? "Cancel Navigation"
+                : etaCalculating
+                  ? "Calculating Routes..."
+                  : canStartNavigation(selectedTimeSlot)
+                    ? "Start Delivery Route"
+                    : `Available in ${formatTimeRemaining(timeUntilNavigationStart)}`}
+            </Button>
+            <div className="flex flex-col items-end gap-1">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                <span className="text-xs text-blue-600 font-medium">
-                  Navigation Active
+                <div
+                  className={`w-2 h-2 rounded-full ${liveUpdatesConnected ? "bg-green-500" : "bg-red-500"}`}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {liveUpdatesConnected ? "Live" : "Offline"}
                 </span>
               </div>
-            )}
+              {navigationStarted && (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="text-xs text-blue-600 font-medium">
+                    Navigation Active
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </div> : <div className="h-8"></div>}
+        ) : (
+          <div className="h-8"></div>
+        )}
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Select Time Slot</label>
+          <label className="text-sm font-medium text-gray-700">
+            Select Time Slot
+          </label>
           <Select
             value={selectedTimeSlot}
             onValueChange={setSelectedTimeSlot}
@@ -1564,20 +1699,28 @@ export default function RouteMap() {
                       <span>{period.label}</span>
                       <div className="flex items-center gap-2 ml-2">
                         {isActive && (
-                          <Badge variant="default" className="text-xs bg-green-500">
+                          <Badge
+                            variant="default"
+                            className="text-xs bg-green-500"
+                          >
                             Active
                           </Badge>
                         )}
                         {!isActive && canStart && (
-                          <Badge variant="default" className="text-xs bg-blue-500">
+                          <Badge
+                            variant="default"
+                            className="text-xs bg-blue-500"
+                          >
                             Ready
                           </Badge>
                         )}
-                        {!canStart && timeUntil > 0 && timeUntil <= 1440 && ( // Show if within 24 hours
-                          <Badge variant="outline" className="text-xs">
-                            {formatTimeRemaining(timeUntil)}
-                          </Badge>
-                        )}
+                        {!canStart &&
+                          timeUntil > 0 &&
+                          timeUntil <= 1440 && ( // Show if within 24 hours
+                            <Badge variant="outline" className="text-xs">
+                              {formatTimeRemaining(timeUntil)}
+                            </Badge>
+                          )}
                       </div>
                     </div>
                   </SelectItem>
@@ -1587,260 +1730,295 @@ export default function RouteMap() {
           </Select>
           {!canStartNavigation(selectedTimeSlot) && !navigationStarted && (
             <p className="text-xs text-gray-500">
-              Navigation available in {formatTimeRemaining(timeUntilNavigationStart)} (30 min before {TIME_SLOT_PERIODS[selectedTimeSlot]?.label})
+              Navigation available in{" "}
+              {formatTimeRemaining(timeUntilNavigationStart)} (30 min before{" "}
+              {TIME_SLOT_PERIODS[selectedTimeSlot]?.label})
             </p>
           )}
         </div>
 
-        {orders.length && !loadingOrders ? <><div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">
-            Today's Orders ({orders.length})
-          </h3>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchOrders}
-              disabled={loadingOrders}
-            >
-              {loadingOrders ? "Loading..." : "Refresh"}
-            </Button>
-          </div>
-        </div>
+        {orders.length && !loadingOrders ? (
+          <>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">
+                Today's Orders ({orders.length})
+              </h3>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchOrders}
+                  disabled={loadingOrders}
+                >
+                  {loadingOrders ? "Loading..." : "Refresh"}
+                </Button>
+              </div>
+            </div>
 
-          {/* Navigation Status Card */}
-          {!navigationStarted && (
-            <Card className="p-3 border-orange-200 bg-orange-50">
-              <h4 className="font-medium mb-2 text-orange-900">Navigation Status</h4>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-orange-700">Selected Slot:</span>
-                  <Badge variant="outline" className="text-xs">
-                    {TIME_SLOT_PERIODS[selectedTimeSlot]?.label}
-                  </Badge>
-                </div>
-                {canStartNavigation(selectedTimeSlot) ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <span className="text-sm text-green-700 font-medium">
-                      Ready to start navigation
-                    </span>
+            {/* Navigation Status Card */}
+            {!navigationStarted && (
+              <Card className="p-3 border-orange-200 bg-orange-50">
+                <h4 className="font-medium mb-2 text-orange-900">
+                  Navigation Status
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-orange-700">Selected Slot:</span>
+                    <Badge variant="outline" className="text-xs">
+                      {TIME_SLOT_PERIODS[selectedTimeSlot]?.label}
+                    </Badge>
                   </div>
-                ) : (
-                  <div className="space-y-1">
+                  {canStartNavigation(selectedTimeSlot) ? (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-orange-500" />
-                      <span className="text-sm text-orange-700 font-medium">
-                        Navigation available in {formatTimeRemaining(timeUntilNavigationStart)}
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-sm text-green-700 font-medium">
+                        Ready to start navigation
                       </span>
                     </div>
-                    <p className="text-xs text-orange-600">
-                      Navigation starts 30 minutes before the time slot
-                    </p>
+                  ) : (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                        <span className="text-sm text-orange-700 font-medium">
+                          Navigation available in{" "}
+                          {formatTimeRemaining(timeUntilNavigationStart)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-orange-600">
+                        Navigation starts 30 minutes before the time slot
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {/* Advanced Navigation Controls */}
+            <Card className="p-3">
+              <h4 className="font-medium mb-3">Navigation Settings</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Voice Navigation</span>
+                  <Button
+                    variant={voiceEnabled ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      if (!voiceEnabled) {
+                        initializeVoiceNavigation();
+                      } else {
+                        setVoiceEnabled(false);
+                        speechSynthesisRef.current?.cancel();
+                        toast.info("Voice navigation disabled");
+                      }
+                    }}
+                  >
+                    {voiceEnabled ? "ON" : "OFF"}
+                  </Button>
+                </div>
+
+                {alternativeRoutes.length > 0 && (
+                  <div>
+                    <span className="text-sm">Alternative Routes</span>
+                    <div className="flex gap-1 mt-1">
+                      {alternativeRoutes[0].routes.map((_, index) => (
+                        <Button
+                          key={index}
+                          variant={
+                            selectedRouteIndex === index ? "default" : "outline"
+                          }
+                          size="sm"
+                          onClick={() => selectAlternativeRoute(index)}
+                        >
+                          Route {index + 1}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
             </Card>
-          )}
 
-          {/* Advanced Navigation Controls */}
-          <Card className="p-3">
-            <h4 className="font-medium mb-3">Navigation Settings</h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Voice Navigation</span>
-                <Button
-                  variant={voiceEnabled ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    if (!voiceEnabled) {
-                      initializeVoiceNavigation();
-                    } else {
-                      setVoiceEnabled(false);
-                      speechSynthesisRef.current?.cancel();
-                      toast.info("Voice navigation disabled");
-                    }
-                  }}
-                >
-                  {voiceEnabled ? "ON" : "OFF"}
-                </Button>
-              </div>
-
-              {alternativeRoutes.length > 0 && (
-                <div>
-                  <span className="text-sm">Alternative Routes</span>
-                  <div className="flex gap-1 mt-1">
-                    {alternativeRoutes[0].routes.map((_, index) => (
-                      <Button
-                        key={index}
-                        variant={selectedRouteIndex === index ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => selectAlternativeRoute(index)}
-                      >
-                        Route {index + 1}
-                      </Button>
-                    ))}
+            {/* Order Status Summary */}
+            <Card className="p-3">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {Object.entries(
+                  orders.reduce(
+                    (acc, order) => {
+                      acc[order.status] = (acc[order.status] || 0) + 1;
+                      return acc;
+                    },
+                    {} as Record<string, number>,
+                  ),
+                ).map(([status, count]) => (
+                  <div
+                    key={status}
+                    className="flex items-center justify-between"
+                  >
+                    <Badge
+                      variant={getStatusBadgeVariant(status)}
+                      className="text-xs"
+                    >
+                      {formatStatus(status)}
+                    </Badge>
+                    <span className="font-medium">{count}</span>
                   </div>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {/* Order Status Summary */}
-          <Card className="p-3">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {Object.entries(
-                orders.reduce((acc, order) => {
-                  acc[order.status] = (acc[order.status] || 0) + 1;
-                  return acc;
-                }, {} as Record<string, number>)
-              ).map(([status, count]) => (
-                <div key={status} className="flex items-center justify-between">
-                  <Badge variant={getStatusBadgeVariant(status)} className="text-xs">
-                    {formatStatus(status)}
-                  </Badge>
-                  <span className="font-medium">{count}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Live Navigation Info in Sidebar */}
-          {navigationStarted && liveNavigation.nextCustomer && (
-            <Card className="p-3 border-blue-200 bg-blue-50">
-              <h4 className="font-medium mb-2 text-blue-900">Next Delivery</h4>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-blue-700">
-                    {liveNavigation.nextCustomer.consumerId.name}
-                  </span>
-                  <Badge variant="outline" className="text-xs">
-                    {liveNavigation.nextCustomer.status}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-blue-600" />
-                    <span className="text-blue-600 font-medium">
-                      {formatDistance(liveNavigation.distanceToNext)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-green-600" />
-                    <span className="text-green-600 font-medium">
-                      {formatETA(liveNavigation.timeToNext)}
-                    </span>
-                  </div>
-                </div>
+                ))}
               </div>
             </Card>
-          )}
 
-          <Card className="p-0">
-            <ScrollArea style={{ height: 600 }}>
-              <div className="space-y-2 p-3">
-                {orders.map((order, idx) => (
-                  <div
-                    key={order._id}
-                    className="flex items-start gap-3 p-3 rounded-md hover:bg-slate-50"
-                  >
-                    <div className="w-10 flex items-center justify-center">
-                      <div className="text-sm font-medium">{idx + 1}</div>
+            {/* Live Navigation Info in Sidebar */}
+            {navigationStarted && liveNavigation.nextCustomer && (
+              <Card className="p-3 border-blue-200 bg-blue-50">
+                <h4 className="font-medium mb-2 text-blue-900">
+                  Next Delivery
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-700">
+                      {liveNavigation.nextCustomer.consumerId.name}
+                    </span>
+                    <Badge variant="outline" className="text-xs">
+                      {liveNavigation.nextCustomer.status}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-blue-600" />
+                      <span className="text-blue-600 font-medium">
+                        {formatDistance(liveNavigation.distanceToNext)}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-medium">
-                            {order.consumerId?.name}
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-green-600" />
+                      <span className="text-green-600 font-medium">
+                        {formatETA(liveNavigation.timeToNext)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            <Card className="p-0">
+              <ScrollArea style={{ height: 600 }}>
+                <div className="space-y-2 p-3">
+                  {orders.map((order, idx) => (
+                    <div
+                      key={order._id}
+                      className="flex items-start gap-3 p-3 rounded-md hover:bg-slate-50"
+                    >
+                      <div className="w-10 flex items-center justify-center">
+                        <div className="text-sm font-medium">{idx + 1}</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-medium">
+                              {order.consumerId?.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {order.menuId?.name}
+                            </div>
+                            <div className="flex items-center gap-1 mt-1">
+                              <Badge
+                                variant={getStatusBadgeVariant(order.status)}
+                                className="text-xs"
+                              >
+                                {formatStatus(order.status)}
+                              </Badge>
+                              {order.estimatedDeliveryTime && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="w-3 h-3" />
+                                  {format(
+                                    new Date(order.estimatedDeliveryTime),
+                                    "HH:mm",
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {order.menuId?.name}
-                          </div>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Badge variant={getStatusBadgeVariant(order.status)} className="text-xs">
-                              {formatStatus(order.status)}
-                            </Badge>
-                            {order.estimatedDeliveryTime && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="w-3 h-3" />
-                                {format(new Date(order.estimatedDeliveryTime), "HH:mm")}
+                          <div className="text-right">
+                            <div className="text-sm font-semibold">
+                              ₹{order.totalAmount}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {order.timeSlot}
+                            </div>
+                            {navigationStarted && (
+                              <div className="text-xs text-green-600 font-medium mt-1">
+                                ETA: {getCustomerETA(order._id)}
                               </div>
                             )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold">
-                            ₹{order.totalAmount}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {order.timeSlot}
-                          </div>
-                          {navigationStarted && (
-                            <div className="text-xs text-green-600 font-medium mt-1">
-                              ETA: {getCustomerETA(order._id)}
-                            </div>
-                          )}
+                        <div className="mt-2 text-sm text-gray-600 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {order.address.city}, {order.address.state}
                         </div>
-                      </div>
-                      <div className="mt-2 text-sm text-gray-600 flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {order.address.city}, {order.address.state}
-                      </div>
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openOrderFromSidebar(order)}
-                        >
-                          View Details
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            // center map to this order
-                            const pos = getAddressCoordinates(order.address);
-                            if (pos && mapRef.current) {
-                              mapRef.current.panTo(pos);
-                              mapRef.current.setZoom(15);
-                            }
-                          }}
-                        >
-                          <Navigation className="w-3 h-3 mr-1" />
-                          Navigate
-                        </Button>
-                        {order.consumerId.phone && (
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openOrderFromSidebar(order)}
+                          >
+                            View Details
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => window.open(`tel:${order.consumerId.phone}`)}
+                            onClick={() => {
+                              // center map to this order
+                              const pos = getAddressCoordinates(order.address);
+                              if (pos && mapRef.current) {
+                                mapRef.current.panTo(pos);
+                                mapRef.current.setZoom(15);
+                              }
+                            }}
                           >
-                            <Phone className="w-3 h-3" />
+                            <Navigation className="w-3 h-3 mr-1" />
+                            Navigate
                           </Button>
-                        )}
+                          {order.consumerId.phone && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                window.open(`tel:${order.consumerId.phone}`)
+                              }
+                            >
+                              <Phone className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            </Card>
 
-          <div>
-            <p className="text-sm text-muted-foreground">Driver</p>
-            <div className="mt-2">
-              <Button
-                onClick={() => {
-                  if (driverMarkerRef.current && mapRef.current) {
-                    const p = driverMarkerRef.current.getPosition();
-                    if (p) mapRef.current.panTo({ lat: p.lat(), lng: p.lng() });
-                  }
-                }}
-              >
-                Center Driver
-              </Button>
+            <div>
+              <p className="text-sm text-muted-foreground">Driver</p>
+              <div className="mt-2">
+                <Button
+                  onClick={() => {
+                    if (driverMarkerRef.current && mapRef.current) {
+                      const p = driverMarkerRef.current.getPosition();
+                      if (p)
+                        mapRef.current.panTo({ lat: p.lat(), lng: p.lng() });
+                    }
+                  }}
+                >
+                  Center Driver
+                </Button>
+              </div>
             </div>
-          </div></> : <div className="h-40 flex justify-center items-center">No orders for this timeSlot</div>}
+          </>
+        ) : (
+          <div className="h-40 flex justify-center items-center">
+            No orders for this timeSlot
+          </div>
+        )}
       </aside>
 
       <main className="absolute inset-0">
@@ -1878,7 +2056,7 @@ export default function RouteMap() {
             onClick={() => {
               if (mapRef.current && pathCoords.length > 0) {
                 const bounds = new google.maps.LatLngBounds();
-                pathCoords.forEach(coord => bounds.extend(coord));
+                pathCoords.forEach((coord) => bounds.extend(coord));
                 mapRef.current.fitBounds(bounds, 50);
               }
             }}
@@ -1909,7 +2087,10 @@ export default function RouteMap() {
                     </div>
                   </div>
                   <div className="text-sm text-gray-500">
-                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date().toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </div>
                 </div>
 
@@ -1934,7 +2115,9 @@ export default function RouteMap() {
                       className="border-gray-300 text-gray-700 hover:bg-gray-50"
                       onClick={() => {
                         if (liveNavigation.nextCustomer?.consumerId.phone) {
-                          window.open(`tel:${liveNavigation.nextCustomer.consumerId.phone}`);
+                          window.open(
+                            `tel:${liveNavigation.nextCustomer.consumerId.phone}`,
+                          );
                         }
                       }}
                       disabled={!liveNavigation.nextCustomer?.consumerId.phone}
@@ -1946,7 +2129,9 @@ export default function RouteMap() {
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4"
                       onClick={() => {
-                        const pos = getAddressCoordinates(liveNavigation.nextCustomer!.address);
+                        const pos = getAddressCoordinates(
+                          liveNavigation.nextCustomer!.address,
+                        );
                         if (pos && mapRef.current) {
                           mapRef.current.panTo(pos);
                           mapRef.current.setZoom(18);
@@ -1964,12 +2149,15 @@ export default function RouteMap() {
                     <div
                       className="bg-blue-500 h-1 rounded-full transition-all duration-300"
                       style={{
-                        width: `${Math.max(10, 100 - (liveNavigation.distanceToNext / 1000) * 10)}%`
+                        width: `${Math.max(10, 100 - (liveNavigation.distanceToNext / 1000) * 10)}%`,
                       }}
                     ></div>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {orders.findIndex(o => o._id === liveNavigation.nextCustomer?._id) + 1} of {orders.length}
+                    {orders.findIndex(
+                      (o) => o._id === liveNavigation.nextCustomer?._id,
+                    ) + 1}{" "}
+                    of {orders.length}
                   </div>
                 </div>
               </div>
@@ -1995,7 +2183,6 @@ export default function RouteMap() {
             disableDefaultUI: true,
           }}
         >
-
           {/* If we have at least 2 points, request directions */}
           {navigationStarted &&
             driverLocation &&
@@ -2055,7 +2242,11 @@ export default function RouteMap() {
                 {selectedOrder.estimatedDeliveryTime && (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
-                    ETA: {format(new Date(selectedOrder.estimatedDeliveryTime), "HH:mm")}
+                    ETA:{" "}
+                    {format(
+                      new Date(selectedOrder.estimatedDeliveryTime),
+                      "HH:mm",
+                    )}
                   </div>
                 )}
               </div>
@@ -2086,7 +2277,9 @@ export default function RouteMap() {
               </div>
 
               <div>
-                <p className="text-xs text-muted-foreground">Delivery Address</p>
+                <p className="text-xs text-muted-foreground">
+                  Delivery Address
+                </p>
                 <p className="font-medium">
                   {selectedOrder.address.addressLine1}
                 </p>
@@ -2103,7 +2296,9 @@ export default function RouteMap() {
 
               {selectedOrder.notes && (
                 <div>
-                  <p className="text-xs text-muted-foreground">Special Instructions</p>
+                  <p className="text-xs text-muted-foreground">
+                    Special Instructions
+                  </p>
                   <p className="text-sm bg-yellow-50 p-2 rounded border">
                     {selectedOrder.notes}
                   </p>
@@ -2146,7 +2341,9 @@ export default function RouteMap() {
                   {selectedOrder.consumerId.phone && (
                     <Button
                       variant="outline"
-                      onClick={() => window.open(`tel:${selectedOrder.consumerId.phone}`)}
+                      onClick={() =>
+                        window.open(`tel:${selectedOrder.consumerId.phone}`)
+                      }
                     >
                       <Phone className="w-4 h-4 mr-2" />
                       Call
@@ -2154,26 +2351,30 @@ export default function RouteMap() {
                   )}
                 </div>
 
-                {selectedOrder.status !== "delivered" && selectedOrder.status !== "cancelled" && (
-                  <div className="space-y-2">
-                    {selectedOrder.status === "out_for_delivery" && isDriverNearCustomer && (
-                      <Button
-                        className="w-full bg-green-600 hover:bg-green-700"
-                        onClick={() =>
-                          updateOrderStatus(selectedOrder._id, "delivered")
-                        }
-                      >
-                        Mark as Delivered
-                      </Button>
-                    )}
+                {selectedOrder.status !== "delivered" &&
+                  selectedOrder.status !== "cancelled" && (
+                    <div className="space-y-2">
+                      {selectedOrder.status === "out_for_delivery" &&
+                        isDriverNearCustomer && (
+                          <Button
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            onClick={() =>
+                              updateOrderStatus(selectedOrder._id, "delivered")
+                            }
+                          >
+                            Mark as Delivered
+                          </Button>
+                        )}
 
-                    {!isDriverNearCustomer && selectedOrder.status === "out_for_delivery" && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Move within 50 meters of customer to enable delivery confirmation
-                      </p>
-                    )}
-                  </div>
-                )}
+                      {!isDriverNearCustomer &&
+                        selectedOrder.status === "out_for_delivery" && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            Move within 50 meters of customer to enable delivery
+                            confirmation
+                          </p>
+                        )}
+                    </div>
+                  )}
               </div>
             </div>
           ) : (

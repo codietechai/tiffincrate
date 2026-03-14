@@ -5,6 +5,7 @@ import User from "@/models/User";
 import Menu from "@/models/Menu";
 import MenuItem from "@/models/MenuItem";
 import bcrypt from "bcryptjs";
+import { WalletService } from "@/services/wallet-service";
 
 // Sample providers data
 const sampleProviders = Array.from({ length: 10 }).map((_, i) => ({
@@ -388,6 +389,10 @@ async function seedProviders() {
         });
 
         await provider.save();
+
+        // Create wallet for the provider
+        await WalletService.createWallet(user._id.toString(), "provider");
+
         createdProviders.push({
             user: user,
             provider: provider
