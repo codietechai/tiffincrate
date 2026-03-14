@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         })
         .populate({
           path: "menuId",
-          select: "name description category basePrice",
+          select: "name description category basePrice image",
         })
         .populate("address")
         .sort({ createdAt: -1 })

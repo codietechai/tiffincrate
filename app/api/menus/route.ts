@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       if (!serviceProvider) {
         return NextResponse.json(
           { error: "Provider not found for this user" },
-          { status: 404 }
+          { status: 404 },
         );
       }
       query.providerId = new Types.ObjectId(serviceProvider._id.toString());
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       if (!serviceProvider) {
         return NextResponse.json(
           { error: ERRORMESSAGE.PROVIDER_NOT_FOUND },
-          { status: 404 }
+          { status: 404 },
         );
       }
       query.providerId = new Types.ObjectId(serviceProvider._id.toString());
@@ -80,7 +80,10 @@ export async function GET(request: NextRequest) {
 
     // Get counts for stats
     const total = await Menu.countDocuments(query);
-    const availableCount = await Menu.countDocuments({ ...query, isAvailable: true });
+    const availableCount = await Menu.countDocuments({
+      ...query,
+      isAvailable: true,
+    });
     const activeCount = await Menu.countDocuments({ ...query, isActive: true });
 
     // Build aggregation pipeline
@@ -128,20 +131,17 @@ export async function GET(request: NextRequest) {
           providerId: "$providerInfo._id",
           providerName: "$providerInfo.businessName",
           menuItems: 1,
-          // Add text search score if search was performed
           ...(search && { score: { $meta: "textScore" } }),
         },
       },
     ];
 
-    // Add sorting
     if (search) {
       pipeline.push({ $sort: { score: { $meta: "textScore" }, rating: -1 } });
     } else {
-      pipeline.push({ $sort: { rating: -1, createdAt: -1 } });
+      pipeline.push({ $sort: { rating: -1, createdAt: 1 } });
     }
 
-    // Add pagination
     pipeline.push({ $skip: skip }, { $limit: limit });
 
     const menus = await Menu.aggregate(pipeline);
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     if (!userId || role !== "provider") {
       return NextResponse.json(
         { error: ERRORMESSAGE.FORBIDDEN },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
     if (!menuData.name || !menuData.category || !menuData.basePrice) {
       return NextResponse.json(
         { error: "Menu name, category, and base price are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
     if (!provider) {
       return NextResponse.json(
         { error: "Provider not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
           spiceLevel: item.spiceLevel || "mild",
           ingredients: item.ingredients || [],
         });
-      })
+      }),
     );
 
     // Filter out nulls
@@ -255,13 +255,10 @@ export async function POST(request: NextRequest) {
         message: SUCCESSMESSAGE.MENU_CREATE,
         data: populatedMenu,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error(ERRORMESSAGE.MENU_CREATE_FAILED, error);
-    return NextResponse.json(
-      { error: ERRORMESSAGE.INTERNAL },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: ERRORMESSAGE.INTERNAL }, { status: 500 });
   }
 }

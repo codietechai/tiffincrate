@@ -7,7 +7,7 @@ export async function PATCH(request: NextRequest) {
     try {
         const userId = request.headers.get("x-user-id");
         const role = request.headers.get("x-user-role");
-
+console.log('role :>> ', role);
         if (role !== "provider") {
             return NextResponse.json(
                 { error: "Only providers can update delivery order status" },
@@ -20,6 +20,7 @@ export async function PATCH(request: NextRequest) {
         const { status, orderIds } = await request.json();
 
         // Get provider info
+        console.log('userId :>> ', userId);
         const provider = await ServiceProvider.findOne({ userId });
         if (!provider) {
             return NextResponse.json(
@@ -59,7 +60,7 @@ export async function PATCH(request: NextRequest) {
                 updateObj.notDeliveredAt = new Date();
                 break;
         }
-
+console.log('orderIds :>> ', orderIds);
         // Update multiple delivery orders at once
         const result = await DeliveryOrder.updateMany(
             {
@@ -68,7 +69,7 @@ export async function PATCH(request: NextRequest) {
             },
             { $set: updateObj }
         );
-
+console.log('result :>> ', result);
         if (result.matchedCount === 0) {
             return NextResponse.json(
                 { error: "No delivery orders found or unauthorized" },
