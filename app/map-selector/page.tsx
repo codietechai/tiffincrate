@@ -29,7 +29,7 @@ export default function MapSelectorPage() {
     }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.GOOGLE_MAPS_API_KEY}&libraries=places`;
     script.onload = initializeMap;
     document.head.appendChild(script);
   };
@@ -79,7 +79,7 @@ export default function MapSelectorPage() {
             setSelectedLocation(fullLocation);
             updateMarker(event.latLng, fullLocation.address);
           }
-        }
+        },
       );
     });
 
@@ -96,7 +96,7 @@ export default function MapSelectorPage() {
         },
         (error) => {
           console.error("Error getting user location:", error);
-        }
+        },
       );
     }
   };
@@ -171,7 +171,7 @@ export default function MapSelectorPage() {
       // Store location in localStorage or pass back to parent
       localStorage.setItem(
         "selectedDeliveryLocation",
-        JSON.stringify(selectedLocation)
+        JSON.stringify(selectedLocation),
       );
       router.push(returnUrl);
     }

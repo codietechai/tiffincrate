@@ -185,7 +185,7 @@ const formatTimeRemaining = (minutes: number): string => {
 
 export default function RouteMap() {
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY!,
     libraries: ["places"],
   });
 
@@ -911,6 +911,7 @@ export default function RouteMap() {
   </g>
 </svg>
 `)}`;
+  const allowedDistance = 5000;
 
   const startLiveDriverTracking = () => {
     if (!navigator.geolocation || !mapRef.current) return;
@@ -1000,11 +1001,11 @@ export default function RouteMap() {
                   );
 
                   // Give voice instructions at specific distances
-                  if (distanceToNext < 200 && distanceToNext > 150) {
+                  if (distanceToNext < 20000 && distanceToNext > 15000) {
                     speakInstruction(
                       `Approaching ${nextOrder.consumerId.name}'s location in 200 meters`,
                     );
-                  } else if (distanceToNext < 50) {
+                  } else if (distanceToNext < allowedDistance) {
                     speakInstruction(
                       `You have arrived at ${nextOrder.consumerId.name}'s location`,
                     );
@@ -1199,7 +1200,7 @@ export default function RouteMap() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Goog-Api-Key": process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+            "X-Goog-Api-Key": process.env.GOOGLE_MAPS_API_KEY!,
             "X-Goog-FieldMask":
               "routes.duration,routes.distanceMeters,routes.optimizedIntermediateWaypointIndex",
           },
@@ -1565,7 +1566,7 @@ export default function RouteMap() {
       customerCoords.lng,
     );
 
-    return distance <= 50;
+    return distance <= allowedDistance;
   }, [selectedOrder]);
 
   const updateOrderStatus = async (
@@ -2369,8 +2370,8 @@ export default function RouteMap() {
                       {!isDriverNearCustomer &&
                         selectedOrder.status === "out_for_delivery" && (
                           <p className="text-xs text-muted-foreground text-center">
-                            Move within 50 meters of customer to enable delivery
-                            confirmation
+                            Move within {allowedDistance} meters of customer to
+                            enable delivery confirmation
                           </p>
                         )}
                     </div>

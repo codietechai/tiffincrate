@@ -107,8 +107,10 @@ export function MenuItemDetail() {
       setAddresses(allAddressesResponse.data);
 
       // Find default address or use first one
-      const defaultAddr = allAddressesResponse.data.find((addr: TAddress) => addr.isDefault) ||
-        allAddressesResponse.data[0] || null;
+      const defaultAddr =
+        allAddressesResponse.data.find((addr: TAddress) => addr.isDefault) ||
+        allAddressesResponse.data[0] ||
+        null;
 
       setDefaultAddress(defaultAddr);
     } catch (error) {
@@ -168,8 +170,8 @@ export function MenuItemDetail() {
       }
     };
 
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [user]);
 
   useEffect(() => {
@@ -239,7 +241,7 @@ export function MenuItemDetail() {
       if (!razorpayResponse.ok) throw new Error(razorpayOrder.error);
 
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: process.env.RAZORPAY_KEY_ID,
         amount: razorpayOrder.order.amount,
         currency: razorpayOrder.order.currency,
         description: `${menu.name} - ${totalDays} meals × ₹${menu.basePrice}`,
@@ -402,7 +404,9 @@ export function MenuItemDetail() {
             {user?.role === "consumer" && (
               <div className="space-y-4 mt-4">
                 <div>
-                  <Label className="text-sm font-medium">Delivery Address</Label>
+                  <Label className="text-sm font-medium">
+                    Delivery Address
+                  </Label>
                   {addressLoading ? (
                     <div className="mt-2 p-4 border rounded-lg animate-pulse">
                       <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -544,8 +548,7 @@ export function MenuItemDetail() {
                     ? "Processing..."
                     : !defaultAddress
                       ? "Add Address to Continue"
-                      : "Place Order"
-                  }
+                      : "Place Order"}
                 </Button>
               </div>
             )}

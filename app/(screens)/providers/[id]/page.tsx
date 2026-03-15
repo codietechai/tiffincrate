@@ -94,7 +94,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
   });
   const [multiDates, setMultiDates] = useState<Date[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>(
-    orderData.dates ? orderData.dates.split(",") : []
+    orderData.dates ? orderData.dates.split(",") : [],
   );
   const router = useRouter();
 
@@ -175,7 +175,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
       const existing = prev.find((m) => m._id === menu._id);
       if (existing)
         return prev.map((m) =>
-          m._id === menu._id ? { ...m, quantity: m.quantity + 1 } : m
+          m._id === menu._id ? { ...m, quantity: m.quantity + 1 } : m,
         );
       return [...prev, { ...menu, quantity: 1 }];
     });
@@ -186,7 +186,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
       const existing = prev.find((m) => m._id === id);
       if (existing && existing.quantity > 1)
         return prev.map((m) =>
-          m._id === id ? { ...m, quantity: m.quantity - 1 } : m
+          m._id === id ? { ...m, quantity: m.quantity - 1 } : m,
         );
       return prev.filter((m) => m._id !== id);
     });
@@ -211,7 +211,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
     return menus.filter((m) => m.category === selectedCategory);
   };
 
-  const handlePlaceOrder = () => { };
+  const handlePlaceOrder = () => {};
 
   //  const handlePlaceOrder = async () => {
   //   if (!user || user.role !== "consumer") {
@@ -246,7 +246,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
   //     if (!razorpayResponse.ok) throw new Error(razorpayOrder.error);
   //     console.log(295, razorpayOrder);
   //     const options = {
-  //       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  //       key: process.env.RAZORPAY_KEY_ID,
   //       amount: razorpayOrder.order.amount,
   //       currency: razorpayOrder.order.currency,
   //       name: "TiffinCrate",
@@ -419,25 +419,28 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                        {Object.entries((menu as any)?.weeklyItems).map(([day, item]) =>
-                          item ? (
-                            <div
-                              key={day}
-                              className="p-3 border rounded-md bg-white"
-                            >
-                              <h4 className="capitalize font-medium">{day}</h4>
-                              <p className="text-sm text-gray-600">
-                                {(item as any).name}
-                              </p>
-                            </div>
-                          ) : (
-                            <div
-                              key={day}
-                              className="p-3 border rounded-md text-gray-400 text-sm"
-                            >
-                              {day}: No item
-                            </div>
-                          )
+                        {Object.entries((menu as any)?.weeklyItems).map(
+                          ([day, item]) =>
+                            item ? (
+                              <div
+                                key={day}
+                                className="p-3 border rounded-md bg-white"
+                              >
+                                <h4 className="capitalize font-medium">
+                                  {day}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {(item as any).name}
+                                </p>
+                              </div>
+                            ) : (
+                              <div
+                                key={day}
+                                className="p-3 border rounded-md text-gray-400 text-sm"
+                              >
+                                {day}: No item
+                              </div>
+                            ),
                         )}
                       </div>
 
@@ -495,10 +498,11 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`h-4 w-4 ${i < r.rating
+                              className={`h-4 w-4 ${
+                                i < r.rating
                                   ? "text-yellow-400 fill-yellow-400"
                                   : "text-gray-300"
-                                }`}
+                              }`}
                             />
                           ))}
                         </div>
@@ -599,8 +603,8 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                                 onClick={() =>
                                   router.push(
                                     `/map-selector?returnUrl=${encodeURIComponent(
-                                      window.location.pathname
-                                    )}`
+                                      window.location.pathname,
+                                    )}`,
                                   )
                                 }
                                 className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
@@ -618,7 +622,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                           <Select
                             value={orderData.deliveryPeriod}
                             onValueChange={(
-                              value: "month" | "specific_days" | "custom_dates"
+                              value: "month" | "specific_days" | "custom_dates",
                             ) =>
                               setOrderData((prev) => ({
                                 ...prev,
@@ -676,7 +680,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
                                     className={clsx(
                                       "text-sm",
                                       selectedDays.includes(day.value) &&
-                                      "bg-primary text-white"
+                                        "bg-primary text-white",
                                     )}
                                     onClick={() => toggleDay(day.value)}
                                   >
