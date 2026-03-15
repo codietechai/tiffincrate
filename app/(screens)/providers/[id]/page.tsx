@@ -311,7 +311,7 @@ export default function ProviderPage({ params }: { params: { id: string } }) {
   }, []);
 
   if (loading) return <LoadingPage />;
-
+  console.log("object :>> ");
   if (!provider)
     return (
       <div className="min-h-screen bg-gray-50">
